@@ -1,0 +1,9 @@
+.\objects\main.o: ..\ports\tm4c123\main.c
+.\objects\main.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
+.\objects\main.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\stdio.h
+.\objects\main.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\string.h
+.\objects\main.o: ..\..\Nmicropython\py/compile.h
+.\objects\main.o: ..\..\Nmicropython\py/lexer.h
+.\objects\main.o: ..\..\Nmicropython\py/mpconfig.h
+.\objects\main.o: ..\ports\tm4c123\mpconfigport.h
+.\objects\main.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\alloca.h
