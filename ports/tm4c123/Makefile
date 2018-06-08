@@ -1,6 +1,8 @@
 include ../../py/mkenv.mk
 
-CROSS = 0
+CROSS = 1
+
+BOARD = TM4C123GH6PM
 
 # qstr definitions (must come before including py.mk)
 QSTR_DEFS = qstrdefsport.h
@@ -15,16 +17,21 @@ endif
 INC += -I.
 INC += -I$(TOP)
 INC += -I$(BUILD)
+INC += -I$(PY_SRC)
+INC += -I../../
 
 ifeq ($(CROSS), 1)
 DFU = $(TOP)/tools/dfu.py
 PYDFU = $(TOP)/tools/pydfu.py
 CFLAGS_CORTEX_M4 = -mthumb -mtune=cortex-m4 -mabi=aapcs-linux -mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mfloat-abi=hard -fsingle-precision-constant -Wdouble-promotion
-CFLAGS = $(INC) -Wall -Werror -std=c99 -nostdlib $(CFLAGS_CORTEX_M4) $(COPT)
+CFLAGS = $(INC) -Wall -Werror -std=gnu99 -nostdlib $(CFLAGS_CORTEX_M4) $(COPT)
+#Preprocessor Flags
+CFLAGS += -D$(BOARD)
+
 LDFLAGS = -nostdlib -T stm32f405.ld -Map=$@.map --cref --gc-sections
 else
 LD = gcc
-CFLAGS = -m32 $(INC) -Wall -Werror -std=c99 $(COPT)
+#CFLAGS = -m32 $(INC) -Wall -Werror -std=gnu99 $(COPT)
 LDFLAGS = -m32 -Wl,-Map=$@.map,--cref -Wl,--gc-sections
 endif
 

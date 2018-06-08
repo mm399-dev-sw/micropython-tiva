@@ -2,8 +2,6 @@
 #include <stdio.h>
 #include <string.h>
 
-//#define TM4C123GH6PM
-
 #include "device/Include/TM4C123.h"
 
 #include "py/compile.h"
