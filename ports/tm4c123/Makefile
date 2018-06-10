@@ -1,9 +1,30 @@
 include ../../py/mkenv.mk
 
-CROSS = 0
+CROSS = 1
 
 # qstr definitions (must come before including py.mk)
 QSTR_DEFS = qstrdefsport.h
+
+#
+# Defines the part type that this project uses.
+#
+PART=TM4C123GH6PM
+
+TIVAWARE_LIB = TivaWare/
+
+#
+# The base directory for TivaWare.
+#
+ROOT = $(TIVAWARE_LIB)
+
+#
+# Include the common make definitions.
+#
+include $(ROOT)/makedefs
+
+VPATH = $(TIVAWARE_LIB)/utils
+
+IPATH = $(TIVAWARE_LIB) ./ $(TOP) $(BUILD) $(TIVAWARE_LIB)/inc
 
 # include py core make definitions
 include $(TOP)/py/py.mk
@@ -15,6 +36,7 @@ endif
 INC += -I.
 INC += -I$(TOP)
 INC += -I$(BUILD)
+INC += -I$(TIVAWARE_LIB)
 
 ifeq ($(CROSS), 1)
 DFU = $(TOP)/tools/dfu.py
@@ -40,7 +62,9 @@ LIBS =
 
 SRC_C = \
 	main.c \
+	startup_${COMPILER}.c \
 	uart_core.c \
+	uartstdio.c \
 	lib/utils/printf.c \
 	lib/utils/stdout_helpers.c \
 	lib/utils/pyexec.c \
@@ -50,10 +74,29 @@ SRC_C = \
 
 OBJ = $(PY_CORE_O) $(addprefix $(BUILD)/, $(SRC_C:.c=.o))
 
-ifeq ($(CROSS), 1)
-all: $(BUILD)/firmware.dfu
-else
-all: $(BUILD)/firmware.elf
+all: $(COMPILER)
+all: $(COMPILER)/firmware.axf
+
+$(COMPILER):
+	@mkdir -p $(BUILD)
+	
+#
+# Rules for building the hello example.
+#
+${COMPILER}/firmware.axf: ${COMPILER}/firmware.o
+${COMPILER}/firmware.axf: ${COMPILER}/startup_${COMPILER}.o
+${COMPILER}/firmware.axf: ${COMPILER}/uartstdio.o
+${COMPILER}/firmware.axf: ${ROOT}/driverlib/${COMPILER}/libdriver.a
+${COMPILER}/firmware.axf: tm4c123gh6pm.ld
+SCATTERgcc_hello=tm4c123gh6pm.ld
+ENTRY_hello=ResetISR
+CFLAGSgcc=-DTARGET_IS_TM4C123_RB1
+
+#
+# Include the automatically generated dependency files.
+#
+ifneq (${MAKECMDGOALS},clean)
+-include ${wildcard ${COMPILER}/*.d} __dummy__
 endif
 
 $(BUILD)/_frozen_mpy.c: frozentest.mpy $(BUILD)/genhdr/qstrdefs.generated.h
@@ -87,5 +130,8 @@ run:
 
 test: $(BUILD)/firmware.elf
 	$(Q)/bin/echo -e "print('hello world!', list(x+1 for x in range(10)), end='eol\\\\n')\\r\\n\\x04" | $(BUILD)/firmware.elf | tail -n2 | grep "^hello world! \\[1, 2, 3, 4, 5, 6, 7, 8, 9, 10\\]eol"
+	
+clean:
+	@rm -rf ${COMPILER} ${wildcard *~}
 
 include $(TOP)/py/mkrules.mk
