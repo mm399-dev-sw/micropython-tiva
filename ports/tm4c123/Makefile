@@ -12,7 +12,7 @@ PART=TM4C123GH6PM
 
 PROJECT_NAME = uPY_TM4C123
 
-TIVAWARE_LIB = TivaWare/
+TIVAWARE_LIB = TivaWare
 
 #
 # The base directory for TivaWare.
@@ -30,7 +30,7 @@ OD = $(CROSS_COMPILE)objdump
 
 ODFLAGS = -S
 LFLAGS = --gc-sections
-CPFLAGS = -OBinary
+CPFLAGS = -O binary
 
 LINKER_FILE = tm4c123gh6pm.ld
 
@@ -85,12 +85,16 @@ SRC_C = \
 	lib/utils/pyexec.c \
 	lib/libc/string0.c \
 	lib/mp-readline/readline.c \
-	$(BUILD)/_frozen_mpy.c 
+	_frozen_mpy.c 
 
 OBJ = $(PY_CORE_O) $(addprefix $(BUILD)/, $(SRC_C:.c=.o))
 
 
 all: $(OBJ) ${PROJECT_NAME}.axf ${PROJECT_NAME}
+
+$(BUILD)/_frozen_mpy.c: frozentest.mpy $(BUILD)/genhdr/qstrdefs.generated.h
+	$(ECHO) "MISC freezing bytecode"
+	$(Q)$(TOP)/tools/mpy-tool.py -f -q $(BUILD)/genhdr/qstrdefs.preprocessed.h -mlongint-impl=none $< > $@
 
 %.o: %.c
 	@echo
@@ -100,7 +104,7 @@ all: $(OBJ) ${PROJECT_NAME}.axf ${PROJECT_NAME}
 ${PROJECT_NAME}.axf: $(OBJ)
 	@echo
 	@echo Making driverlib
-	$(MAKE) -C ${TIVAWARE_LIB}driverlib/
+	$(MAKE) -C ${TIVAWARE_LIB}/driverlib/
 	@echo
 	@echo Linking...
 	$(LD) -T $(LINKER_FILE) $(LFLAGS) -o ${PROJECT_NAME}.axf $(OBJ) $(LIBS)  $(LIBM) $(LIBC) $(LIBGCC)
@@ -114,6 +118,7 @@ ${PROJECT_NAME}: ${PROJECT_NAME}.axf
 	$(OD) $(ODFLAGS) ${PROJECT_NAME}.axf > ${PROJECT_NAME}.lst
 
 
+
 # Rule to load the project to the board
 # I added a sudo because it's needed without a rule.
 load:
@@ -124,5 +129,10 @@ test: $(BUILD)/firmware.elf
 	$(Q)/bin/echo -e "print('hello world!', list(x+1 for x in range(10)), end='eol\\\\n')\\r\\n\\x04" | $(BUILD)/firmware.elf | tail -n2 | grep "^hello world! \\[1, 2, 3, 4, 5, 6, 7, 8, 9, 10\\]eol"
 
 
-
 include $(TOP)/py/mkrules.mk
+
+clean:
+	rm -rf $(BUILD)
+	rm -f $(TIVAWARE_LIB)/driverlib/gcc/*.d
+	rm -f $(TIVAWARE_LIB)/driverlib/gcc/*.o
+	rm -f *.o *.d *.axf
