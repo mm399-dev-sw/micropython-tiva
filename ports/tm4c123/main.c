@@ -2,10 +2,6 @@
 #include <stdio.h>
 #include <string.h>
 
-//#define TM4C123GH6PM
-
-#include "device/Include/TM4C123.h"
-
 #include "py/compile.h"
 #include "py/runtime.h"
 #include "py/repl.h"
@@ -13,7 +9,7 @@
 #include "py/mperrno.h"
 #include "lib/utils/pyexec.h"
 
-#include "tm4c123.h"
+#include "tm4c123gh6pm.h"
 
 #if MICROPY_ENABLE_COMPILER
 void do_str(const char *src, mp_parse_input_kind_t input_kind) {
