@@ -1,6 +1,8 @@
-include ../../py/mkenv.mk
+# Makefile for Micropython Tiva Lauchpad (TM4C123GH6PM) Port
+# by Raphael Kriegl
 
-CROSS = 1
+# Include variabes for Python and Compiler
+include ../../py/mkenv.mk
 
 # qstr definitions (must come before including py.mk)
 QSTR_DEFS = qstrdefsport.h
@@ -10,21 +12,31 @@ QSTR_DEFS = qstrdefsport.h
 #
 PART=TM4C123GH6PM
 
+# OpenOCD paths
+OPENOCD_PATH = /usr/local/share/openocd
+
+OPENOCD_BOARD_CFG = $(OPENOCD_PATH)/scripts/board/ek-tm4c123gxl.cfg
+
+OPENOCD_PROG_CFG = openocd/tiva_flash.cfg
+
+
+# Name of the Project (and the resulting binary file)
 PROJECT_NAME = uPY_TM4C123
 
+# Location of the TivaWare library
+# Can be pointed to a newer version if desired
 TIVAWARE_LIB = TivaWare
 
-#
 # The base directory for TivaWare.
-#
 ROOT = $(TIVAWARE_LIB)
 
 # include py core make definitions
 include $(TOP)/py/py.mk
 
-ifeq ($(CROSS), 1)
+# Cross compilation prefix
 CROSS_COMPILE = arm-none-eabi-
-endif
+# Cross compilation flag
+CROSS = 1
 
 OD = $(CROSS_COMPILE)objdump
 
@@ -34,6 +46,7 @@ CPFLAGS = -O binary
 
 LINKER_FILE = tm4c123gh6pm.ld
 
+# Included directories
 INC += -I.
 INC += -I$(TOP)
 INC += -I$(BUILD)
@@ -42,7 +55,6 @@ INC += -I$(TIVAWARE_LIB)/inc
 INC += -I$(PY_SRC)
 INC += -I../../
 
-ifeq ($(CROSS), 1)
 DFU = $(TOP)/tools/dfu.py
 PYDFU = $(TOP)/tools/pydfu.py
 CFLAGS_CORTEX_M4 = -mthumb -mtune=cortex-m4 -mabi=aapcs-linux -mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mfloat-abi=hard -fsingle-precision-constant -Wdouble-promotion
@@ -50,12 +62,7 @@ CFLAGS = $(INC) -Wall -Werror -std=gnu99 -nostdlib $(CFLAGS_CORTEX_M4) $(COPT)
 #Preprocessor Flags
 CFLAGS += -DPART_$(PART) -c -DTARGET_IS_TM4C123_RB1
 
-LDFLAGS = -nostdlib -T $(LINKER_FILE) -Map=$@.map --cref --gc-sections
-else
-LD = gcc
-#CFLAGS = -m32 $(INC) -Wall -Werror -std=gnu99 $(COPT)
-LDFLAGS = -m32 -Wl,-Map=$@.map,--cref -Wl,--gc-sections
-endif
+LDFLAGS = -nostdlib -T $(LINKER_FILE) --entry ResetISR -Map=$@.map --cref --gc-sections
 
 # Tune for Debugging or Optimization
 ifeq ($(DEBUG), 1)
@@ -65,15 +72,11 @@ CFLAGS += -Os -DNDEBUG
 CFLAGS += -fdata-sections -ffunction-sections
 endif
 
-
+#Libraries
 LIBS = $(TIVAWARE_LIB)/driverlib/gcc/libdriver.a
-
-
 LICGCC := ${shell $(CC) $(CFLAGS) -print-libgcc-file-name}
-
-LIBC:=${shell ${CC} ${CFLAGS} -print-file-name=libc.a}
-
-LIBM:=${shell ${CC} ${CFLAGS} -print-file-name=libm.a}
+LIBC := ${shell ${CC} ${CFLAGS} -print-file-name=libc.a}
+LIBM := ${shell ${CC} ${CFLAGS} -print-file-name=libm.a}
 
 
 SRC_C = \
@@ -96,11 +99,6 @@ $(BUILD)/_frozen_mpy.c: frozentest.mpy $(BUILD)/genhdr/qstrdefs.generated.h
 	$(ECHO) "MISC freezing bytecode"
 	$(Q)$(TOP)/tools/mpy-tool.py -f -q $(BUILD)/genhdr/qstrdefs.preprocessed.h -mlongint-impl=none $< > $@
 
-%.o: %.c
-	@echo
-	@echo Compiling $<...
-	$(CC) -c $(CFLAGS) ${<} -o ${@}
-
 ${PROJECT_NAME}.axf: $(OBJ)
 	@echo
 	@echo Making driverlib
@@ -117,16 +115,15 @@ ${PROJECT_NAME}: ${PROJECT_NAME}.axf
 	@echo Creating list file...
 	$(OD) $(ODFLAGS) ${PROJECT_NAME}.axf > ${PROJECT_NAME}.lst
 
-
-
-# Rule to load the project to the board
-# I added a sudo because it's needed without a rule.
+# Move this to .sh file??
 load:
-	sudo ${FLASHER} ${PROJECT_NAME}.bin ${FLASHER_FLAGS}
-
-
-test: $(BUILD)/firmware.elf
-	$(Q)/bin/echo -e "print('hello world!', list(x+1 for x in range(10)), end='eol\\\\n')\\r\\n\\x04" | $(BUILD)/firmware.elf | tail -n2 | grep "^hello world! \\[1, 2, 3, 4, 5, 6, 7, 8, 9, 10\\]eol"
+	sudo openocd --file $(OPENOCD_BOARD_CFG)
+#-f $(OPENOCD_PROG_CFG) -c "tiva_flash `basename $(CURID) `$(PROJECT_NAME).bin" -c shutdown
+#gdb-multiarch
+#target extended-remote :3333
+#monitor reset halt
+#load
+#monitor reset init
 
 
 include $(TOP)/py/mkrules.mk
@@ -135,4 +132,4 @@ clean:
 	rm -rf $(BUILD)
 	rm -f $(TIVAWARE_LIB)/driverlib/gcc/*.d
 	rm -f $(TIVAWARE_LIB)/driverlib/gcc/*.o
-	rm -f *.o *.d *.axf
+	rm -f *.o *.d *.axf *.bin *.lst

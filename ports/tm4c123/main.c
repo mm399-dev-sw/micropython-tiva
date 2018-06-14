@@ -9,9 +9,28 @@
 #include "py/mperrno.h"
 #include "lib/utils/pyexec.h"
 
-#include "system_TM4C123.h" //Aus KEIL, wichtig????
 
-#include "tm4c123gh6pm.h"
+#include "inc/hw_gpio.h"
+#include "inc/hw_ints.h"
+#include "inc/hw_memmap.h"
+#include "inc/hw_types.h"
+#include "inc/hw_timer.h"
+#include "inc/hw_sysctl.h"
+#include "inc/hw_ssi.h"
+#include "inc/hw_adc.h"
+#include "driverlib/rom.h"
+#include "driverlib/debug.h"
+#include "driverlib/fpu.h"
+#include "driverlib/gpio.h"
+#include "driverlib/interrupt.h"
+#include "driverlib/pin_map.h"
+#include "driverlib/rom.h"
+#include "driverlib/sysctl.h"
+#include "driverlib/systick.h"
+#include "driverlib/uart.h"
+#include "driverlib/ssi.h"
+#include "driverlib/timer.h"
+#include "driverlib/adc.h"
 
 #if MICROPY_ENABLE_COMPILER
 void do_str(const char *src, mp_parse_input_kind_t input_kind) {
@@ -38,6 +57,12 @@ static char heap[2048];
 int main(int argc, char **argv) {
     int stack_dummy;
     stack_top = (char*)&stack_dummy;
+
+    SysCtlClockSet(SYSCTL_SYSDIV_2_5 | SYSCTL_USE_PLL | SYSCTL_OSC_MAIN |SYSCTL_XTAL_16MHZ);
+
+//Pin1: red, Pin2: Blue, Pin3: Green
+    GPIOPinTypeGPIOOutput(GPIO_PORTF_BASE, GPIO_PIN_2);
+    GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_2, 1);
 
     #if MICROPY_ENABLE_GC
     gc_init(heap, heap + sizeof(heap));
