@@ -1,20 +1,0 @@
-Dependencies for Project 'micropython', Target 'tm4c123': (DO NOT MODIFY !)
-F (..\ports\tm4c123\main.c)(0x5B19A7B6)(--c99 --gnu -c --cpu Cortex-M4.fp -D__EVAL -g -O0 --apcs=interwork --split_sections -I ..\..\Nmicropython -I ..\ports\tm4c123-I.\RTE\_tm4c123-ID:\Keil_v5\ARM\PACK\Keil\TM4C_DFP\1.1.0\Device\Include\TM4C123-ID:\Keil_v5\ARM\CMSIS\Include-D__UVISION_VERSION="525" -DTM4C123GH6PM-o .\objects\main.o --omf_browse .\objects\main.crf --depend .\objects\main.d)
-I (D:\Keil_v5\ARM\ARMCC\include\stdint.h)(0x599F218E)
-I (D:\Keil_v5\ARM\ARMCC\include\stdio.h)(0x599F218C)
-I (D:\Keil_v5\ARM\ARMCC\include\string.h)(0x599F218C)
-I (..\..\Nmicropython\py/compile.h)(0x5B196A07)
-I (..\..\Nmicropython\py/lexer.h)(0x5B196A07)
-I (..\..\Nmicropython\py/mpconfig.h)(0x5B196A07)
-I (..\ports\tm4c123\mpconfigport.h)(0x5B196A03)
-I (D:\Keil_v5\ARM\ARMCC\include\alloca.h)(0x599F218E)
-F (..\ports\tm4c123\mpconfigport.h)(0x5B196A03)()
-F (..\ports\tm4c123\mphalport.h)(0x5B196A03)()
-F (..\ports\tm4c123\qstrdefsport.h)(0x5B196A03)()
-F (..\ports\tm4c123\stm32f405.ld)(0x5B196A03)()
-F (..\ports\tm4c123\uart_core.c)(0x5B19AAB1)(--c99 --gnu -c --cpu Cortex-M4.fp -D__EVAL -g -O0 --apcs=interwork --split_sections -I ..\..\Nmicropython -I ..\ports\tm4c123-I.\RTE\_tm4c123-ID:\Keil_v5\ARM\PACK\Keil\TM4C_DFP\1.1.0\Device\Include\TM4C123-ID:\Keil_v5\ARM\CMSIS\Include-D__UVISION_VERSION="525" -DTM4C123GH6PM-o .\objects\uart_core.o --omf_browse .\objects\uart_core.crf --depend .\objects\uart_core.d)
-I (D:\Keil_v5\ARM\ARMCC\include\string.h)(0x599F218C)
-I (..\..\Nmicropython\py/mpconfig.h)(0x5B196A07)
-I (..\ports\tm4c123\mpconfigport.h)(0x5B196A03)
-I (D:\Keil_v5\ARM\ARMCC\include\stdint.h)(0x599F218E)
-I (D:\Keil_v5\ARM\ARMCC\include\alloca.h)(0x599F218E)
