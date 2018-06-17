@@ -61,6 +61,7 @@ int main(int argc, char **argv) {
     SysCtlClockSet(SYSCTL_SYSDIV_2_5 | SYSCTL_USE_PLL | SYSCTL_OSC_MAIN |SYSCTL_XTAL_16MHZ);
 
 //Pin1: red, Pin2: Blue, Pin3: Green
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);
     GPIOPinTypeGPIOOutput(GPIO_PORTF_BASE, GPIO_PIN_2);
     GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_2, 1);
 
@@ -103,7 +104,7 @@ mp_lexer_t *mp_lexer_new_from_file(const char *filename) {
     mp_raise_OSError(MP_ENOENT);
 }
 
-mp_import_stat_t mp_import_stat(const char *path) {
+mp_import_stat_t mp_import_stat(const char *path) { // @suppress("Type cannot be resolved")
     return MP_IMPORT_STAT_NO_EXIST;
 }
 
