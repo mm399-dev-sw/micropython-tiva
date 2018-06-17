@@ -1,6 +1,8 @@
 # Makefile for Micropython Tiva Lauchpad (TM4C123GH6PM) Port
 # by Raphael Kriegl
 
+DEBUG = 1
+
 # Include variabes for Python and Compiler
 include ../../py/mkenv.mk
 
@@ -13,10 +15,11 @@ QSTR_DEFS = qstrdefsport.h
 PART=TM4C123GH6PM
 
 # OpenOCD paths
-OPENOCD_PATH = /usr/local/share/openocd
+#OPENOCD_PATH = /usr/local/share/openocd
+OPENOCD_PATH = openocd
 
-OPENOCD_BOARD_CFG = $(OPENOCD_PATH)/scripts/board/ek-tm4c123gxl.cfg
-
+#OPENOCD_BOARD_CFG = $(OPENOCD_PATH)/scripts/board/ek-tm4c123gxl.cfg
+OPENOCD_BOARD_CFG = openocd/ek-tm4c123gxl.cfg
 OPENOCD_PROG_CFG = openocd/tiva_flash.cfg
 
 
@@ -28,7 +31,7 @@ PROJECT_NAME = uPY_TM4C123
 TIVAWARE_LIB = TivaWare
 
 # The base directory for TivaWare.
-ROOT = $(TIVAWARE_LIB)
+#ROOT = $(TIVAWARE_LIB)
 
 # include py core make definitions
 include $(TOP)/py/py.mk
@@ -51,14 +54,14 @@ INC += -I.
 INC += -I$(TOP)
 INC += -I$(BUILD)
 INC += -I$(TIVAWARE_LIB)
-INC += -I$(TIVAWARE_LIB)/inc
+INC += -I$(TIVAWARE_LIB)/driverlib
 INC += -I$(PY_SRC)
 INC += -I../../
 
 DFU = $(TOP)/tools/dfu.py
 PYDFU = $(TOP)/tools/pydfu.py
 CFLAGS_CORTEX_M4 = -mthumb -mtune=cortex-m4 -mabi=aapcs-linux -mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mfloat-abi=hard -fsingle-precision-constant -Wdouble-promotion
-CFLAGS = $(INC) -Wall -Werror -std=gnu99 -nostdlib $(CFLAGS_CORTEX_M4) $(COPT)
+CFLAGS = $(INC) -Wall -Werror -std=c99 -nostdlib $(CFLAGS_CORTEX_M4) $(COPT)
 #Preprocessor Flags
 CFLAGS += -DPART_$(PART) -c -DTARGET_IS_TM4C123_RB1
 

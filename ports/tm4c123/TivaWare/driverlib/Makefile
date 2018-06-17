@@ -52,6 +52,8 @@ include ${ROOT}/makedefs
 #
 IPATH=..
 
+CFLAGSgcc = -fno-short-enums
+
 #
 # The default rule, which causes the driver library to be built.
 #
