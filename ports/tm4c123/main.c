@@ -63,7 +63,7 @@ int main(int argc, char **argv) {
 //Pin1: red, Pin2: Blue, Pin3: Green
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);
     GPIOPinTypeGPIOOutput(GPIO_PORTF_BASE, GPIO_PIN_2);
-    GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_2, 1);
+    GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_2, GPIO_PIN_2);
 
     #if MICROPY_ENABLE_GC
     gc_init(heap, heap + sizeof(heap));

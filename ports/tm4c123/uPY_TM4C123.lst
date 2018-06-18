@@ -66140,8 +66140,8 @@ int main(int argc, char **argv) {
    1b2b6:	2104      	movs	r1, #4
    1b2b8:	480e      	ldr	r0, [pc, #56]	; (1b2f4 <main+0x5c>)
    1b2ba:	f001 faf6 	bl	1c8aa <GPIOPinTypeGPIOOutput>
-    GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_2, 1);
-   1b2be:	2201      	movs	r2, #1
+    GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_2, GPIO_PIN_2);
+   1b2be:	2204      	movs	r2, #4
    1b2c0:	2104      	movs	r1, #4
    1b2c2:	480c      	ldr	r0, [pc, #48]	; (1b2f4 <main+0x5c>)
    1b2c4:	f001 faee 	bl	1c8a4 <GPIOPinWrite>
@@ -72335,8 +72335,8 @@ void readline_push_history(const char *line) {
    22d88:	422d4c52 206f7420 74697865 00000a0d     RL-B to exit....
    22d98:	0000003e 00000a0d 00004b4f 7263694d     >.......OK..Micr
    22da8:	7479506f 206e6f68 392e3176 312d342e     oPython v1.9.4-1
-   22db8:	672d3134 61343730 37336337 7269642d     41-g074a7c37-dir
-   22dc8:	6f207974 3032206e 302d3831 37312d36     ty on 2018-06-17
+   22db8:	672d3534 35336461 33636438 7269642d     45-gad358dc3-dir
+   22dc8:	6f207974 3032206e 302d3831 38312d36     ty on 2018-06-18
    22dd8:	696d203b 616d696e 6977206c 75206874     ; minimal with u
    22de8:	6f6e6b6e 632d6e77 0a0d7570 00000000     nknown-cpu......
    22df8:	203e3e3e 00000000 61700a0d 20657473     >>> ......paste 
