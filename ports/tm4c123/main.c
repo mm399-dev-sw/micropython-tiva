@@ -129,28 +129,28 @@ void MP_WEAK __assert_func(const char *file, int line, const char *func, const c
 #endif
 
 
-/* void stm32_init(void) { */
-/*     // basic MCU config */
-/*     RCC->CR |= (uint32_t)0x00000001; // set HSION */
-/*     RCC->CFGR = 0x00000000; // reset all */
-/*     RCC->CR &= (uint32_t)0xfef6ffff; // reset HSEON, CSSON, PLLON */
-/*     RCC->PLLCFGR = 0x24003010; // reset PLLCFGR */
-/*     RCC->CR &= (uint32_t)0xfffbffff; // reset HSEBYP */
-/*     RCC->CIR = 0x00000000; // disable IRQs */
-
-/*     // leave the clock as-is (internal 16MHz) */
-
-/*     // enable GPIO clocks */
-/*     RCC->AHB1ENR |= 0x00000003; // GPIOAEN, GPIOBEN */
-
-/*     // turn on an LED! (on pyboard it's the red one) */
-/*     gpio_init(GPIOA, 13, GPIO_MODE_OUT, GPIO_PULL_NONE, 0); */
-/*     gpio_high(GPIOA, 13); */
-
-/*     // enable UART1 at 9600 baud (TX=B6, RX=B7) */
-/*     gpio_init(GPIOB, 6, GPIO_MODE_ALT, GPIO_PULL_NONE, 7); */
-/*     gpio_init(GPIOB, 7, GPIO_MODE_ALT, GPIO_PULL_NONE, 7); */
-/*     RCC->APB2ENR |= 0x00000010; // USART1EN */
-/*     USART1->BRR = (104 << 4) | 3; // 16MHz/(16*104.1875) = 9598 baud */
-/*     USART1->CR1 = 0x0000200c; // USART enable, tx enable, rx enable */
-/* } */
+// void stm32_init(void) {
+//     // basic MCU config
+//     RCC->CR |= (uint32_t)0x00000001; // set HSION
+//     RCC->CFGR = 0x00000000; // reset all
+//     RCC->CR &= (uint32_t)0xfef6ffff; // reset HSEON, CSSON, PLLON
+//     RCC->PLLCFGR = 0x24003010; // reset PLLCFGR
+//     RCC->CR &= (uint32_t)0xfffbffff; // reset HSEBYP
+//     RCC->CIR = 0x00000000; // disable IRQs
+//
+//     // leave the clock as-is (internal 16MHz)
+//
+//     // enable GPIO clocks
+//     RCC->AHB1ENR |= 0x00000003; // GPIOAEN, GPIOBEN
+//
+//     // turn on an LED! (on pyboard it's the red one)
+//     gpio_init(GPIOA, 13, GPIO_MODE_OUT, GPIO_PULL_NONE, 0);
+//     gpio_high(GPIOA, 13);
+//
+//     // enable UART1 at 9600 baud (TX=B6, RX=B7)
+//     gpio_init(GPIOB, 6, GPIO_MODE_ALT, GPIO_PULL_NONE, 7);
+//     gpio_init(GPIOB, 7, GPIO_MODE_ALT, GPIO_PULL_NONE, 7);
+//     RCC->APB2ENR |= 0x00000010; // USART1EN
+//     USART1->BRR = (104 << 4) | 3; // 16MHz/(16*104.1875) = 9598 baud
+//     USART1->CR1 = 0x0000200c; // USART enable, tx enable, rx enable
+// }
