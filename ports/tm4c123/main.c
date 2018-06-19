@@ -32,6 +32,10 @@
 #include "driverlib/timer.h"
 #include "driverlib/adc.h"
 
+/* TODO
+ * -uart-core.c redefine USART1 to actual port
+ */
+
 #if MICROPY_ENABLE_COMPILER
 void do_str(const char *src, mp_parse_input_kind_t input_kind) {
     nlr_buf_t nlr;

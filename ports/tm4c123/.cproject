@@ -20,15 +20,19 @@
 							<option id="cdt.managedbuild.option.gnu.cross.prefix.599867749" name="Prefix" superClass="cdt.managedbuild.option.gnu.cross.prefix"/>
 							<option id="cdt.managedbuild.option.gnu.cross.path.1560773158" name="Path" superClass="cdt.managedbuild.option.gnu.cross.path"/>
 							<targetPlatform archList="all" binaryParser="org.eclipse.cdt.core.ELF" id="cdt.managedbuild.targetPlatform.gnu.cross.638447885" isAbstract="false" osList="all" superClass="cdt.managedbuild.targetPlatform.gnu.cross"/>
-							<builder buildPath="C:\Users\Raphy\Documents\git_repos\Nmicropython\ports\tm4c123" command="" id="cdt.managedbuild.builder.gnu.cross.1003294311" keepEnvironmentInBuildfile="false" managedBuildOn="false" name="Gnu Make Builder" superClass="cdt.managedbuild.builder.gnu.cross"/>
+							<builder buildPath="C:\Users\Raphy\Documents\git_repos\Nmicropython\ports\tm4c123" command="" id="cdt.managedbuild.builder.gnu.cross.1003294311" keepEnvironmentInBuildfile="false" managedBuildOn="false" name="Gnu Make Builder" superClass="cdt.managedbuild.builder.gnu.cross">
+								<outputEntries>
+									<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="outputPath" name=""/>
+								</outputEntries>
+							</builder>
 							<tool id="cdt.managedbuild.tool.gnu.cross.c.compiler.1205696932" name="Cross GCC Compiler" superClass="cdt.managedbuild.tool.gnu.cross.c.compiler">
 								<option id="gnu.c.compiler.option.include.paths.1310175372" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/micropython/TivaWare}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/micropython/TivaWare/driverlib}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;C:\Users\Raphy\Documents\git_repos\Nmicropython&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;C:\Users\Raphy\Documents\git_repos\Nmicropython\py&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/micropython/build/genhdr}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/micropython/build}&quot;"/>
+									<listOptionValue builtIn="false" value="../../../py"/>
+									<listOptionValue builtIn="false" value="../../../"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.1735906583" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
 							</tool>
