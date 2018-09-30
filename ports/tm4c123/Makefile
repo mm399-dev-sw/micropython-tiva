@@ -1,6 +1,21 @@
 # Makefile for Micropython Tiva Lauchpad (TM4C123GH6PM) Port
 # by Raphael Kriegl
 
+#Check for OS
+ifdef SYSTEMROOT
+#Windows / MinGW
+   RM = del /q
+   RD = rd /s /q
+   FixPath = $(subst /,\,$1)
+else
+#Linux
+   ifeq ($(shell uname), Linux)
+      RM = rm -f
+      RD = rm -rf
+      FixPath = $1
+   endif
+endif
+
 DEBUG = 1
 
 # Include variabes for Python and Compiler
@@ -84,7 +99,7 @@ LIBM := ${shell ${CC} ${CFLAGS} -print-file-name=libm.a}
 
 SRC_C = \
 	main.c \
-	startup_gcc.c \
+	#startup_gcc.c 
 	uart_core.c \
 	lib/utils/printf.c \
 	lib/utils/stdout_helpers.c \
@@ -132,7 +147,7 @@ load:
 include $(TOP)/py/mkrules.mk
 
 clean:
-	rm -rf $(BUILD)
-	rm -f $(TIVAWARE_LIB)/driverlib/gcc/*.d
-	rm -f $(TIVAWARE_LIB)/driverlib/gcc/*.o
-	rm -f *.o *.d *.axf *.bin *.lst
+	$(RD) $(BUILD)
+	$(RM) $(TIVAWARE_LIB)/driverlib/gcc/*.d
+	$(RM) $(TIVAWARE_LIB)/driverlib/gcc/*.o
+	$(RM) *.o *.d *.axf *.bin *.lst

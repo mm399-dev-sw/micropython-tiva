@@ -7,10 +7,13 @@
 
 #if MICROPY_MIN_USE_STM32_MCU
 typedef struct {
-    volatile uint32_t SR;
-    volatile uint32_t DR;
+    volatile uint32_t DR; // Data Register 0x00
+    volatile char ph1[0x02]; //Spacer 2 Bytes
+    volatile uint32_t SR; // Status Register 0x04
+    volatile char ph2[0x12]; // Spacer 0x12 bytes
+    volatile uint32_t FR; //Flag Register 0x18
 } periph_uart_t;
-#define USART1 ((periph_uart_t*)0x40011000)
+#define UART0 ((periph_uart_t*)0x4000C000)
 #endif
 
 // Receive single character
@@ -20,10 +23,10 @@ int mp_hal_stdin_rx_chr(void) {
     int r = read(0, &c, 1);
     (void)r;
 #elif MICROPY_MIN_USE_STM32_MCU
-    // wait for RXNE
-    while ((USART1->SR & (1 << 5)) == 0) {
+    // wait for RXFE
+    while ((UART0->FR & (1 << 4)) == 0) {
     }
-    c = USART1->DR;
+    c = UART0->DR;
 #endif
     return c;
 }
@@ -36,9 +39,9 @@ void mp_hal_stdout_tx_strn(const char *str, mp_uint_t len) {
 #elif MICROPY_MIN_USE_STM32_MCU
     while (len--) {
         // wait for TXE
-        while ((USART1->SR & (1 << 7)) == 0) {
+        while ((UART0->FR & (1 << 7)) == 0) {
         }
-        USART1->DR = *str++;
+        UART0->DR = *str++;
     }
 #endif
 }
