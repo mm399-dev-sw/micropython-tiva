@@ -88,7 +88,7 @@ typedef long mp_off_t;
 
 #ifdef __thumb__
 #define MICROPY_MIN_USE_CORTEX_CPU (1)
-#define MICROPY_MIN_USE_STM32_MCU (1)
+#define MICROPY_MIN_USE_TM4C123_MCU (1)
 #endif
 
 #define MP_STATE_PORT MP_STATE_VM

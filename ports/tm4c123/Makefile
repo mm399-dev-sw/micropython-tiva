@@ -90,16 +90,16 @@ CFLAGS += -Os -DNDEBUG
 CFLAGS += -fdata-sections -ffunction-sections
 endif
 
-#Libraries
+# Libraries
 LIBS = $(TIVAWARE_LIB)/driverlib/gcc/libdriver.a
 LICGCC := ${shell $(CC) $(CFLAGS) -print-libgcc-file-name}
 LIBC := ${shell ${CC} ${CFLAGS} -print-file-name=libc.a}
 LIBM := ${shell ${CC} ${CFLAGS} -print-file-name=libm.a}
 
-
+# Sources	
 SRC_C = \
 	main.c \
-	#startup_gcc.c 
+	startup_gcc.c \
 	uart_core.c \
 	lib/utils/printf.c \
 	lib/utils/stdout_helpers.c \

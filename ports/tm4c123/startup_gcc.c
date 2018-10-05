@@ -41,7 +41,7 @@ static void IntDefaultHandler(void);
 // The entry point for the application.
 //
 //*****************************************************************************
-extern int main(void);
+extern int _start(void);
 
 //*****************************************************************************
 //
@@ -284,7 +284,7 @@ ResetISR(void)
     //
     // Call the application's entry point.
     //
-    main();
+    _start();
 }
 
 //*****************************************************************************
