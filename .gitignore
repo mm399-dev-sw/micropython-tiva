@@ -1,6 +1,8 @@
 # Compiled Sources
 ###################
 *.o
+*.d
+*.axf
 *.a
 *.elf
 *.bin
