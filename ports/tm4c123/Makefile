@@ -150,4 +150,4 @@ clean:
 	$(RD) $(BUILD)
 	$(RM) $(TIVAWARE_LIB)/driverlib/gcc/*.d
 	$(RM) $(TIVAWARE_LIB)/driverlib/gcc/*.o
-	$(RM) *.o *.d *.axf *.bin *.lst
+	$(RM) *.axf *.bin *.lst
