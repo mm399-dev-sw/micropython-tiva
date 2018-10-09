@@ -249,34 +249,7 @@ typedef struct {
     volatile uint32_t PRWTIMER;
 } periph_sysctl_t;
 
-typedef struct {
-    uint32_t _1[255];
-    volatile uint32_t DATA;
-    volatile uint32_t DIR;
-    volatile uint32_t IS;
-    volatile uint32_t IBE;
-    volatile uint32_t IEV;
-    volatile uint32_t IM;
-    volatile uint32_t RIS;
-    volatile uint32_t MIS;
-    volatile uint32_t ICR;
-    volatile uint32_t AFSEL;
-    uint32_t _2[55];
-    volatile uint32_t DR2R;
-    volatile uint32_t DR4R;
-    volatile uint32_t DR8R;
-    volatile uint32_t ODR;
-    volatile uint32_t PUR;
-    volatile uint32_t PDR;
-    volatile uint32_t SLR;
-    volatile uint32_t DEN;
-    volatile uint32_t LOCK;
-    volatile uint32_t CR;
-    volatile uint32_t AMSEL;
-    volatile uint32_t PCTL;
-    volatile uint32_t ADCCTL;
-    volatile uint32_t DMACTL;
-} periph_gpio_t;
+
 
 typedef struct {
     volatile uint32_t DR; // Data Register 0x00
@@ -303,12 +276,7 @@ typedef struct {
 } periph_uart_t;
 
 #define UART0  ((periph_uart_t*) 0x4000C000)
-#define GPIOA  ((periph_gpio_t*) 0x40058000)
-#define GPIOB  ((periph_gpio_t*) 0x40059000)
-#define GPIOC  ((periph_gpio_t*) 0x4005A000)
-#define GPIOD  ((periph_gpio_t*) 0x4005B000)
-#define GPIOE  ((periph_gpio_t*) 0x4005C000)
-#define GPIOF  ((periph_gpio_t*) 0x4005D000)
+
 #define SYSCTL ((periph_sysctl_t*)  0x400FE000)
 
 // simple GPIO interface
