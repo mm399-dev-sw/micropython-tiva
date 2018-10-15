@@ -60,11 +60,21 @@ typedef struct {
     volatile uint32_t DMACTL;
 } periph_gpio_t;
 
+enum {
+    GPIO_DRIVE_2MA = 0,
+    GPIO_DRIVE_4MA,
+    GPIO_DRIVE_8MA
+};
+
+
 #define GPIOA  ((periph_gpio_t*) 0x40058000)
 #define GPIOB  ((periph_gpio_t*) 0x40059000)
 #define GPIOC  ((periph_gpio_t*) 0x4005A000)
 #define GPIOD  ((periph_gpio_t*) 0x4005B000)
 #define GPIOE  ((periph_gpio_t*) 0x4005C000)
 #define GPIOF  ((periph_gpio_t*) 0x4005D000)
+
+void hal_gpio_init(periph_gpio_t* gpio, int pin, int mode, int pull, int alt, int strength);
+void hal_gpio_set_strength(periph_gpio_t* gpio, int pin, int strength);
 
 #endif // MICROPY_TM4C123_INC_GPIO_H
