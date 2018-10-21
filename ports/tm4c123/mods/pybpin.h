@@ -24,18 +24,36 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#ifndef MICROPY_INCLUDED_CC3200_MODS_PYBPIN_H
-#define MICROPY_INCLUDED_CC3200_MODS_PYBPIN_H
+#ifndef MICROPY_INCLUDED_TM4C123_MODS_PYBPIN_H
+#define MICROPY_INCLUDED_TM4C123_MODS_PYBPIN_H
 
-#include "_gpio.h"
+#include "py/runtime.h"
+#include "py/gc.h"
+#include "py/qstr.h"
+
+#include "inc/tm4c123gh6pm.h"
+#include "inc/hw_types.h"
+#include "inc/hw_gpio.h"
+#include "inc/hw_ints.h"
+#include "inc/hw_memmap.h"
+#include "driverlib/pin_map.h"
+#include "driverlib/gpio.h"
+#include "driverlib/rom_map.h"
+// #include "prcm.h"
+#include "driverlib/interrupt.h"
+
+#include "misc/mpirq.h"
+#include "pybsleep.h"
+#include "misc/mpexception.h"
+#include "misc/mperror.h"
 
 enum {
-    PORT_A = GPIOA,
-    PORT_B = GPIOB,
-    PORT_C = GPIOC,
-    PORT_D = GPIOD,
-    PORT_E = GPIOE,
-    PORT_F = GPIOF,
+    PORT_A = GPIO_PORTA_AHB_BASE,
+    PORT_B = GPIO_PORTB_AHB_BASE,
+    PORT_C = GPIO_PORTC_AHB_BASE,
+    PORT_D = GPIO_PORTD_AHB_BASE,
+    PORT_E = GPIO_PORTE_AHB_BASE,
+    PORT_F = GPIO_PORTF_AHB_BASE,
 };
 
 enum {

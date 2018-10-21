@@ -25,10 +25,8 @@
  * THE SOFTWARE.
  */
 
-// for machine module
-Q(/)
+#include "py/builtin.h"
 
-
-// entries for sys.path
-Q(/flash)
-Q(/flash/lib)
+const char cc3200_help_text[] = "Welcome to MicroPython!\n"
+                                "For online help please visit http://micropython.org/help/.\n"
+                                "For further help on a specific object, type help(obj)\n";

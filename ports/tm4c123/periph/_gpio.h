@@ -66,6 +66,16 @@ enum {
     GPIO_DRIVE_8MA
 };
 
+// simple GPIO interface
+#define GPIO_MODE_IN (0)
+#define GPIO_MODE_OUT (1)
+#define GPIO_MODE_ALT (2)
+
+#define GPIO_PULL_UP (0)
+#define GPIO_PULL_DOWN (1)
+#define GPIO_PULL_NONE (2)
+
+
 
 #define GPIOA  ((periph_gpio_t*) 0x40058000)
 #define GPIOB  ((periph_gpio_t*) 0x40059000)
@@ -76,5 +86,15 @@ enum {
 
 void hal_gpio_init(periph_gpio_t* gpio, int pin, int mode, int pull, int alt, int strength);
 void hal_gpio_set_strength(periph_gpio_t* gpio, int pin, int strength);
+
+void gpio_init(periph_gpio_t *gpio, int pin, int mode, int pull, int alt);
+
+// bits 9:2 as mask for GPIO ports
+#define gpio_get(gpio, pin) ((gpio->DATA >> (pin)) & 1);
+// https://stackoverflow.com/questions/257418/do-while-0-what-is-it-good-for#257425
+#define gpio_set(gpio, pin, value) do { gpio->DATA = (gpio->DATA & ~(1 << pin)) | (value << pin); } while (0);
+#define gpio_low(gpio, pin) gpio_set(gpio, pin, 0);
+#define gpio_high(gpio, pin) gpio_set(gpio, pin, 1);
+
 
 #endif // MICROPY_TM4C123_INC_GPIO_H

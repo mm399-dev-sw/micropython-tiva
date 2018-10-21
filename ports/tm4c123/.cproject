@@ -34,6 +34,11 @@
 									<listOptionValue builtIn="false" value="../../../py"/>
 									<listOptionValue builtIn="false" value="../../../"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/micropython/periph}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/micropython/misc}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/micropython/TivaWare/inc}&quot;"/>
+								</option>
+								<option id="gnu.c.compiler.option.preprocessor.def.symbols.1581719304" superClass="gnu.c.compiler.option.preprocessor.def.symbols" valueType="definedSymbols">
+									<listOptionValue builtIn="false" value="PART_TM4C123GHPM"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.1735906583" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
 							</tool>

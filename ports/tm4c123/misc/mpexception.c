@@ -25,10 +25,15 @@
  * THE SOFTWARE.
  */
 
-// for machine module
-Q(/)
+#include <stdint.h>
+#include <string.h>
+
+#include "mpexception.h"
 
 
-// entries for sys.path
-Q(/flash)
-Q(/flash/lib)
+/******************************************************************************
+DECLARE EXPORTED DATA
+ ******************************************************************************/
+const char mpexception_value_invalid_arguments[]    = "invalid argument(s) value";
+const char mpexception_num_type_invalid_arguments[] = "invalid argument(s) num/type";
+const char mpexception_uncaught[]                   = "uncaught exception";

@@ -25,27 +25,13 @@
  * THE SOFTWARE.
  */
 
-#include <_gpio.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
-#include <tm4c123/mods/pybpin.h>
-#include <tm4c123/mods/pybpin.h>
+#include <pybpin.h>
 
-#include "py/runtime.h"
-#include "py/gc.h"
-#include "inc/hw_types.h"
-#include "inc/hw_gpio.h"
-#include "inc/hw_ints.h"
-#include "inc/hw_memmap.h"
-#include "rom_map.h"
-#include "pin.h"
-#include "prcm.h"
-#include "interrupt.h"
-#include "mpirq.h"
-#include "pybsleep.h"
-#include "mpexception.h"
-#include "mperror.h"
+
+
 
 
 /// \moduleref pyb
@@ -83,8 +69,8 @@ DEFINE CONSTANTS
 #define PYBPIN_NUM_WAKE_PINS            (6)
 #define PYBPIN_WAKES_NOT                (-1)
 
-#define GPIO_DIR_MODE_ALT               0x00000002  // Pin is NOT controlled by the PGIO module
-#define GPIO_DIR_MODE_ALT_OD            0x00000003  // Pin is NOT controlled by the PGIO module and is in open drain mode
+// #define GPIO_DIR_MODE_ALT               0x00000002  // Pin is NOT controlled by the PGIO module
+// #define GPIO_DIR_MODE_ALT_OD            0x00000003  // Pin is NOT controlled by the PGIO module and is in open drain mode
 
 #define PYB_PIN_FALLING_EDGE            0x01
 #define PYB_PIN_RISING_EDGE             0x02
@@ -172,7 +158,7 @@ void pin_assign_pins_af (mp_obj_t *pins, uint32_t n_pins, uint32_t pull, uint32_
         pin_free_af_from_pins(fn, unit, i);
         if (pins[i] != mp_const_none) {
             pin_obj_t *pin = pin_find(pins[i]);
-            pin_config (pin, pin_find_af_index(pin, fn, unit, i), 0, pull, -1, PIN_STRENGTH_2MA);
+            pin_config (pin, pin_find_af_index(pin, fn, unit, i), 0, pull, -1, GPIO_STRENGTH_2MA);
         }
     }
 }
@@ -242,7 +228,7 @@ STATIC void pin_free_af_from_pins (uint8_t fn, uint8_t unit, uint8_t type) {
     for (uint i = 0; i < named_map->used - 1; i++) {
         pin_obj_t * pin = (pin_obj_t *)named_map->table[i].value;
         // af is different than GPIO
-        if (pin->af > PIN_MODE_0) {
+        if (pin->af > GPIO_DIR_MODE_IN) {
             // check if the pin supports the target af
             int af = pin_obj_find_af(pin, fn, unit, type);
             if (af > 0 && af == pin->af) {
@@ -254,39 +240,24 @@ STATIC void pin_free_af_from_pins (uint8_t fn, uint8_t unit, uint8_t type) {
 }
 
 STATIC void pin_deassign (pin_obj_t* pin) {
-    pin_config (pin, PIN_MODE_0, GPIO_DIR_MODE_IN, PIN_TYPE_STD, -1, PIN_STRENGTH_4MA);
+    pin_config (pin, 0, GPIO_DIR_MODE_IN, GPIO_PIN_TYPE_STD, -1, GPIO_STRENGTH_2MA);
     pin->used = false;
 }
 
 STATIC void pin_obj_configure (const pin_obj_t *self) {
     uint32_t type;
-    if (self->mode == PIN_TYPE_ANALOG) {
-        type = PIN_TYPE_ANALOG;
+    if (self->mode == GPIO_PIN_TYPE_ANALOG) {
+        type = GPIO_PIN_TYPE_ANALOG;
     } else {
         type = self->pull;
         uint32_t direction = self->mode;
-        if (direction == PIN_TYPE_OD || direction == GPIO_DIR_MODE_ALT_OD) {
+        if (direction == GPIO_PIN_TYPE_OD || direction == GPIO_DIR_MODE_HW) {
             direction = GPIO_DIR_MODE_OUT;
-            type |= PIN_TYPE_OD;
+            type |= GPIO_PIN_TYPE_OD;
         }
-        if (self->mode != GPIO_DIR_MODE_ALT && self->mode != GPIO_DIR_MODE_ALT_OD) {
+        if (self->mode != GPIO_DIR_MODE_HW) {
             // enable the peripheral clock for the GPIO port of this pin
-            switch (self->port) {
-            case PORT_A:
-                MAP_PRCMPeripheralClkEnable(PRCM_GPIOA0, PRCM_RUN_MODE_CLK | PRCM_SLP_MODE_CLK);
-                break;
-            case PORT_B:
-                MAP_PRCMPeripheralClkEnable(PRCM_GPIOA1, PRCM_RUN_MODE_CLK | PRCM_SLP_MODE_CLK);
-                break;
-            case PORT_C:
-                MAP_PRCMPeripheralClkEnable(PRCM_GPIOA2, PRCM_RUN_MODE_CLK | PRCM_SLP_MODE_CLK);
-                break;
-            case PORT_D:
-                MAP_PRCMPeripheralClkEnable(PRCM_GPIOA3, PRCM_RUN_MODE_CLK | PRCM_SLP_MODE_CLK);
-                break;
-            default:
-                break;
-            }
+            MAP_SysCtlPeripheralEnable(self->port);
             // configure the direction
             MAP_GPIODirModeSet(self->port, self->bit, direction);
             // set the pin value
@@ -297,9 +268,10 @@ STATIC void pin_obj_configure (const pin_obj_t *self) {
             }
         }
         // now set the alternate function
-        MAP_PinModeSet (self->pin_num, self->af);
+        MAP_GPIODirModeSet(self->port, self->pin_num, GPIO_DIR_MODE_HW);
     }
-    MAP_PinConfigSet(self->pin_num, self->strength, type);
+    MAP_GPIOPadConfigSet(self->port, self->pin_num, self->strength, type);
+
 }
 
 STATIC void pin_get_hibernate_pin_and_idx (const pin_obj_t *self, uint *hib_pin, uint *idx) {
@@ -396,24 +368,35 @@ STATIC void pin_extint_register(pin_obj_t *self, uint32_t intmode, uint32_t prio
     uint32_t intnum;
 
     // configure the interrupt type
-    MAP_GPIOIntTypeSet(self->port, self->bit, intmode);
+    MAP_GPIOIntTypeSet(self->port, self->pin_num, intmode);
     switch (self->port) {
-    case GPIOA0_BASE:
+    case PORT_A:
         handler = GPIOAIntHandler;
-        intnum = INT_GPIOA0;
+        intnum = INT_GPIOA;
         break;
-    case GPIOA1_BASE:
+    case PORT_B:
         handler = GPIOBIntHandler;
-        intnum = INT_GPIOA1;
+        intnum = INT_GPIOB;
         break;
-    case GPIOA2_BASE:
+    case PORT_C:
         handler = GPIOCIntHandler;
-        intnum = INT_GPIOA2;
+        intnum = INT_GPIOC;
         break;
-    case GPIOA3_BASE:
+    case PORT_D:
+        handler = GPIODIntHandler;
+        intnum = INT_GPIOD;
+        break;
+    case PORT_E:
+        handler = GPIOEIntHandler;
+        intnum = INT_GPIOE;
+        break;
+    case PORT_F:
+        handler = GPIOFIntHandler;
+        intnum = INT_GPIOF;
+        break;
     default:
         handler = GPIODIntHandler;
-        intnum = INT_GPIOA3;
+        intnum = INT_GPIOD;
         break;
     }
     MAP_GPIOIntRegister(self->port, handler);
@@ -423,19 +406,19 @@ STATIC void pin_extint_register(pin_obj_t *self, uint32_t intmode, uint32_t prio
 }
 
 STATIC void pin_validate_mode (uint mode) {
-    if (mode != GPIO_DIR_MODE_IN && mode != GPIO_DIR_MODE_OUT && mode != PIN_TYPE_OD &&
-        mode != GPIO_DIR_MODE_ALT && mode != GPIO_DIR_MODE_ALT_OD) {
+    if (mode != GPIO_DIR_MODE_IN && mode != GPIO_DIR_MODE_OUT && mode != GPIO_PIN_TYPE_OD &&
+        mode != GPIO_DIR_MODE_HW) {
         mp_raise_ValueError(mpexception_value_invalid_arguments);
     }
 }
 STATIC void pin_validate_pull (uint pull) {
-    if (pull != PIN_TYPE_STD && pull != PIN_TYPE_STD_PU && pull != PIN_TYPE_STD_PD) {
+    if (pull != GPIO_PIN_TYPE_STD && pull != GPIO_PIN_TYPE_STD_WPU && pull != GPIO_PIN_TYPE_STD_WPD) {
         mp_raise_ValueError(mpexception_value_invalid_arguments);
     }
 }
 
 STATIC void pin_validate_drive(uint strength) {
-    if (strength != PIN_STRENGTH_2MA && strength != PIN_STRENGTH_4MA && strength != PIN_STRENGTH_6MA) {
+    if (strength != GPIO_STRENGTH_2MA && strength != GPIO_STRENGTH_4MA && strength != GPIO_STRENGTH_6MA) {
         mp_raise_ValueError(mpexception_value_invalid_arguments);
     }
 }
@@ -455,7 +438,7 @@ STATIC void pin_validate_af(const pin_obj_t* pin, int8_t idx, uint8_t *fn, uint8
 STATIC uint8_t pin_get_value (const pin_obj_t* self) {
     uint32_t value;
     bool setdir = false;
-    if (self->mode == PIN_TYPE_OD || self->mode == GPIO_DIR_MODE_ALT_OD) {
+    if (self->mode == GPIO_PIN_TYPE_OD) {
         setdir = true;
         // configure the direction to IN for a moment in order to read the pin value
         MAP_GPIODirModeSet(self->port, self->bit, GPIO_DIR_MODE_IN);
@@ -476,27 +459,27 @@ STATIC uint8_t pin_get_value (const pin_obj_t* self) {
 }
 
 STATIC void GPIOAIntHandler (void) {
-    EXTI_Handler(GPIOA);
+    EXTI_Handler(PORT_A);
 }
 
 STATIC void GPIOBIntHandler (void) {
-    EXTI_Handler(GPIOB);
+    EXTI_Handler(PORT_B);
 }
 
 STATIC void GPIOCIntHandler (void) {
-    EXTI_Handler(GPIOC);
+    EXTI_Handler(PORT_C);
 }
 
 STATIC void GPIODIntHandler (void) {
-    EXTI_Handler(GPIOD);
+    EXTI_Handler(PORT_D);
 }
 
 STATIC void GPIOEIntHandler (void) {
-    EXTI_Handler(GPIOE);
+    EXTI_Handler(PORT_E);
 }
 
 STATIC void GPIOFIntHandler (void) {
-    EXTI_Handler(GPIOF);
+    EXTI_Handler(PORT_F);
 }
 
 // common interrupt handler
@@ -532,7 +515,7 @@ STATIC const mp_arg_t pin_init_args[] = {
     { MP_QSTR_mode,                        MP_ARG_OBJ, {.u_obj = MP_OBJ_NULL} },
     { MP_QSTR_pull,                        MP_ARG_OBJ, {.u_obj = mp_const_none} },
     { MP_QSTR_value,    MP_ARG_KW_ONLY  |  MP_ARG_OBJ, {.u_obj = MP_OBJ_NULL} },
-    { MP_QSTR_drive,    MP_ARG_KW_ONLY  |  MP_ARG_INT, {.u_int = PIN_STRENGTH_4MA} },
+    { MP_QSTR_drive,    MP_ARG_KW_ONLY  |  MP_ARG_INT, {.u_int = GPIO_STRENGTH_4MA} },
     { MP_QSTR_alt,      MP_ARG_KW_ONLY  |  MP_ARG_INT, {.u_int = -1} },
 };
 #define pin_INIT_NUM_ARGS MP_ARRAY_SIZE(pin_init_args)
@@ -555,7 +538,7 @@ STATIC mp_obj_t pin_obj_init_helper(pin_obj_t *self, size_t n_args, const mp_obj
     // get the pull type
     uint pull;
     if (args[1].u_obj == mp_const_none) {
-        pull = PIN_TYPE_STD;
+        pull = GPIO_PIN_TYPE_STD;
     } else {
         pull = mp_obj_get_int(args[1].u_obj);
         pin_validate_pull (pull);
@@ -577,7 +560,7 @@ STATIC mp_obj_t pin_obj_init_helper(pin_obj_t *self, size_t n_args, const mp_obj
 
     // get the alternate function
     int af = args[4].u_int;
-    if (mode != GPIO_DIR_MODE_ALT && mode != GPIO_DIR_MODE_ALT_OD) {
+    if (mode != GPIO_DIR_MODE_HW) {
         if (af == -1) {
             af = 0;
         } else {
@@ -588,7 +571,7 @@ STATIC mp_obj_t pin_obj_init_helper(pin_obj_t *self, size_t n_args, const mp_obj
     }
 
     // check for a valid af and then free it from any other pins
-    if (af > PIN_MODE_0) {
+    if (af > 0) {
         uint8_t fn, unit, type;
         pin_validate_af (self, af, &fn, &unit, &type);
         pin_free_af_from_pins(fn, unit, type);
@@ -616,10 +599,8 @@ STATIC void pin_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t
         mode_qst = MP_QSTR_IN;
     } else if (mode == GPIO_DIR_MODE_OUT) {
         mode_qst = MP_QSTR_OUT;
-    } else if (mode == GPIO_DIR_MODE_ALT) {
+    } else if (mode == GPIO_DIR_MODE_HW) {
         mode_qst = MP_QSTR_ALT;
-    } else if (mode == GPIO_DIR_MODE_ALT_OD) {
-        mode_qst = MP_QSTR_ALT_OPEN_DRAIN;
     } else {
         mode_qst = MP_QSTR_OPEN_DRAIN;
     }
@@ -627,10 +608,10 @@ STATIC void pin_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t
 
     // pin pull
     qstr pull_qst;
-    if (pull == PIN_TYPE_STD) {
+    if (pull == GPIO_PIN_TYPE_STD) {
         mp_printf(print, ", pull=%q", MP_QSTR_None);
     } else {
-        if (pull == PIN_TYPE_STD_PU) {
+        if (pull == GPIO_PIN_TYPE_STD_WPU) {
             pull_qst = MP_QSTR_PULL_UP;
         } else {
             pull_qst = MP_QSTR_PULL_DOWN;
@@ -640,9 +621,9 @@ STATIC void pin_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t
 
     // pin drive
     qstr drv_qst;
-    if (drive == PIN_STRENGTH_2MA) {
+    if (drive == GPIO_STRENGTH_2MA) {
         drv_qst = MP_QSTR_LOW_POWER;
-    } else if (drive == PIN_STRENGTH_4MA) {
+    } else if (drive == GPIO_STRENGTH_4MA) {
         drv_qst = MP_QSTR_MED_POWER;
     } else {
         drv_qst = MP_QSTR_HIGH_POWER;
@@ -714,14 +695,14 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(pin_mode_obj, 1, 2, pin_mode);
 STATIC mp_obj_t pin_pull(size_t n_args, const mp_obj_t *args) {
     pin_obj_t *self = args[0];
     if (n_args == 1) {
-        if (self->pull == PIN_TYPE_STD) {
+        if (self->pull == GPIO_PIN_TYPE_STD) {
             return mp_const_none;
         }
         return mp_obj_new_int(self->pull);
     } else {
         uint32_t pull;
         if (args[1] == mp_const_none) {
-            pull = PIN_TYPE_STD;
+            pull = GPIO_PIN_TYPE_STD;
         } else {
             pull = mp_obj_get_int(args[1]);
             pin_validate_pull (pull);
@@ -926,14 +907,13 @@ STATIC const mp_rom_map_elem_t pin_locals_dict_table[] = {
     // class constants
     { MP_ROM_QSTR(MP_QSTR_IN),                      MP_ROM_INT(GPIO_DIR_MODE_IN) },
     { MP_ROM_QSTR(MP_QSTR_OUT),                     MP_ROM_INT(GPIO_DIR_MODE_OUT) },
-    { MP_ROM_QSTR(MP_QSTR_OPEN_DRAIN),              MP_ROM_INT(PIN_TYPE_OD) },
-    { MP_ROM_QSTR(MP_QSTR_ALT),                     MP_ROM_INT(GPIO_DIR_MODE_ALT) },
-    { MP_ROM_QSTR(MP_QSTR_ALT_OPEN_DRAIN),          MP_ROM_INT(GPIO_DIR_MODE_ALT_OD) },
-    { MP_ROM_QSTR(MP_QSTR_PULL_UP),                 MP_ROM_INT(PIN_TYPE_STD_PU) },
-    { MP_ROM_QSTR(MP_QSTR_PULL_DOWN),               MP_ROM_INT(PIN_TYPE_STD_PD) },
-    { MP_ROM_QSTR(MP_QSTR_LOW_POWER),               MP_ROM_INT(PIN_STRENGTH_2MA) },
-    { MP_ROM_QSTR(MP_QSTR_MED_POWER),               MP_ROM_INT(PIN_STRENGTH_4MA) },
-    { MP_ROM_QSTR(MP_QSTR_HIGH_POWER),              MP_ROM_INT(PIN_STRENGTH_6MA) },
+    { MP_ROM_QSTR(MP_QSTR_OPEN_DRAIN),              MP_ROM_INT(GPIO_PIN_TYPE_OD) },
+    { MP_ROM_QSTR(MP_QSTR_ALT),                     MP_ROM_INT(GPIO_DIR_MODE_HW) },
+    { MP_ROM_QSTR(MP_QSTR_PULL_UP),                 MP_ROM_INT(GPIO_PIN_TYPE_STD_WPU) },
+    { MP_ROM_QSTR(MP_QSTR_PULL_DOWN),               MP_ROM_INT(GPIO_PIN_TYPE_STD_WPD) },
+    { MP_ROM_QSTR(MP_QSTR_LOW_POWER),               MP_ROM_INT(GPIO_STRENGTH_2MA) },
+    { MP_ROM_QSTR(MP_QSTR_MED_POWER),               MP_ROM_INT(GPIO_STRENGTH_4MA) },
+    { MP_ROM_QSTR(MP_QSTR_HIGH_POWER),              MP_ROM_INT(GPIO_STRENGTH_6MA) },
     { MP_ROM_QSTR(MP_QSTR_IRQ_FALLING),             MP_ROM_INT(PYB_PIN_FALLING_EDGE) },
     { MP_ROM_QSTR(MP_QSTR_IRQ_RISING),              MP_ROM_INT(PYB_PIN_RISING_EDGE) },
     { MP_ROM_QSTR(MP_QSTR_IRQ_LOW_LEVEL),           MP_ROM_INT(PYB_PIN_LOW_LEVEL) },

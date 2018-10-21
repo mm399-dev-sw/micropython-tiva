@@ -24,4 +24,29 @@
  * THE SOFTWARE.
  */
 
-#include <gpio.h>
+#include "periph/_gpio.h"
+
+void gpio_init(periph_gpio_t *gpio, int pin, int mode, int pull, int alt) {
+    if ( pin >= 8 ) return;
+    // does not consider the locked pins, which need special treatment
+    if (mode == GPIO_MODE_ALT) {
+        gpio->DEN |= (1 << pin);
+        gpio->AFSEL |= (1 << pin);
+        gpio->PCTL = (gpio->PCTL & ~(0x000000F << (4 * pin))) | (alt << (4 * pin));
+    }
+    else {
+        gpio->AFSEL &= ~(1 << pin);
+        gpio->DEN |= (1 << pin);
+        gpio->DIR = (gpio->DIR & ~(1 << pin)) | ((mode & 1) << pin);
+    }
+
+    if (pull == GPIO_PULL_UP) { gpio->PUR = (gpio->PUR & ~(1 << pin)) | (1 << pin);}
+    else if (pull == GPIO_PULL_DOWN) { gpio->PDR = (gpio->PDR & ~(1 << pin)) | (1 << pin);}
+    else if (pull == GPIO_PULL_NONE) {
+        gpio->PUR &= ~(1 << pin);
+        gpio->PDR &= ~(1 << pin);
+        gpio->ODR &= (1 << pin);
+    }
+}
+
+

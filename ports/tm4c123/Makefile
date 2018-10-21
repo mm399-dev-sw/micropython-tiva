@@ -147,7 +147,6 @@ load:
 include $(TOP)/py/mkrules.mk
 
 clean:
-	$(RD) $(BUILD)
-	$(RM) $(TIVAWARE_LIB)/driverlib/gcc/*.d
-	$(RM) $(TIVAWARE_LIB)/driverlib/gcc/*.o
+	$(RD) $(BUILD)/*
+	$(RM) $(TIVAWARE_LIB)/driverlib/gcc/*
 	$(RM) *.axf *.bin *.lst
