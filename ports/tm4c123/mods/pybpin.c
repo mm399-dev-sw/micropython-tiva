@@ -66,7 +66,7 @@ STATIC void EXTI_Handler(uint port);
 /******************************************************************************
 DEFINE CONSTANTS
 ******************************************************************************/
-#define PYBPIN_NUM_WAKE_PINS            (6)
+#define PYBPIN_NUM_WAKE_PINS            (1)
 #define PYBPIN_WAKES_NOT                (-1)
 
 // #define GPIO_DIR_MODE_ALT               0x00000002  // Pin is NOT controlled by the PGIO module
@@ -91,12 +91,7 @@ DECLARE PRIVATE DATA
 ******************************************************************************/
 STATIC const mp_irq_methods_t pin_irq_methods;
 STATIC pybpin_wake_pin_t pybpin_wake_pin[PYBPIN_NUM_WAKE_PINS] =
-                                    { {.active = false, .lpds = PYBPIN_WAKES_NOT, .hib = PYBPIN_WAKES_NOT},
-                                      {.active = false, .lpds = PYBPIN_WAKES_NOT, .hib = PYBPIN_WAKES_NOT},
-                                      {.active = false, .lpds = PYBPIN_WAKES_NOT, .hib = PYBPIN_WAKES_NOT},
-                                      {.active = false, .lpds = PYBPIN_WAKES_NOT, .hib = PYBPIN_WAKES_NOT},
-                                      {.active = false, .lpds = PYBPIN_WAKES_NOT, .hib = PYBPIN_WAKES_NOT},
-                                      {.active = false, .lpds = PYBPIN_WAKES_NOT, .hib = PYBPIN_WAKES_NOT} } ;
+                                    { {.active = false, .lpds = PYBPIN_WAKES_NOT, .hib = PYBPIN_WAKES_NOT}} ;
 
 /******************************************************************************
  DEFINE PUBLIC FUNCTIONS
@@ -277,29 +272,9 @@ STATIC void pin_obj_configure (const pin_obj_t *self) {
 STATIC void pin_get_hibernate_pin_and_idx (const pin_obj_t *self, uint *hib_pin, uint *idx) {
     // pin_num is actually : (package_pin - 1)
     switch (self->pin_num) {
-    case 56:    // GP2
-        *hib_pin = PRCM_HIB_GPIO2;
+    case 31:    // GP2
+        *hib_pin = 31; //switch 2 & con to pf0
         *idx = 0;
-        break;
-    case 58:    // GP4
-        *hib_pin = PRCM_HIB_GPIO4;
-        *idx = 1;
-        break;
-    case 3:     // GP13
-        *hib_pin = PRCM_HIB_GPIO13;
-        *idx = 2;
-        break;
-    case 7:     // GP17
-        *hib_pin = PRCM_HIB_GPIO17;
-        *idx = 3;
-        break;
-    case 1:     // GP11
-        *hib_pin = PRCM_HIB_GPIO11;
-        *idx = 4;
-        break;
-    case 16:    // GP24
-        *hib_pin = PRCM_HIB_GPIO24;
-        *idx = 5;
         break;
     default:
         *idx = 0xFF;
@@ -842,7 +817,7 @@ STATIC mp_obj_t pin_irq(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_ar
             wake_mode = PRCM_HIB_RISE_EDGE;
             break;
         case GPIO_LOW_LEVEL:
-            wake_mode = PRCM_HIB_LOW_LEVEL;
+            wake_mode = LPWR_HIB_LOW_LEVEL;
             break;
         case GPIO_HIGH_LEVEL:
             wake_mode = PRCM_HIB_HIGH_LEVEL;

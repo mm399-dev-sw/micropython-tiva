@@ -51,6 +51,13 @@ TIVAWARE_LIB = TivaWare
 # include py core make definitions
 include $(TOP)/py/py.mk
 
+# Modules to be evaluated by QSTR generator
+MODS_SRC_C = $(addprefix mods/,\
+	pybpin.c \
+	)
+
+SRC_QSTR += $(MODS_SRC_C)
+
 # Cross compilation prefix
 CROSS_COMPILE = arm-none-eabi-
 # Cross compilation flag
@@ -66,8 +73,11 @@ LINKER_FILE = tm4c123gh6pm.ld
 
 # Included directories
 INC += -I.
+INC += -I./mods
+INC += -I./misc
 INC += -I$(TOP)
 INC += -I$(BUILD)
+INC += -I$(BUILD)/genhdr
 INC += -I$(TIVAWARE_LIB)
 INC += -I$(TIVAWARE_LIB)/driverlib
 INC += -I$(PY_SRC)

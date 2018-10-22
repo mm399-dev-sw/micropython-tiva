@@ -11,6 +11,7 @@
 #include "lib/utils/pyexec.h"
 #include "periph/_gpio.h"
 #include "mods/pybpin.h"
+#include "driverlib/gpio.h"
 
 #if MICROPY_ENABLE_COMPILER
 void do_str(const char *src, mp_parse_input_kind_t input_kind) {
@@ -333,6 +334,8 @@ void tm4c123_init(void) {
 //    // GPIOA already configured for UART0 after reset
 //    gpio_init(GPIOA, 0, GPIO_MODE_ALT, GPIO_PULL_NONE, 1);
 //    gpio_init(GPIOA, 1, GPIO_MODE_ALT, GPIO_PULL_NONE, 1);
+
+    MAP_GPIOPinTypeUART(GPIO_PORTA_AHB_BASE, GPIO_PIN_0 | GPIO_PIN_1);
 
     // BRD = IBRD + FRAC = UARTSysClk / (ClkDiv * BaudRate)
     // 520.8333 = 104  + 0.166 = 80MHz      / (16     * 9600    )
