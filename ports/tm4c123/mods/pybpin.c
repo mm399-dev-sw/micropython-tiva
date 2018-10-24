@@ -284,52 +284,12 @@ STATIC void pin_get_hibernate_pin_and_idx (const pin_obj_t *self, uint *hib_pin,
 
 STATIC void pin_irq_enable (mp_obj_t self_in) {
     const pin_obj_t *self = self_in;
-    uint hib_pin, idx;
-
-    pin_get_hibernate_pin_and_idx (self, &hib_pin, &idx);
-    if (idx < PYBPIN_NUM_WAKE_PINS) {
-        if (pybpin_wake_pin[idx].lpds != PYBPIN_WAKES_NOT) {
-            // enable GPIO as a wake source during LPDS
-            MAP_PRCMLPDSWakeUpGPIOSelect(idx, pybpin_wake_pin[idx].lpds);
-            MAP_PRCMLPDSWakeupSourceEnable(PRCM_LPDS_GPIO);
-        }
-
-        if (pybpin_wake_pin[idx].hib != PYBPIN_WAKES_NOT) {
-            // enable GPIO as a wake source during hibernate
-            MAP_PRCMHibernateWakeUpGPIOSelect(hib_pin, pybpin_wake_pin[idx].hib);
-            MAP_PRCMHibernateWakeupSourceEnable(hib_pin);
-        }
-        else {
-            MAP_PRCMHibernateWakeupSourceDisable(hib_pin);
-        }
-    }
-    // if idx is invalid, the pin supports active interrupts for sure
-    if (idx >= PYBPIN_NUM_WAKE_PINS || pybpin_wake_pin[idx].active) {
-        MAP_GPIOIntClear(self->port, self->bit);
-        MAP_GPIOIntEnable(self->port, self->bit);
-    }
-    // in case it was enabled before
-    else if (idx < PYBPIN_NUM_WAKE_PINS && !pybpin_wake_pin[idx].active) {
-        MAP_GPIOIntDisable(self->port, self->bit);
-    }
+    MAP_GPIOIntClear(self->port, self->bit);
+    MAP_GPIOIntEnable(self->port, self->bit);
 }
 
 STATIC void pin_irq_disable (mp_obj_t self_in) {
     const pin_obj_t *self = self_in;
-    uint hib_pin, idx;
-
-    pin_get_hibernate_pin_and_idx (self, &hib_pin, &idx);
-    if (idx < PYBPIN_NUM_WAKE_PINS) {
-        if (pybpin_wake_pin[idx].lpds != PYBPIN_WAKES_NOT) {
-            // disable GPIO as a wake source during LPDS
-            MAP_PRCMLPDSWakeupSourceDisable(PRCM_LPDS_GPIO);
-        }
-        if (pybpin_wake_pin[idx].hib != PYBPIN_WAKES_NOT) {
-            // disable GPIO as a wake source during hibernate
-            MAP_PRCMHibernateWakeupSourceDisable(hib_pin);
-        }
-    }
-    // not need to check for the active flag, it's safe to disable it anyway
     MAP_GPIOIntDisable(self->port, self->bit);
 }
 
@@ -370,8 +330,8 @@ STATIC void pin_extint_register(pin_obj_t *self, uint32_t intmode, uint32_t prio
         intnum = INT_GPIOF;
         break;
     default:
-        handler = GPIODIntHandler;
-        intnum = INT_GPIOD;
+        handler = NULL;
+        intnum = 0;
         break;
     }
     MAP_GPIOIntRegister(self->port, handler);
@@ -735,7 +695,7 @@ STATIC mp_obj_t pin_irq(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_ar
     // verify and translate the interrupt mode
     uint mp_trigger = mp_obj_get_int(args[0].u_obj);
     uint trigger;
-    if (mp_trigger == (PYB_PIN_FALLING_EDGE | PYB_PIN_RISING_EDGE)) {
+    if (mp_trigger == (GPIO_FALLING_EDGE | GPIO_RISING_EDGE)) {
         trigger = GPIO_BOTH_EDGES;
     } else {
         switch (mp_trigger) {
@@ -761,89 +721,12 @@ STATIC mp_obj_t pin_irq(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_ar
         goto invalid_args;
     }
 
-    // get the wake info from this pin
-    uint hib_pin, idx;
-    pin_get_hibernate_pin_and_idx ((const pin_obj_t *)self, &hib_pin, &idx);
-    if (pwrmode & PYB_PWR_MODE_LPDS) {
-        if (idx >= PYBPIN_NUM_WAKE_PINS) {
-            goto invalid_args;
-        }
-        // wake modes are different in LDPS
-        uint wake_mode;
-        switch (trigger) {
-        case GPIO_FALLING_EDGE:
-            wake_mode = PRCM_LPDS_FALL_EDGE;
-            break;
-        case GPIO_RISING_EDGE:
-            wake_mode = PRCM_LPDS_RISE_EDGE;
-            break;
-        case GPIO_LOW_LEVEL:
-            wake_mode = PRCM_LPDS_LOW_LEVEL;
-            break;
-        case GPIO_HIGH_LEVEL:
-            wake_mode = PRCM_LPDS_HIGH_LEVEL;
-            break;
-        default:
-            goto invalid_args;
-            break;
-        }
-
-        // first clear the lpds value from all wake-able pins
-        for (uint i = 0; i < PYBPIN_NUM_WAKE_PINS; i++) {
-            pybpin_wake_pin[i].lpds = PYBPIN_WAKES_NOT;
-        }
-
-        // enable this pin as a wake-up source during LPDS
-        pybpin_wake_pin[idx].lpds = wake_mode;
-    } else if (idx < PYBPIN_NUM_WAKE_PINS) {
-        // this pin was the previous LPDS wake source, so disable it completely
-        if (pybpin_wake_pin[idx].lpds != PYBPIN_WAKES_NOT) {
-            MAP_PRCMLPDSWakeupSourceDisable(PRCM_LPDS_GPIO);
-        }
-        pybpin_wake_pin[idx].lpds = PYBPIN_WAKES_NOT;
-    }
-
-    if (pwrmode & PYB_PWR_MODE_HIBERNATE) {
-        if (idx >= PYBPIN_NUM_WAKE_PINS) {
-            goto invalid_args;
-        }
-        // wake modes are different in hibernate
-        uint wake_mode;
-        switch (trigger) {
-        case GPIO_FALLING_EDGE:
-            wake_mode = PRCM_HIB_FALL_EDGE;
-            break;
-        case GPIO_RISING_EDGE:
-            wake_mode = PRCM_HIB_RISE_EDGE;
-            break;
-        case GPIO_LOW_LEVEL:
-            wake_mode = LPWR_HIB_LOW_LEVEL;
-            break;
-        case GPIO_HIGH_LEVEL:
-            wake_mode = PRCM_HIB_HIGH_LEVEL;
-            break;
-        default:
-            goto invalid_args;
-            break;
-        }
-
-        // enable this pin as wake-up source during hibernate
-        pybpin_wake_pin[idx].hib = wake_mode;
-    } else if (idx < PYBPIN_NUM_WAKE_PINS) {
-        pybpin_wake_pin[idx].hib = PYBPIN_WAKES_NOT;
-    }
-
     // we need to update the callback atomically, so we disable the
     // interrupt before we update anything.
     pin_irq_disable(self);
     if (pwrmode & PYB_PWR_MODE_ACTIVE) {
         // register the interrupt
         pin_extint_register((pin_obj_t *)self, trigger, priority);
-        if (idx < PYBPIN_NUM_WAKE_PINS) {
-            pybpin_wake_pin[idx].active = true;
-        }
-    } else if (idx < PYBPIN_NUM_WAKE_PINS) {
-        pybpin_wake_pin[idx].active = false;
     }
 
     // all checks have passed, we can create the irq object

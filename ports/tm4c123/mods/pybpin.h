@@ -43,7 +43,6 @@
 #include "driverlib/rom_map.h"
 // #include "prcm.h"
 #include "driverlib/interrupt.h"
-#include "driverlib/hibernate.h"
 
 #include "misc/mpirq.h"
 #include "pybsleep.h"
