@@ -54,6 +54,7 @@ include $(TOP)/py/py.mk
 # Modules to be evaluated by QSTR generator
 MODS_SRC_C = $(addprefix mods/,\
 	pybpin.c \
+	modmachine.c \
 	)
 
 SRC_QSTR += $(MODS_SRC_C)
