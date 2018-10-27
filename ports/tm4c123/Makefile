@@ -22,7 +22,7 @@ DEBUG = 1
 include ../../py/mkenv.mk
 
 # qstr definitions (must come before including py.mk)
-QSTR_DEFS = qstrdefsport.h
+QSTR_DEFS = qstrdefsport.h $(BUILD)/pins_qstr.h
 
 #
 # Defines the part type that this project uses.
