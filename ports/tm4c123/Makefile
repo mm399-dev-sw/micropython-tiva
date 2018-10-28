@@ -1,28 +1,10 @@
 # Makefile for Micropython Tiva Lauchpad (TM4C123GH6PM) Port
 # by Raphael Kriegl
 
-#Check for OS
-ifdef SYSTEMROOT
-#Windows / MinGW
-   RM = del /q
-   RD = rd /s /q
-   FixPath = $(subst /,\,$1)
-else
-#Linux
-   ifeq ($(shell uname), Linux)
-      RM = rm -f
-      RD = rm -rf
-      FixPath = $1
-   endif
-endif
-
 DEBUG = 1
 
 # Include variabes for Python and Compiler
 include ../../py/mkenv.mk
-
-# qstr definitions (must come before including py.mk)
-QSTR_DEFS = qstrdefsport.h $(BUILD)/pins_qstr.h
 
 #
 # Defines the part type that this project uses.
@@ -45,8 +27,8 @@ PROJECT_NAME = uPY_TM4C123
 # Can be pointed to a newer version if desired
 TIVAWARE_LIB = TivaWare
 
-# The base directory for TivaWare.
-#ROOT = $(TIVAWARE_LIB)
+# qstr definitions (must come before including py.mk)
+QSTR_DEFS = qstrdefsport.h $(BUILD)/pins_qstr.h
 
 # include py core make definitions
 include $(TOP)/py/py.mk
@@ -82,6 +64,7 @@ INC += -I$(BUILD)/genhdr
 INC += -I$(TIVAWARE_LIB)
 INC += -I$(TIVAWARE_LIB)/driverlib
 INC += -I$(PY_SRC)
+INC += -I./board
 INC += -I../../
 
 DFU = $(TOP)/tools/dfu.py
@@ -112,14 +95,15 @@ SRC_C = \
 	main.c \
 	startup_gcc.c \
 	uart_core.c \
-	lib/utils/printf.c \
+	mods/modmachine.c \
 	lib/utils/stdout_helpers.c \
 	lib/utils/pyexec.c \
 	lib/libc/string0.c \
 	lib/mp-readline/readline.c \
 	_frozen_mpy.c 
+		#lib/utils/printf.c 
 
-OBJ = $(PY_CORE_O) $(addprefix $(BUILD)/, $(SRC_C:.c=.o))
+OBJ = $(PY_O) $(addprefix $(BUILD)/, $(SRC_C:.c=.o))
 
 
 all: $(OBJ) ${PROJECT_NAME}.axf ${PROJECT_NAME}
@@ -127,6 +111,29 @@ all: $(OBJ) ${PROJECT_NAME}.axf ${PROJECT_NAME}
 $(BUILD)/_frozen_mpy.c: frozentest.mpy $(BUILD)/genhdr/qstrdefs.generated.h
 	$(ECHO) "MISC freezing bytecode"
 	$(Q)$(TOP)/tools/mpy-tool.py -f -q $(BUILD)/genhdr/qstrdefs.preprocessed.h -mlongint-impl=none $< > $@
+	
+MAKE_PINS = board/make-pins.py
+BOARD_PINS = board/pins.csv
+AF_FILE = board/tm4c123_af.csv
+PREFIX_FILE = board/tm4c123_prefix.c
+GEN_PINS_SRC = $(BUILD)/pins.c
+GEN_PINS_HDR = $(HEADER_BUILD)/pins.h
+GEN_PINS_QSTR = $(BUILD)/pins_qstr.h
+
+# Making OBJ use an order-only dependency on the generated pins.h file
+# has the side effect of making the pins.h file before we actually compile
+# any of the objects. The normal dependency generation will deal with the
+# case when pins.h is modified. But when it doesn't exist, we don't know
+# which source files might need it.
+$(OBJ): | $(GEN_PINS_HDR)
+
+# Call make-pins.py to generate both pins_gen.c and pins.h
+$(GEN_PINS_SRC) $(GEN_PINS_HDR) $(GEN_PINS_QSTR): $(BOARD_PINS) $(MAKE_PINS) $(AF_FILE) $(PREFIX_FILE) | $(HEADER_BUILD)
+	$(ECHO) "Create $@"
+	$(Q)$(PYTHON) $(MAKE_PINS) --board $(BOARD_PINS) --af $(AF_FILE) --prefix $(PREFIX_FILE) --hdr $(GEN_PINS_HDR) --qstr $(GEN_PINS_QSTR) > $(GEN_PINS_SRC)
+
+$(BUILD)/pins.o: $(BUILD)/pins.c
+	$(call compile_c)	
 
 ${PROJECT_NAME}.axf: $(OBJ)
 	@echo
@@ -154,10 +161,7 @@ load:
 #load
 #monitor reset init
 
+CLEAN_EXTRA += $(TIVAWARE_LIB)/driverlib/gcc/* *.axf *.bin *.lst
 
 include $(TOP)/py/mkrules.mk
 
-clean:
-	$(RD) $(BUILD)/*
-	$(RM) $(TIVAWARE_LIB)/driverlib/gcc/*
-	$(RM) *.axf *.bin *.lst

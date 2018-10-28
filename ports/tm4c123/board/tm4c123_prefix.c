@@ -4,7 +4,6 @@
  * The MIT License (MIT)
  *
  * Copyright (c) 2013, 2014 Damien P. George
- * Copyright (c) 2015 Daniel Campora
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -25,7 +24,7 @@
  * THE SOFTWARE.
  */
 
-// cc3200_prefix.c becomes the initial portion of the generated pins file.
+// tm4c123_prefix.c becomes the initial portion of the generated pins file.
 
 #include <stdio.h>
 #include <stdint.h>
@@ -34,8 +33,7 @@
 #include "py/obj.h"
 #include "inc/hw_types.h"
 #include "inc/hw_memmap.h"
-#include "pin.h"
-#include "gpio.h"
+#include "driverlib/gpio.h"
 #include "pybpin.h"
 
 
