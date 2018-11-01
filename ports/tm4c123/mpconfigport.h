@@ -73,15 +73,18 @@ typedef long mp_off_t;
 
 #define MP_PLAT_PRINT_STRN(str, len) mp_hal_stdout_tx_strn_cooked(str, len)
 
+extern const struct _mp_obj_module_t mp_module_test;
+
 // extra built in names to add to the global namespace
 #define MICROPY_PORT_BUILTINS \
-    { MP_ROM_QSTR(MP_QSTR_open), MP_ROM_PTR(&mp_builtin_open_obj) },
+    { MP_ROM_QSTR(MP_QSTR_open), MP_ROM_PTR(&mp_builtin_open_obj) },\
+    { MP_ROM_QSTR(MP_QSTR_test), MP_ROM_PTR(&mp_module_test) },
 
 // We need to provide a declaration/definition of alloca()
 #include <alloca.h>
 
-#define MICROPY_HW_BOARD_NAME "TM4C123GXL"
-#define MICROPY_HW_MCU_NAME " TM4C123GH6PM"
+#define MICROPY_HW_BOARD_NAME "Tiva Launch Pad"
+#define MICROPY_HW_MCU_NAME "TM4C123G6HPM"
 
 #ifdef __linux__
 #define MICROPY_MIN_USE_STDOUT (1)
@@ -94,29 +97,8 @@ typedef long mp_off_t;
 
 #define MP_STATE_PORT MP_STATE_VM
 
-//#define MICROPY_PORT_ROOT_POINTERS
-//    const char *readline_hist[8];
-
-#define MICROPY_ENABLE_EMERGENCY_EXCEPTION_BUF      (1)
-#define MICROPY_EMERGENCY_EXCEPTION_BUF_SIZE        (0)
-#define MICROPY_KBD_EXCEPTION                       (1)
+#define MICROPY_PORT_ROOT_POINTERS \
+    const char *readline_hist[8]; \
+    mp_obj_t test_callback_obj;
 
 
-
-// vm state and root pointers for the gc
-#define MP_STATE_PORT MP_STATE_VM
-#define MICROPY_PORT_ROOT_POINTERS                                        \
-    const char *readline_hist[8];                                         \
-    mp_obj_t mp_const_user_interrupt;                                     \
-    mp_obj_t machine_config_main;                                         \
-    mp_obj_list_t pyb_sleep_obj_list;                                     \
-    mp_obj_list_t mp_irq_obj_list;                                        \
-    mp_obj_list_t pyb_timer_channel_obj_list;                             \
-    struct _pyb_uart_obj_t *pyb_uart_objs[2];                             \
-    struct _os_term_dup_obj_t *os_term_dup_obj;                           \
-
-
-//#define MICROPY_BEGIN_ATOMIC_SECTION()              disable_irq()
-//#define MICROPY_END_ATOMIC_SECTION(state)           enable_irq(state)
-//#define MICROPY_EVENT_POLL_HOOK                     __WFI();
-//
