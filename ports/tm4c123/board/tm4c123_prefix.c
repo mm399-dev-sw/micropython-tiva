@@ -57,7 +57,7 @@
     .bit            = (p_bit), \
     .pin_num        = (p_pin_num), \
     .af             = PIN_MODE_0, \
-    .strength       = PIN_STRENGTH_4MA, \
+    .strength       = PIN_STRENGTH_2MA, \
     .mode           = GPIO_DIR_MODE_IN, \
     .num_afs        = (p_num_afs), \
     .value          = 0, \

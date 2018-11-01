@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Generates the pins file for the CC3200."""
+"""Generates the pins file for the TM4C123."""
 
 from __future__ import print_function
 
@@ -8,26 +8,38 @@ import sys
 import csv
 
 
-SUPPORTED_AFS = { 'UART': ('TX', 'RX', 'RTS', 'CTS'),
-                  'SPI': ('CLK', 'MOSI', 'MISO', 'CS0'),
-                  #'I2S': ('CLK', 'FS', 'DAT0', 'DAT1'),
-                  'I2C': ('SDA', 'SCL'),
-                  'TIM': ('PWM'),
-                  'SD': ('CLK', 'CMD', 'DAT0'),
-                  'ADC': ('CH0', 'CH1', 'CH2', 'CH3')
+SUPPORTED_AFS = { 
+	'U'	: ('Tx', 'Rx', 'RTS', 'CTS'), #UART
+        'SSI'	: ('Clk', 'Tx', 'Rx', 'Fss'), #SPI
+        'I2C'	: ('SDA', 'SCL'),
+        'T'	: ('CCP0', 'CCP1'), #16 bit Timer
+	'WT' 	: ('CCP0', 'CCP1'), #32 bit Wide Timer
+	'M' 	: ('PWM0', 'PWM1', 'PWM2', 'PWM3', 'PWM4', 'PWM5','PWM6','PWM7', 'FAULT0'), # Motor Control      
+        'ADC'	: ( 'AIN0','AIN1','AIN2','AIN3','AIN4','AIN5','AIN6','AIN7','AIN8','AIN9','AIN10', 			'AIN11'),
+	'C'	: ('0-','0+', '0o' ,'1+','1-', '1o' ), # Analog Comparator
+	'QEI'	: ('PhA0', 'PhA1', 'PhB0', 'PhB1', 'IDX0', 'IDX1'), # Quadrature Encoder Interface
+	'TR'	: ('Clk', 'D0', 'D1'), # Trace
+	'CAN'	: ('Tx', 'Rx'),
+	'NMI'	: (''),
+	'JTAG'	: ('TDO/SWO', 'TDI', 'TMS/SWDIO', 'TCK/SWCLK'),
+	'USB'	: ('DM', 'DP', 'EPEN', 'ID', 'PFLT', 'VBUS')
                 }
+"""So oder direkt beim parsen?"""
+???AFS_MAP = { "U" : "UART","T":"TIM", "WT":"WTIM","M":"MOT_CTRL","C":"COMP","TR":"TRACE" }
 
 def parse_port_pin(name_str):
-    """Parses a string and returns a (port, gpio_bit) tuple."""
+    """Parses a string and returns a (port, port_pin) tuple."""
     if len(name_str) < 3:
         raise ValueError("Expecting pin name to be at least 3 characters")
-    if name_str[:2] != 'GP':
-        raise ValueError("Expecting pin name to start with GP")
-    if not name_str[2:].isdigit():
-        raise ValueError("Expecting numeric GPIO number")
-    port = int(int(name_str[2:]) / 8)
-    gpio_bit = 1 << int(int(name_str[2:]) % 8)
-    return (port, gpio_bit)
+if name_str[0] != 'P':
+        raise ValueError("Expecting pin name to start with P")
+    if name_str[1] < 'A' or name_str[1] > 'F':
+        raise ValueError("Expecting pin port to be between A and F")
+    port = ord(name_str[1]) - ord('A')
+    pin_str = name_str[2:]
+    if not pin_str.isdigit():
+        raise ValueError("Expecting numeric pin number.")
+    return (port, int(pin_str))
 
 
 class AF:
@@ -35,7 +47,8 @@ class AF:
     def __init__(self, name, idx, fn, unit, type):
         self.name = name
         self.idx = idx
-        if self.idx > 15:
+	"""AF from 0 to 9 and 14 to 15"""
+        if self.idx > 15 or (10 <= self.idx <= 13):
             self.idx = -1
         self.fn = fn
         self.unit = unit
@@ -47,10 +60,10 @@ class AF:
 
 class Pin:
     """Holds the information associated with a pin."""
-    def __init__(self, name, port, gpio_bit, pin_num):
+    def __init__(self, name, port, port_pin, pin_num):
         self.name = name
         self.port = port
-        self.gpio_bit = gpio_bit
+        self.port_pin = port_pin
         self.pin_num = pin_num
         self.board_pin = False
         self.afs = []
@@ -66,10 +79,10 @@ class Pin:
                 af.print()
             print('};')
             print('pin_obj_t pin_{:4s} = PIN({:6s}, {:1d}, {:3d}, {:2d}, pin_{}_af, {});\n'.format(
-                   self.name, self.name, self.port, self.gpio_bit, self.pin_num, self.name, len(self.afs)))
+                   self.name, self.name, self.port, self.port_pin, self.pin_num, self.name, len(self.afs)))
         else:
             print('pin_obj_t pin_{:4s} = PIN({:6s}, {:1d}, {:3d}, {:2d}, NULL, 0);\n'.format(
-                   self.name, self.name, self.port, self.gpio_bit, self.pin_num))
+                   self.name, self.name, self.port, self.port_pin, self.pin_num))
 
     def print_header(self, hdr_file):
         hdr_file.write('extern pin_obj_t pin_{:s};\n'.format(self.name))
@@ -79,9 +92,9 @@ class Pins:
     def __init__(self):
         self.board_pins = []   # list of pin objects
 
-    def find_pin(self, port, gpio_bit):
+    def find_pin(self, port, port_pin):
         for pin in self.board_pins:
-            if pin.port == port and pin.gpio_bit == gpio_bit:
+            if pin.port == port and pin.port_pin == port_pin:
                 return pin
 
     def find_pin_by_num(self, pin_num):
@@ -99,14 +112,14 @@ class Pins:
             rows = csv.reader(csvfile)
             for row in rows:
                 try:
-                    (port_num, gpio_bit) = parse_port_pin(row[pinname_col])
+                    (port_num, port_pin) = parse_port_pin(row[pinname_col])
                 except:
                     continue
                 if not row[pin_col].isdigit():
                     raise ValueError("Invalid pin number {:s} in row {:s}".format(row[pin_col]), row)
                 # Pin numbers must start from 0 when used with the TI API
                 pin_num = int(row[pin_col]) - 1;        
-                pin = Pin(row[pinname_col], port_num, gpio_bit, pin_num)
+                pin = Pin(row[pinname_col], port_num, port_pin, pin_num)
                 self.board_pins.append(pin)
                 af_idx = 0
                 for af in row[af_start_col:]:

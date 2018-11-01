@@ -33,13 +33,6 @@ QSTR_DEFS = qstrdefsport.h $(BUILD)/pins_qstr.h
 # include py core make definitions
 include $(TOP)/py/py.mk
 
-# Modules to be evaluated by QSTR generator
-MODS_SRC_C = $(addprefix mods/,\
-	test.c \
-	)
-
-SRC_QSTR += $(MODS_SRC_C)
-
 # Cross compilation prefix
 CROSS_COMPILE = arm-none-eabi-
 # Cross compilation flag
@@ -90,17 +83,31 @@ LIBC := ${shell ${CC} ${CFLAGS} -print-file-name=libc.a}
 LIBM := ${shell ${CC} ${CFLAGS} -print-file-name=libm.a}
 
 # Sources	
-SRC_C = \
+
+# Module sources
+MODS_SRC_C = $(addprefix mods/,\
+	test.c \
+	pybpin.c \
+	)
+
+# QSTR sources
+SRC_QSTR += $(MODS_SRC_C)
+
+# Core sources
+CORE_SRC_C = \
 	main.c \
 	startup_gcc.c \
-	uart_core.c \
-	mods/test.c \
+	uart_core.c 
+
+PY_SRC_C = \
 	lib/utils/stdout_helpers.c \
 	lib/utils/pyexec.c \
 	lib/libc/string0.c \
 	lib/mp-readline/readline.c \
 	_frozen_mpy.c 
 		#lib/utils/printf.c 
+		
+SRC_C = $(CORE_SRC_C) $(PY_SRC_C) $(MODS_SRC_C)
 
 OBJ = $(PY_O) $(addprefix $(BUILD)/, $(SRC_C:.c=.o))
 
