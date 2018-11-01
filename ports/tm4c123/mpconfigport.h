@@ -80,8 +80,8 @@ typedef long mp_off_t;
 // We need to provide a declaration/definition of alloca()
 #include <alloca.h>
 
-#define MICROPY_HW_BOARD_NAME "TM4C123GXL"
-#define MICROPY_HW_MCU_NAME " TM4C123GH6PM"
+#define MICROPY_HW_BOARD_NAME "minimal"
+#define MICROPY_HW_MCU_NAME "unknown-cpu"
 
 #ifdef __linux__
 #define MICROPY_MIN_USE_STDOUT (1)
@@ -89,34 +89,10 @@ typedef long mp_off_t;
 
 #ifdef __thumb__
 #define MICROPY_MIN_USE_CORTEX_CPU (1)
-#define MICROPY_MIN_USE_TM4C123_MCU (1)
+#define MICROPY_MIN_USE_STM32_MCU (1)
 #endif
 
 #define MP_STATE_PORT MP_STATE_VM
 
-//#define MICROPY_PORT_ROOT_POINTERS
-//    const char *readline_hist[8];
-
-#define MICROPY_ENABLE_EMERGENCY_EXCEPTION_BUF      (1)
-#define MICROPY_EMERGENCY_EXCEPTION_BUF_SIZE        (0)
-#define MICROPY_KBD_EXCEPTION                       (1)
-
-
-
-// vm state and root pointers for the gc
-#define MP_STATE_PORT MP_STATE_VM
-#define MICROPY_PORT_ROOT_POINTERS                                        \
-    const char *readline_hist[8];                                         \
-    mp_obj_t mp_const_user_interrupt;                                     \
-    mp_obj_t machine_config_main;                                         \
-    mp_obj_list_t pyb_sleep_obj_list;                                     \
-    mp_obj_list_t mp_irq_obj_list;                                        \
-    mp_obj_list_t pyb_timer_channel_obj_list;                             \
-    struct _pyb_uart_obj_t *pyb_uart_objs[2];                             \
-    struct _os_term_dup_obj_t *os_term_dup_obj;                           \
-
-
-//#define MICROPY_BEGIN_ATOMIC_SECTION()              disable_irq()
-//#define MICROPY_END_ATOMIC_SECTION(state)           enable_irq(state)
-//#define MICROPY_EVENT_POLL_HOOK                     __WFI();
-//
+#define MICROPY_PORT_ROOT_POINTERS \
+    const char *readline_hist[8];

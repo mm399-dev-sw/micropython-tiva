@@ -44,3 +44,5 @@ user.props
 # Generated rst files
 ######################
 genrst/
+
+ports/tm4c123/\.settings/language\.settings\.xml
