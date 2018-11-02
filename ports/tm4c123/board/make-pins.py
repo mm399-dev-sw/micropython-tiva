@@ -9,14 +9,14 @@ import csv
 
 
 SUPPORTED_AFS = { 
-	'U'	: ('Tx', 'Rx', 'RTS', 'CTS'), #UART
+	'UART'	: ('Tx', 'Rx', 'RTS', 'CTS'), #UART
         'SSI'	: ('Clk', 'Tx', 'Rx', 'Fss'), #SPI
         'I2C'	: ('SDA', 'SCL'),
-        'T'	: ('CCP0', 'CCP1'), #16 bit Timer
-	'WT' 	: ('CCP0', 'CCP1'), #32 bit Wide Timer
-	'M' 	: ('PWM0', 'PWM1', 'PWM2', 'PWM3', 'PWM4', 'PWM5','PWM6','PWM7', 'FAULT0'), # Motor Control      
+        'TIM'	: ('CCP0', 'CCP1'), #16 bit Timer
+	'WTIM' 	: ('CCP0', 'CCP1'), #32 bit Wide Timer
+	'MTRL' 	: ('PWM0', 'PWM1', 'PWM2', 'PWM3', 'PWM4', 'PWM5','PWM6','PWM7', 'FAULT0'), # Motion Control      
         'ADC'	: ( 'AIN0','AIN1','AIN2','AIN3','AIN4','AIN5','AIN6','AIN7','AIN8','AIN9','AIN10', 			'AIN11'),
-	'C'	: ('0-','0+', '0o' ,'1+','1-', '1o' ), # Analog Comparator
+	'COMP'	: ('-','+', 'o' ), # Analog Comparator
 	'QEI'	: ('PhA0', 'PhA1', 'PhB0', 'PhB1', 'IDX0', 'IDX1'), # Quadrature Encoder Interface
 	'TR'	: ('Clk', 'D0', 'D1'), # Trace
 	'CAN'	: ('Tx', 'Rx'),
@@ -24,14 +24,14 @@ SUPPORTED_AFS = {
 	'JTAG'	: ('TDO/SWO', 'TDI', 'TMS/SWDIO', 'TCK/SWCLK'),
 	'USB'	: ('DM', 'DP', 'EPEN', 'ID', 'PFLT', 'VBUS')
                 }
-"""So oder direkt beim parsen?"""
-???AFS_MAP = { "U" : "UART","T":"TIM", "WT":"WTIM","M":"MOT_CTRL","C":"COMP","TR":"TRACE" }
+SINGLE_UNIT_AF = ('ADC','QEI','NMI','TR', 'JTAG') # These do not have Unit numbers
+     
 
 def parse_port_pin(name_str):
     """Parses a string and returns a (port, port_pin) tuple."""
     if len(name_str) < 3:
         raise ValueError("Expecting pin name to be at least 3 characters")
-if name_str[0] != 'P':
+    if name_str[0] != 'P':
         raise ValueError("Expecting pin name to start with P")
     if name_str[1] < 'A' or name_str[1] > 'F':
         raise ValueError("Expecting pin port to be between A and F")
@@ -60,11 +60,12 @@ class AF:
 
 class Pin:
     """Holds the information associated with a pin."""
-    def __init__(self, name, port, port_pin, pin_num):
+    def __init__(self, name, port, port_pin, def_af, pin_num):
         self.name = name
         self.port = port
         self.port_pin = port_pin
         self.pin_num = pin_num
+        self.def_af = def_af
         self.board_pin = False
         self.afs = []
 
@@ -78,10 +79,10 @@ class Pin:
             for af in self.afs:
                 af.print()
             print('};')
-            print('pin_obj_t pin_{:4s} = PIN({:6s}, {:1d}, {:3d}, {:2d}, pin_{}_af, {});\n'.format(
-                   self.name, self.name, self.port, self.port_pin, self.pin_num, self.name, len(self.afs)))
+            print('pin_obj_t pin_{:4s} = PIN({:6s}, {:1d}, {:3d}, {:2d}, pin_{}_af, {}, {});\n'.format(
+                   self.name, self.name, self.port, self.port_pin, self.pin_num, self.name, self.def_af, len(self.afs)))
         else:
-            print('pin_obj_t pin_{:4s} = PIN({:6s}, {:1d}, {:3d}, {:2d}, NULL, 0);\n'.format(
+            print('pin_obj_t pin_{:4s} = PIN({:6s}, {:1d}, {:3d}, {:2d}, NULL, 0, 0);\n'.format(
                    self.name, self.name, self.port, self.port_pin, self.pin_num))
 
     def print_header(self, hdr_file):
@@ -107,7 +108,7 @@ class Pins:
             if pin.name == name:
                 return pin
 
-    def parse_af_file(self, filename, pin_col, pinname_col, af_start_col):
+    def parse_af_file(self, filename, pin_col, pinname_col, defaf_col, af_start_col):
         with open(filename, 'r') as csvfile:
             rows = csv.reader(csvfile)
             for row in rows:
@@ -117,18 +118,31 @@ class Pins:
                     continue
                 if not row[pin_col].isdigit():
                     raise ValueError("Invalid pin number {:s} in row {:s}".format(row[pin_col]), row)
-                # Pin numbers must start from 0 when used with the TI API
-                pin_num = int(row[pin_col]) - 1;        
-                pin = Pin(row[pinname_col], port_num, port_pin, pin_num)
+                pin_num = int(row[pin_col]);
+                # find the default af
+                if row[defaf_col] != '' and row[defaf_col] != row[pinname_col]:
+                    for cell in row[af_start_col:]: 
+                         if cell == row[defaf_col]:
+                             def_af = row[af_start_col:].index(cell)
+                             break   
+                else:
+                    def_af = 0       
+                pin = Pin(row[pinname_col], port_num, port_pin, def_af, pin_num)
                 self.board_pins.append(pin)
                 af_idx = 0
                 for af in row[af_start_col:]:
                     af_splitted = af.split('_')
                     fn_name = af_splitted[0].rstrip('0123456789')
                     if  fn_name in SUPPORTED_AFS:
-                        type_name = af_splitted[1]
+                        try:
+                            type_name = af_splitted[1]
+                        except:
+                            type_name = ''
                         if type_name in SUPPORTED_AFS[fn_name]:
-                            unit_idx = af_splitted[0][-1]
+                            if fn_name in SINGLE_UNIT_AF: # Dont have numbers
+				unit_idx = -1
+			    else:			
+				unit_idx = af_splitted[0][-1]
                             pin.add_af(AF(af, af_idx, fn_name, int(unit_idx), type_name))
                     af_idx += 1
 
@@ -136,9 +150,8 @@ class Pins:
         with open(filename, 'r') as csvfile:
             rows = csv.reader(csvfile)
             for row in rows:
-                # Pin numbers must start from 0 when used with the TI API
                 if row[cpu_pin_col].isdigit():
-                    pin = self.find_pin_by_num(int(row[cpu_pin_col]) - 1)
+                    pin = self.find_pin_by_num(int(row[cpu_pin_col]))
                 else:
                     pin = self.find_pin_by_name(row[cpu_pin_col])
                 if pin:
@@ -193,7 +206,7 @@ def main():
         "-a", "--af",
         dest="af_filename",
         help="Specifies the alternate function file for the chip",
-        default="cc3200_af.csv"
+        default="tm4c123_af.csv"
     )
     parser.add_argument(
         "-b", "--board",
@@ -204,7 +217,7 @@ def main():
         "-p", "--prefix",
         dest="prefix_filename",
         help="Specifies beginning portion of generated pins file",
-        default="cc3200_prefix.c"
+        default="tm4c123_prefix.c"
     )
     parser.add_argument(
         "-q", "--qstr",
@@ -226,7 +239,7 @@ def main():
     print('//')
     if args.af_filename:
         print('// --af {:s}'.format(args.af_filename))
-        pins.parse_af_file(args.af_filename, 0, 1, 3)
+        pins.parse_af_file(args.af_filename, 0, 1, 2, 3)
 
     if args.board_filename:
         print('// --board {:s}'.format(args.board_filename))

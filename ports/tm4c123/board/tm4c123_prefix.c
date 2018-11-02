@@ -31,7 +31,7 @@
 
 #include "py/mpconfig.h"
 #include "py/obj.h"
-#include "inc/hw_types.h"
+#include "inc/hw_gpio.h"
 #include "inc/hw_memmap.h"
 #include "driverlib/gpio.h"
 #include "pybpin.h"
@@ -39,6 +39,10 @@
 
 #define AF(af_name, af_idx, af_fn, af_unit, af_type) \
 { \
+#ifndef PIN_TYPE_ ## af_fn ## _ ## af_type
+#define PIN_TYPE_ ## af_fn ## _ ## af_type
+#endif
+    PIN_FN_SSI
     .name = MP_QSTR_ ## af_name, \
     .idx = (af_idx), \
     .fn = PIN_FN_ ## af_fn, \
@@ -47,17 +51,17 @@
 }
 
 
-#define PIN(p_pin_name, p_port, p_bit, p_pin_num, p_af_list, p_num_afs) \
+#define PIN(p_pin_name, p_port, p_port_pin, p_pin_num, p_af_list, p_def_af,p_num_afs) \
 { \
     { &pin_type }, \
     .name           = MP_QSTR_ ## p_pin_name, \
-    .port           = PORT_A ## p_port, \
+    .port           = GPIO_PORT ## p_port ## _AHB_BASE, \
     .af_list        = (p_af_list), \
-    .pull           = PIN_TYPE_STD, \
-    .bit            = (p_bit), \
+    .pull           = GPIO_PIN_TYPE_STD, \
+    .port_pin       = GPIO_PIN_ ## (p_portp_port_pin), \
     .pin_num        = (p_pin_num), \
-    .af             = PIN_MODE_0, \
-    .strength       = PIN_STRENGTH_2MA, \
+    .af             = (p_def_af), \
+    .strength       = GPIO_STRENGTH_2MA, \
     .mode           = GPIO_DIR_MODE_IN, \
     .num_afs        = (p_num_afs), \
     .value          = 0, \
@@ -65,3 +69,4 @@
     .irq_trigger    = 0, \
     .irq_flags      = 0, \
 }
+

@@ -11,6 +11,7 @@ STATIC mp_obj_t test_set_callback(mp_obj_t callback_obj) {
     return mp_const_none;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(test_set_callback_obj, test_set_callback);
+
 STATIC mp_obj_t test_call_callback(void) {
 #if 1
     vstr_t vstr;
