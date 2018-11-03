@@ -59,16 +59,17 @@ enum {
 };
 
 enum {
-    PIN_FN_AN = 0,
+    PIN_FN_ADC = 0,
     PIN_FN_UART,
     PIN_FN_SSI,
     PIN_FN_I2C,
-    PIN_FN_M0,
-    PIN_FN_M1,
-    PIN_FN_PH_IDX,
+    PIN_FN_QEI,
+    PIN_FN_MTRL,
+    PIN_FN_WTIM,
     PIN_FN_TIM,
-    PIN_FN_CAN_USB,
-    PIN_FN_C,
+    PIN_FN_CAN,
+    PIN_FN_USB,
+    PIN_FN_COMP,
     PIN_FN_TR = 14,
 };
 
@@ -80,17 +81,10 @@ enum {
 };
 
 enum {
-    PIN_TYPE_SPI_CLK = 0,
-    PIN_TYPE_SPI_MOSI,
-    PIN_TYPE_SPI_MISO,
-    PIN_TYPE_SPI_CS0,
-};
-
-enum {
-    PIN_TYPE_I2S_CLK = 0,
-    PIN_TYPE_I2S_FS,
-    PIN_TYPE_I2S_DAT0,
-    PIN_TYPE_I2S_DAT1,
+    PIN_TYPE_SSI_CLK = 0,
+    PIN_TYPE_SSI_TX,
+    PIN_TYPE_SSI_RX,
+    PIN_TYPE_SSI_FSS,
 };
 
 enum {
@@ -99,28 +93,75 @@ enum {
 };
 
 enum {
-    PIN_TYPE_TIM_PWM = 0,
+    PIN_TYPE_TIM_CCP0 = 0,
+    PIN_TYPE_TIM_CCP1
 };
 
 enum {
-    PIN_TYPE_SD_CLK = 0,
-    PIN_TYPE_SD_CMD,
-    PIN_TYPE_SD_DAT0,
+    PIN_TYPE_WTIM_CCP0 = 0,
+    PIN_TYPE_WTIM_CCP1
 };
 
 enum {
-    PIN_TYPE_ADC_CH0 = 0,
-    PIN_TYPE_ADC_CH1,
-    PIN_TYPE_ADC_CH2,
-    PIN_TYPE_ADC_CH3,
-    PIN_TYPE_ADC_CH4,
-    PIN_TYPE_ADC_CH5,
-    PIN_TYPE_ADC_CH6,
-    PIN_TYPE_ADC_CH7,
-    PIN_TYPE_ADC_CH8,
-    PIN_TYPE_ADC_CH9,
-    PIN_TYPE_ADC_CH10,
-    PIN_TYPE_ADC_CH11,
+    PIN_TYPE_QEI_PHA0 = 0,
+    PIN_TYPE_QEI_PHA1,
+    PIN_TYPE_QEI_PHB0,
+    PIN_TYPE_QEI_PHB1,
+    PIN_TYPE_QEI_IDX0,
+    PIN_TYPE_QEI_IDX1
+};
+
+enum {
+    PIN_TYPE_USB_EPEN = 0,
+    PIN_TYPE_USB_PFLT,
+    PIN_TYPE_USB_DM,
+    PIN_TYPE_USB_DP,
+    PIN_TYPE_USB_ID,
+    PIN_TYPE_USB_VBUS
+};
+
+enum {
+    PIN_TYPE_COMP_POS = 0,
+    PIN_TYPE_COMP_NEG,
+    PIN_TYPE_COMP_OUT
+};
+
+enum {
+    PIN_TYPE_CAN_TX = 0,
+    PIN_TYPE_CAN_RX
+};
+
+enum {
+    PIN_TYPE_TR_CLK = 0,
+    PIN_TYPE_TR_D0,
+    PIN_TYPE_TR_D1
+};
+
+enum {
+    PIN_TYPE_MTRL_FAULT0 = 0,
+    PIN_TYPE_MTRL_PWM0 = 0,
+    PIN_TYPE_MTRL_PWM1 = 0,
+    PIN_TYPE_MTRL_PWM2 = 0,
+    PIN_TYPE_MTRL_PWM3 = 0,
+    PIN_TYPE_MTRL_PWM4 = 0,
+    PIN_TYPE_MTRL_PWM5 = 0,
+    PIN_TYPE_MTRL_PWM6 = 0,
+    PIN_TYPE_MTRL_PWM7 = 0,
+};
+
+enum {
+    PIN_TYPE_ADC_AIN0 = 0,
+    PIN_TYPE_ADC_AIN1,
+    PIN_TYPE_ADC_AIN2,
+    PIN_TYPE_ADC_AIN3,
+    PIN_TYPE_ADC_AIN4,
+    PIN_TYPE_ADC_AIN5,
+    PIN_TYPE_ADC_AIN6,
+    PIN_TYPE_ADC_AIN7,
+    PIN_TYPE_ADC_AIN8,
+    PIN_TYPE_ADC_AIN9,
+    PIN_TYPE_ADC_AIN10,
+    PIN_TYPE_ADC_AIN11,
 };
 
 typedef struct {

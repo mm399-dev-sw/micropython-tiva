@@ -1,8 +1,8 @@
 #include <stdint.h>
-//#include <stdio.h>
+#include <stdio.h>
 #include <string.h>
 #include "cmsis_gcc.h"
-#include "driverlib/rom.h"
+#include "driverlib/rom_map.h"
 
 
 #include "py/compile.h"
@@ -11,9 +11,16 @@
 #include "py/gc.h"
 #include "py/mperrno.h"
 #include "lib/utils/pyexec.h"
-#include "periph/_gpio.h"
-#include "mods/pybpin.h"
+//#include "mods/pybpin.h"
+#include "inc/hw_types.h"
+#include "inc/hw_gpio.h"
+#include "inc/hw_ints.h"
+#include "inc/hw_memmap.h"
+#include "inc/hw_hibernate.h"
+#include "driverlib/sysctl.h"
+#include "driverlib/pin_map.h"
 #include "driverlib/gpio.h"
+#include "driverlib/rom_map.h"
 
 #if MICROPY_ENABLE_COMPILER
 void do_str(const char *src, mp_parse_input_kind_t input_kind) {

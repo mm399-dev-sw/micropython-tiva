@@ -30,7 +30,7 @@
 #include <string.h>
 #include <pybpin.h>
 
-
+#include "pins.h"
 
 
 
@@ -46,7 +46,7 @@ STATIC int8_t pin_obj_find_af (const pin_obj_t* pin, uint8_t fn, uint8_t unit, u
 STATIC void pin_free_af_from_pins (uint8_t fn, uint8_t unit, uint8_t type);
 STATIC void pin_deassign (pin_obj_t* pin);
 STATIC void pin_obj_configure (const pin_obj_t *self);
-STATIC void pin_get_hibernate_pin_and_idx (const pin_obj_t *self, uint *wake_pin, uint *idx);
+// STATIC void pin_get_hibernate_pin_and_idx (const pin_obj_t *self, uint *wake_pin, uint *idx);
 STATIC void pin_irq_enable (mp_obj_t self_in);
 STATIC void pin_irq_disable (mp_obj_t self_in);
 STATIC void pin_extint_register(pin_obj_t *self, uint32_t intmode, uint32_t priority);
@@ -90,8 +90,8 @@ typedef struct {
 DECLARE PRIVATE DATA
 ******************************************************************************/
 STATIC const mp_irq_methods_t pin_irq_methods;
-STATIC pybpin_wake_pin_t pybpin_wake_pin[PYBPIN_NUM_WAKE_PINS] =
-                                    { {.active = false, .lpds = PYBPIN_WAKES_NOT, .hib = PYBPIN_WAKES_NOT}} ;
+//STATIC pybpin_wake_pin_t pybpin_wake_pin[PYBPIN_NUM_WAKE_PINS] =
+//                                    { {.active = false, .lpds = PYBPIN_WAKES_NOT, .hib = PYBPIN_WAKES_NOT}} ;
 
 /******************************************************************************
  DEFINE PUBLIC FUNCTIONS
@@ -269,18 +269,18 @@ STATIC void pin_obj_configure (const pin_obj_t *self) {
 
 }
 
-STATIC void pin_get_hibernate_pin_and_idx (const pin_obj_t *self, uint *hib_pin, uint *idx) {
-    // pin_num is actually : (package_pin - 1)
-    switch (self->pin_num) {
-    case 31:    // GP2
-        *hib_pin = 31; //switch 2 & con to pf0
-        *idx = 0;
-        break;
-    default:
-        *idx = 0xFF;
-        break;
-    }
-}
+//STATIC void pin_get_hibernate_pin_and_idx (const pin_obj_t *self, uint *hib_pin, uint *idx) {
+//    // pin_num is actually : (package_pin - 1)
+//    switch (self->pin_num) {
+//    case 31:    // GP2
+//        *hib_pin = 31; //switch 2 & con to pf0
+//        *idx = 0;
+//        break;
+//    default:
+//        *idx = 0xFF;
+//        break;
+//    }
+//}
 
 STATIC void pin_irq_enable (mp_obj_t self_in) {
     const pin_obj_t *self = self_in;
@@ -334,7 +334,8 @@ STATIC void pin_extint_register(pin_obj_t *self, uint32_t intmode, uint32_t prio
         intnum = 0;
         break;
     }
-    MAP_GPIOIntRegister(self->port, handler);
+    GPIOIntRegister(self->port, handler);
+    // MAP_GPIOIntRegister(self->port, handler);
     // set the interrupt to the lowest priority, to make sure that
     // no other ISRs will be preemted by this one
     MAP_IntPrioritySet(intnum, priority);

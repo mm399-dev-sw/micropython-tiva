@@ -35,7 +35,7 @@ def parse_port_pin(name_str):
         raise ValueError("Expecting pin name to start with P")
     if name_str[1] < 'A' or name_str[1] > 'F':
         raise ValueError("Expecting pin port to be between A and F")
-    port = ord(name_str[1]) - ord('A')
+    port = name_str[1]
     pin_str = name_str[2:]
     if not pin_str.isdigit():
         raise ValueError("Expecting numeric pin number.")
@@ -79,10 +79,10 @@ class Pin:
             for af in self.afs:
                 af.print()
             print('};')
-            print('pin_obj_t pin_{:4s} = PIN({:6s}, {:1d}, {:3d}, {:2d}, pin_{}_af, {}, {});\n'.format(
+            print('pin_obj_t pin_{:4s} = PIN({:6s}, {}, {:3d}, {:2d}, pin_{}_af, {}, {});\n'.format(
                    self.name, self.name, self.port, self.port_pin, self.pin_num, self.name, self.def_af, len(self.afs)))
         else:
-            print('pin_obj_t pin_{:4s} = PIN({:6s}, {:1d}, {:3d}, {:2d}, NULL, 0, 0);\n'.format(
+            print('pin_obj_t pin_{:4s} = PIN({:6s}, {}, {:3d}, {:2d}, NULL, 0, 0);\n'.format(
                    self.name, self.name, self.port, self.port_pin, self.pin_num))
 
     def print_header(self, hdr_file):
@@ -162,7 +162,7 @@ class Pins:
         print('STATIC const mp_rom_map_elem_t pin_{:s}_pins_locals_dict_table[] = {{'.format(label))
         for pin in pins:
             if pin.board_pin:
-                print('    {{ MP_ROM_QSTR(MP_QSTR_{:6s}), MP_ROM_PTR(&pin_{:6s}) }},'.format(pin.name, pin.name))
+                print('    {{ MP_ROM_QSTR(MP_QSTR_{:3s}), MP_ROM_PTR(&pin_{:3s}) }},'.format(pin.name, pin.name))
         print('};')
         print('MP_DEFINE_CONST_DICT(pin_{:s}_pins_locals_dict, pin_{:s}_pins_locals_dict_table);'.format(label, label));
 

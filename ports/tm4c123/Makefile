@@ -87,7 +87,7 @@ LIBM := ${shell ${CC} ${CFLAGS} -print-file-name=libm.a}
 # Module sources
 MODS_SRC_C = $(addprefix mods/,\
 	test.c \
-	pybpin.c \
+	modmachine.c \
 	)
 
 # QSTR sources
@@ -107,7 +107,7 @@ PY_SRC_C = \
 	_frozen_mpy.c 
 		#lib/utils/printf.c 
 		
-SRC_C = $(CORE_SRC_C)  $(MODS_SRC_C) $(PY_SRC_C)
+SRC_C = $(CORE_SRC_C) $(MODS_SRC_C) $(PY_SRC_C)
 
 OBJ = $(PY_O) $(addprefix $(BUILD)/, $(SRC_C:.c=.o))
 
