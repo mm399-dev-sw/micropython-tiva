@@ -27,15 +27,13 @@
 							</builder>
 							<tool id="cdt.managedbuild.tool.gnu.cross.c.compiler.1205696932" name="Cross GCC Compiler" superClass="cdt.managedbuild.tool.gnu.cross.c.compiler">
 								<option id="gnu.c.compiler.option.include.paths.1310175372" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/micropython/TivaWare}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/micropython/TivaWare/driverlib}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/micropython/build/genhdr}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/micropython/build}&quot;"/>
 									<listOptionValue builtIn="false" value="../../../py"/>
 									<listOptionValue builtIn="false" value="../../../"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/micropython/periph}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/micropython/misc}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/micropython/TivaWare/inc}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;C:\ti\TivaWare_C_Series-2.1.4.178&quot;"/>
 								</option>
 								<option id="gnu.c.compiler.option.preprocessor.def.symbols.1581719304" name="Defined symbols (-D)" superClass="gnu.c.compiler.option.preprocessor.def.symbols" useByScannerDiscovery="false" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="PART_TM4C123GHPM"/>

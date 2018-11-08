@@ -25,7 +25,7 @@ PROJECT_NAME = uPY_TM4C123
 
 # Location of the TivaWare library
 # Can be pointed to a newer version if desired
-TIVAWARE_LIB = TivaWare
+TIVAWARE_LIB = "/mnt/c/ti/TivaWare_C_Series-2.1.4.178"
 
 # qstr definitions (must come before including py.mk)
 QSTR_DEFS = qstrdefsport.h $(BUILD)/pins_qstr.h
@@ -86,7 +86,7 @@ LIBM := ${shell ${CC} ${CFLAGS} -print-file-name=libm.a}
 
 # Module sources
 MODS_SRC_C = $(addprefix mods/,\
-	pybpin_.c
+	test.c \
 	)
 
 # QSTR sources
