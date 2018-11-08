@@ -36,22 +36,23 @@ static inline mp_uint_t mp_hal_ticks_cpu(void) {
 // C-level pin HAL
 
 #include "pin.h"
+#include "driverlib/gpio.h"
+#include "inc/hw_gpio.h"
+#include "driverlib/sysctl.h"
+#include "driverlib/rom_map.h"
+#include "driverlib/rom.h"
 
 #define MP_HAL_PIN_FMT                  "%q"
-#define MP_HAL_PIN_MODE_INPUT           (0)
-#define MP_HAL_PIN_MODE_OUTPUT          (1)
-#define MP_HAL_PIN_MODE_ALT             (2)
-#define MP_HAL_PIN_MODE_ANALOG          (3)
-#if defined(GPIO_ASCR_ASC0)
-#define MP_HAL_PIN_MODE_ADC             (11)
-#else
-#define MP_HAL_PIN_MODE_ADC             (3)
-#endif
-#define MP_HAL_PIN_MODE_OPEN_DRAIN      (5)
-#define MP_HAL_PIN_MODE_ALT_OPEN_DRAIN  (6)
-#define MP_HAL_PIN_PULL_NONE            (GPIO_NOPULL)
-#define MP_HAL_PIN_PULL_UP              (GPIO_PULLUP)
-#define MP_HAL_PIN_PULL_DOWN            (GPIO_PULLDOWN)
+#define MP_HAL_PIN_MODE_INPUT           (GPIO_DIR_MODE_IN)
+#define MP_HAL_PIN_MODE_OUTPUT          (GPIO_DIR_MODE_OUT)
+#define MP_HAL_PIN_MODE_ALT             (GPIO_DIR_MODE_HW)
+#define MP_HAL_PIN_MODE_ANALOG          (GPIO_PIN_TYPE_ANALOG)
+#define MP_HAL_PIN_MODE_ADC             (GPIO_PIN_TYPE_ANALOG)
+#define MP_HAL_PIN_MODE_OPEN_DRAIN      (GPIO_PIN_TYPE_OD)
+#define MP_HAL_PIN_MODE_ALT_OPEN_DRAIN  (GPIO_PIN_TYPE_OD)
+#define MP_HAL_PIN_PULL_NONE            (GPIO_PIN_TYPE_STD)
+#define MP_HAL_PIN_PULL_UP              (GPIO_PIN_TYPE_STD_WPU)
+#define MP_HAL_PIN_PULL_DOWN            (GPIO_PIN_TYPE_STD_WPD)
 
 #define mp_hal_pin_obj_t const pin_obj_t*
 #define mp_hal_get_pin_obj(o)   pin_find(o)
@@ -70,6 +71,8 @@ static inline mp_uint_t mp_hal_ticks_cpu(void) {
 #define mp_hal_pin_od_high(p)   mp_hal_pin_high(p)
 #define mp_hal_pin_read(p)      (((p)->gpio->IDR >> (p)->pin) & 1)
 #define mp_hal_pin_write(p, v)  do { if (v) { mp_hal_pin_high(p); } else { mp_hal_pin_low(p); } } while (0)
+
+#define
 
 void mp_hal_gpio_clock_enable(GPIO_TypeDef *gpio);
 void mp_hal_pin_config(mp_hal_pin_obj_t pin, uint32_t mode, uint32_t pull, uint32_t alt);

@@ -34,6 +34,7 @@
 #include "pin.h"
 #include "extint.h"
 
+
 /// \moduleref pyb
 /// \class Pin - control I/O pins
 ///
@@ -188,8 +189,9 @@ STATIC void pin_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t
     mp_printf(print, "Pin(Pin.cpu.%q, mode=Pin.", self->name);
 
     uint32_t mode = pin_get_mode(self);
+    uint32_t type = pin_get_type(self);
 
-    if (mode == GPIO_MODE_ANALOG) {
+    if (type == GPIO_PIN_TYPE_ANALOG) {
         // analog
         mp_print_str(print, "ANALOG)");
 
@@ -197,15 +199,15 @@ STATIC void pin_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t
         // IO mode
         bool af = false;
         qstr mode_qst;
-        if (mode == GPIO_MODE_INPUT) {
+        if (mode == GPIO_DIR_MODE_IN) {
             mode_qst = MP_QSTR_IN;
-        } else if (mode == GPIO_MODE_OUTPUT_PP) {
+        } else if (mode == GPIO_DIR_MODE_OUT && (type == GPIO_PIN_TYPE_STD || type == GPIO_PIN_TYPE_STD_WPU || type == GPIO_PIN_TYPE_STD_WPD)) {
             mode_qst = MP_QSTR_OUT;
-        } else if (mode == GPIO_MODE_OUTPUT_OD) {
+        } else if (mode == GPIO_DIR_MODE_OUT && type == GPIO_PIN_TYPE_OD) {
             mode_qst = MP_QSTR_OPEN_DRAIN;
         } else {
             af = true;
-            if (mode == GPIO_MODE_AF_PP) {
+            if (mode == GPIO_MODE_HW && (type == GPIO_PIN_TYPE_STD || type == GPIO_PIN_TYPE_STD_WPU || type == GPIO_PIN_TYPE_STD_WPD)) {
                 mode_qst = MP_QSTR_ALT;
             } else {
                 mode_qst = MP_QSTR_ALT_OPEN_DRAIN;
@@ -216,9 +218,9 @@ STATIC void pin_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t
         // pull mode
         qstr pull_qst = MP_QSTR_NULL;
         uint32_t pull = pin_get_pull(self);
-        if (pull == GPIO_PULLUP) {
+        if (pull == GPIO_PIN_TYPE_STD_WPU) {
             pull_qst = MP_QSTR_PULL_UP;
-        } else if (pull == GPIO_PULLDOWN) {
+        } else if (pull == GPIO_PIN_TYPE_STD_WPD) {
             pull_qst = MP_QSTR_PULL_DOWN;
         }
         if (pull_qst != MP_QSTR_NULL) {
@@ -346,7 +348,7 @@ STATIC mp_obj_t pin_obj_init_helper(const pin_obj_t *self, size_t n_args, const 
     }
 
     // get pull mode
-    uint pull = GPIO_NOPULL;
+    uint pull = 0;
     if (args[1].u_obj != mp_const_none) {
         pull = mp_obj_get_int(args[1].u_obj);
     }
@@ -354,12 +356,17 @@ STATIC mp_obj_t pin_obj_init_helper(const pin_obj_t *self, size_t n_args, const 
         nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_ValueError, "invalid pin pull: %d", pull));
     }
 
+    uint strength = 0;
+    if (args[2].u_obj != mp_const_none {
+        strength = mp_obj_get_int(args[2])
+    })
+
     // get af (alternate function); alt-arg overrides af-arg
     mp_int_t af = args[4].u_int;
     if (af == -1) {
         af = args[2].u_int;
     }
-    if ((mode == GPIO_MODE_AF_PP || mode == GPIO_MODE_AF_OD) && !IS_GPIO_AF(af)) {
+    if (mode == GPIO_DIR_MODE_HW && !IS_GPIO_AF(af)) {
         nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_ValueError, "invalid pin af: %d", af));
     }
 
@@ -376,9 +383,15 @@ STATIC mp_obj_t pin_obj_init_helper(const pin_obj_t *self, size_t n_args, const 
     GPIO_InitStructure.Pin = self->pin_mask;
     GPIO_InitStructure.Mode = mode;
     GPIO_InitStructure.Pull = pull;
-    GPIO_InitStructure.Speed = GPIO_SPEED_FREQ_HIGH;
     GPIO_InitStructure.Alternate = af;
     HAL_GPIO_Init(self->gpio, &GPIO_InitStructure);
+    // Additional query if analog
+    if (af) {
+        GPIOPinConfigure(GPIO_FETCH_PIN_CONF(pin, af));
+    } else {
+        GPIODirModeSet(self->gpio, self->pin_mask, mode);
+        GPIOPadConfigSet(self->gpio, self->pin_mask, strength, pull)
+    }
 
     return mp_const_none;
 }

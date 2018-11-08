@@ -27,16 +27,14 @@
 // This file contains pin definitions that are specific to the tm4c123 port.
 // This file should only ever be #included by pin.h and not directly.
 
-#include "inc/hw_gpio.h"
-#include "driverlib/gpio.h"
 
 enum {
-    PORT_A = GPIO_PORTA_AHB_BASE,
-    PORT_B = GPIO_PORTB_AHB_BASE,
-    PORT_C = GPIO_PORTC_AHB_BASE,
-    PORT_D = GPIO_PORTD_AHB_BASE,
-    PORT_E = GPIO_PORTE_AHB_BASE,
-    PORT_F = GPIO_PORTF_AHB_BASE,
+    PORT_A = 0 ,
+    PORT_B ,
+    PORT_C ,
+    PORT_D ,
+    PORT_E ,
+    PORT_F ,
 };
 
 enum {
