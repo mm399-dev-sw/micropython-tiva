@@ -86,8 +86,7 @@ LIBM := ${shell ${CC} ${CFLAGS} -print-file-name=libm.a}
 
 # Module sources
 MODS_SRC_C = $(addprefix mods/,\
-	test.c \
-	modmachine.c \
+	pybpin_.c
 	)
 
 # QSTR sources
