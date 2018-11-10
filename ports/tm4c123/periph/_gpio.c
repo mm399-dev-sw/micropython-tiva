@@ -41,8 +41,9 @@ void gpio_init(periph_gpio_t *gpio, int pin, int mode, int pull, int alt) {
     }
 
     if (pull == GPIO_PULL_UP) { gpio->PUR = (gpio->PUR & ~(1 << pin)) | (1 << pin);}
-    else if (pull == GPIO_PULL_DOWN) { gpio->PDR = (gpio->PDR & ~(1 << pin)) | (1 << pin);}
-    else if (pull == GPIO_PULL_NONE) {
+    else if (pull == GPIO_PULL_DOWN) {
+        gpio->PDR = (gpio->PDR & ~(1 << pin)) | (1 << pin);
+    } else if (pull == GPIO_PULL_NONE) {
         gpio->PUR &= ~(1 << pin);
         gpio->PDR &= ~(1 << pin);
         gpio->ODR &= (1 << pin);

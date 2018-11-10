@@ -26,8 +26,6 @@
 #ifndef MICROPY_INCLUDED_STM32_I2CSLAVE_H
 #define MICROPY_INCLUDED_STM32_I2CSLAVE_H
 
-#include STM32_HAL_H
-
 typedef I2C_TypeDef i2c_slave_t;
 
 void i2c_slave_init_helper(i2c_slave_t *i2c, int addr);

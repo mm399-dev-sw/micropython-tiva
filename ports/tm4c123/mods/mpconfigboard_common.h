@@ -27,7 +27,7 @@
 // Common settings and defaults for board configuration.
 // The defaults here should be overridden in mpconfigboard.h.
 
-#include STM32_HAL_H
+//#include STM32_HAL_H
 
 /*****************************************************************************/
 // Feature settings with defaults
@@ -200,7 +200,7 @@
 #endif
 
 // Pin definition header file
-#define MICROPY_PIN_DEFS_PORT_H "pin_defs_stm32.h"
+#define MICROPY_PIN_DEFS_PORT_H "pin_defs_tm4c123.h"
 
 // D-cache clean/invalidate helpers
 #if __DCACHE_PRESENT == 1

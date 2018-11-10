@@ -25,10 +25,11 @@ PROJECT_NAME = uPY_TM4C123
 
 # Location of the TivaWare library
 # Can be pointed to a newer version if desired
-TIVAWARE_LIB = "/mnt/c/ti/TivaWare_C_Series-2.1.4.178"
+TIVAWARE_LIB = /mnt/c/ti/TivaWare_C_Series-2.1.4.178
 
 # qstr definitions (must come before including py.mk)
 QSTR_DEFS = qstrdefsport.h $(BUILD)/pins_qstr.h
+QSTR_GLOBAL_DEPENDENCIES = mpconfigboard_common.h board/mpconfigboard.h
 
 # include py core make definitions
 include $(TOP)/py/py.mk
@@ -86,7 +87,7 @@ LIBM := ${shell ${CC} ${CFLAGS} -print-file-name=libm.a}
 
 # Module sources
 MODS_SRC_C = $(addprefix mods/,\
-	test.c \
+	pin.c \
 	)
 
 # QSTR sources
@@ -106,7 +107,7 @@ PY_SRC_C = \
 	_frozen_mpy.c 
 		#lib/utils/printf.c 
 		
-SRC_C = $(CORE_SRC_C) $(MODS_SRC_C) $(PY_SRC_C)
+SRC_C = $(CORE_SRC_C) $(PY_SRC_C) $(MODS_SRC_C) 
 
 OBJ = $(PY_O) $(addprefix $(BUILD)/, $(SRC_C:.c=.o))
 

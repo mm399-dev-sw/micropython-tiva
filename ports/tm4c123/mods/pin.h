@@ -36,6 +36,7 @@
 #include "driverlib/sysctl.h"
 #include "driverlib/rom_map.h"
 #include "driverlib/rom.h"
+#include "mphalport.h"
 
 
 typedef struct {
@@ -57,7 +58,7 @@ typedef struct {
   uint32_t adc_channel : 5; // Some ARM processors use 32 bits/PORT
   uint32_t adc_num  : 3;    // 1 bit per ADC
   uint32_t pin_mask;
-  pin_gpio_t *gpio;
+  GPIO_TypeDef *gpio;
   const pin_af_obj_t *af;
 } pin_obj_t;
 

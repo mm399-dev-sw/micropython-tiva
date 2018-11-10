@@ -26,15 +26,68 @@
 
 // This file contains pin definitions that are specific to the tm4c123 port.
 // This file should only ever be #included by pin.h and not directly.
+#include <stdint.h>
 
+typedef struct {
+    uint32_t _1[255];
+    volatile uint32_t DATA;
+    volatile uint32_t DIR;
+    volatile uint32_t IS;
+    volatile uint32_t IBE;
+    volatile uint32_t IEV;
+    volatile uint32_t IM;
+    volatile uint32_t RIS;
+    volatile uint32_t MIS;
+    volatile uint32_t ICR;
+    volatile uint32_t AFSEL;
+    uint32_t _2[55];
+    volatile uint32_t DR2R;
+    volatile uint32_t DR4R;
+    volatile uint32_t DR8R;
+    volatile uint32_t ODR;
+    volatile uint32_t PUR;
+    volatile uint32_t PDR;
+    volatile uint32_t SLR;
+    volatile uint32_t DEN;
+    volatile uint32_t LOCK;
+    volatile uint32_t CR;
+    volatile uint32_t AMSEL;
+    volatile uint32_t PCTL;
+    volatile uint32_t ADCCTL;
+    volatile uint32_t DMACTL;
+} periph_gpio_t;
 
 enum {
-    PORT_A = 0 ,
-    PORT_B ,
-    PORT_C ,
-    PORT_D ,
-    PORT_E ,
-    PORT_F ,
+    GPIO_DRIVE_2MA = 0,
+    GPIO_DRIVE_4MA,
+    GPIO_DRIVE_8MA
+};
+
+// simple GPIO interface
+#define GPIO_MODE_IN (0)
+#define GPIO_MODE_OUT (1)
+#define GPIO_MODE_ALT (2)
+
+#define GPIO_PULL_UP (0)
+#define GPIO_PULL_DOWN (1)
+#define GPIO_PULL_NONE (2)
+
+
+
+#define GPIOA  ((periph_gpio_t*) 0x40058000)
+#define GPIOB  ((periph_gpio_t*) 0x40059000)
+#define GPIOC  ((periph_gpio_t*) 0x4005A000)
+#define GPIOD  ((periph_gpio_t*) 0x4005B000)
+#define GPIOE  ((periph_gpio_t*) 0x4005C000)
+#define GPIOF  ((periph_gpio_t*) 0x4005D000)
+
+enum {
+    PORT_A = GPIOA ,
+    PORT_B = GPIOB,
+    PORT_C = GPIOC,
+    PORT_D = GPIOD,
+    PORT_E = GPIOE,
+    PORT_F = GPIOF,
 };
 
 enum {
@@ -143,98 +196,15 @@ enum {
     AF_PIN_TYPE_ADC_AIN11,
 };
 
-enum {
-  PORT_A,
-  PORT_B,
-  PORT_C,
-  PORT_D,
-  PORT_E,
-  PORT_F,
-  PORT_G,
-  PORT_H,
-  PORT_I,
-  PORT_J,
-  PORT_K,
-};
 
-// Must have matching entries in SUPPORTED_FN in boards/make-pins.py
-enum {
-  AF_FN_TIM,
-  AF_FN_I2C,
-  AF_FN_USART,
-  AF_FN_UART = AF_FN_USART,
-  AF_FN_SPI,
-  AF_FN_I2S,
-  AF_FN_SDMMC,
-  AF_FN_CAN,
-};
 
-enum {
-  AF_PIN_TYPE_TIM_CH1 = 0,
-  AF_PIN_TYPE_TIM_CH2,
-  AF_PIN_TYPE_TIM_CH3,
-  AF_PIN_TYPE_TIM_CH4,
-  AF_PIN_TYPE_TIM_CH1N,
-  AF_PIN_TYPE_TIM_CH2N,
-  AF_PIN_TYPE_TIM_CH3N,
-  AF_PIN_TYPE_TIM_CH1_ETR,
-  AF_PIN_TYPE_TIM_ETR,
-  AF_PIN_TYPE_TIM_BKIN,
-
-  AF_PIN_TYPE_I2C_SDA = 0,
-  AF_PIN_TYPE_I2C_SCL,
-
-  AF_PIN_TYPE_USART_TX = 0,
-  AF_PIN_TYPE_USART_RX,
-  AF_PIN_TYPE_USART_CTS,
-  AF_PIN_TYPE_USART_RTS,
-  AF_PIN_TYPE_USART_CK,
-  AF_PIN_TYPE_UART_TX  = AF_PIN_TYPE_USART_TX,
-  AF_PIN_TYPE_UART_RX  = AF_PIN_TYPE_USART_RX,
-  AF_PIN_TYPE_UART_CTS = AF_PIN_TYPE_USART_CTS,
-  AF_PIN_TYPE_UART_RTS = AF_PIN_TYPE_USART_RTS,
-
-  AF_PIN_TYPE_SPI_MOSI = 0,
-  AF_PIN_TYPE_SPI_MISO,
-  AF_PIN_TYPE_SPI_SCK,
-  AF_PIN_TYPE_SPI_NSS,
-
-  AF_PIN_TYPE_I2S_CK = 0,
-  AF_PIN_TYPE_I2S_MCK,
-  AF_PIN_TYPE_I2S_SD,
-  AF_PIN_TYPE_I2S_WS,
-  AF_PIN_TYPE_I2S_EXTSD,
-
-  AF_PIN_TYPE_SDMMC_CK = 0,
-  AF_PIN_TYPE_SDMMC_CMD,
-  AF_PIN_TYPE_SDMMC_D0,
-  AF_PIN_TYPE_SDMMC_D1,
-  AF_PIN_TYPE_SDMMC_D2,
-  AF_PIN_TYPE_SDMMC_D3,
-
-  AF_PIN_TYPE_CAN_TX = 0,
-  AF_PIN_TYPE_CAN_RX,
-};
 
 // The HAL uses a slightly different naming than we chose, so we provide
 // some #defines to massage things. Also I2S and SPI share the same
 // peripheral.
 
-#define GPIO_AF5_I2S2   GPIO_AF5_SPI2
-#define GPIO_AF5_I2S3   GPIO_AF5_I2S3ext
-#define GPIO_AF6_I2S2   GPIO_AF6_I2S2ext
-#define GPIO_AF6_I2S3   GPIO_AF6_SPI3
-#define GPIO_AF7_I2S2   GPIO_AF7_SPI2
-#define GPIO_AF7_I2S3   GPIO_AF7_I2S3ext
 
-#define I2S2  SPI2
-#define I2S3  SPI3
 
-enum {
-  PIN_ADC1  = (1 << 0),
-  PIN_ADC2  = (1 << 1),
-  PIN_ADC3  = (1 << 2),
-};
 
-typedef GPIO_TypeDef pin_gpio_t;
+typedef periph_gpio_t GPIO_TypeDef;
 

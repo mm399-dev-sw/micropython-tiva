@@ -12,6 +12,7 @@
 #include "py/mperrno.h"
 #include "lib/utils/pyexec.h"
 //#include "mods/pybpin.h"
+#include "mods/mpconfigport.h"
 #include "inc/hw_types.h"
 #include "inc/hw_gpio.h"
 #include "inc/hw_ints.h"

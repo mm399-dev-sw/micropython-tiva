@@ -1,5 +1,9 @@
 // We use the ST Cube HAL library for most hardware peripherals
-#include STM32_HAL_H
+#include "driverlib/gpio.h"
+#include "inc/hw_gpio.h"
+#include "driverlib/sysctl.h"
+#include "driverlib/rom_map.h"
+#include "driverlib/rom.h"
 #include "pin.h"
 
 extern const unsigned char mp_hal_status_to_errno_table[4];
@@ -36,23 +40,24 @@ static inline mp_uint_t mp_hal_ticks_cpu(void) {
 // C-level pin HAL
 
 #include "pin.h"
-#include "driverlib/gpio.h"
-#include "inc/hw_gpio.h"
-#include "driverlib/sysctl.h"
-#include "driverlib/rom_map.h"
-#include "driverlib/rom.h"
 
-#define MP_HAL_PIN_FMT                  "%q"
-#define MP_HAL_PIN_MODE_INPUT           (GPIO_DIR_MODE_IN)
-#define MP_HAL_PIN_MODE_OUTPUT          (GPIO_DIR_MODE_OUT)
-#define MP_HAL_PIN_MODE_ALT             (GPIO_DIR_MODE_HW)
-#define MP_HAL_PIN_MODE_ANALOG          (GPIO_PIN_TYPE_ANALOG)
-#define MP_HAL_PIN_MODE_ADC             (GPIO_PIN_TYPE_ANALOG)
-#define MP_HAL_PIN_MODE_OPEN_DRAIN      (GPIO_PIN_TYPE_OD)
-#define MP_HAL_PIN_MODE_ALT_OPEN_DRAIN  (GPIO_PIN_TYPE_OD)
-#define MP_HAL_PIN_PULL_NONE            (GPIO_PIN_TYPE_STD)
-#define MP_HAL_PIN_PULL_UP              (GPIO_PIN_TYPE_STD_WPU)
-#define MP_HAL_PIN_PULL_DOWN            (GPIO_PIN_TYPE_STD_WPD)
+
+#define MP_HAL_PIN_FMT              "%q"
+#define MP_HAL_DIR_INPUT            (GPIO_DIR_MODE_IN)
+#define MP_HAL_DIR_OUTPUT           (GPIO_DIR_MODE_OUT)
+#define MP_HAL_DIR_ALT              (GPIO_DIR_MODE_HW)
+#define MP_HAL_TYPE_ANALOG          (GPIO_PIN_TYPE_ANALOG)
+#define MP_HAL_TYPE_OPEN_DRAIN      (GPIO_PIN_TYPE_OD)
+#define MP_HAL_TYPE_ALT_OPEN_DRAIN  (GPIO_PIN_TYPE_OD)
+#define MP_HAL_TYPE_PULL_NONE       (GPIO_PIN_TYPE_STD)
+#define MP_HAL_TYPE_PULL_UP         (GPIO_PIN_TYPE_STD_WPU)
+#define MP_HAL_TYPE_PULL_DOWN       (GPIO_PIN_TYPE_STD_WPD)
+
+#define MP_HAL_STREN_WEAK           (GPIO_STRENGTH_2MA)
+#define MP_HAL_STREN_MED            (GPIO_STRENGTH_4MA)
+#define MP_HAL_STREN_STRONG         (GPIO_STRENGTH_8MA)
+
+#define GPIO_FETCH_PIN_CONF(p, a)
 
 #define mp_hal_pin_obj_t const pin_obj_t*
 #define mp_hal_get_pin_obj(o)   pin_find(o)
@@ -60,21 +65,16 @@ static inline mp_uint_t mp_hal_ticks_cpu(void) {
 #define mp_hal_pin_input(p)     mp_hal_pin_config((p), MP_HAL_PIN_MODE_INPUT, MP_HAL_PIN_PULL_NONE, 0)
 #define mp_hal_pin_output(p)    mp_hal_pin_config((p), MP_HAL_PIN_MODE_OUTPUT, MP_HAL_PIN_PULL_NONE, 0)
 #define mp_hal_pin_open_drain(p) mp_hal_pin_config((p), MP_HAL_PIN_MODE_OPEN_DRAIN, MP_HAL_PIN_PULL_NONE, 0)
-#if defined(STM32H7)
-#define mp_hal_pin_high(p)      (((p)->gpio->BSRRL) = (p)->pin_mask)
-#define mp_hal_pin_low(p)       (((p)->gpio->BSRRH) = (p)->pin_mask)
-#else
-#define mp_hal_pin_high(p)      (((p)->gpio->BSRR) = (p)->pin_mask)
-#define mp_hal_pin_low(p)       (((p)->gpio->BSRR) = ((p)->pin_mask << 16))
-#endif
+
+#define mp_hal_pin_high(p)      (MAP_GPIOPinWrite((p)->gpio, (p)->pin, (p)->pin))
+#define mp_hal_pin_low(p)       (MAP_GPIOPinWrite((p)->gpio, (p)->pin, 0))
+
 #define mp_hal_pin_od_low(p)    mp_hal_pin_low(p)
 #define mp_hal_pin_od_high(p)   mp_hal_pin_high(p)
-#define mp_hal_pin_read(p)      (((p)->gpio->IDR >> (p)->pin) & 1)
+#define mp_hal_pin_read(p)      (MAP_GPIOPinRead((p)->gpio, (p)->pin))
 #define mp_hal_pin_write(p, v)  do { if (v) { mp_hal_pin_high(p); } else { mp_hal_pin_low(p); } } while (0)
 
-#define
 
 void mp_hal_gpio_clock_enable(GPIO_TypeDef *gpio);
-void mp_hal_pin_config(mp_hal_pin_obj_t pin, uint32_t mode, uint32_t pull, uint32_t alt);
-bool mp_hal_pin_config_alt(mp_hal_pin_obj_t pin, uint32_t mode, uint32_t pull, uint8_t fn, uint8_t unit);
-void mp_hal_pin_config_speed(mp_hal_pin_obj_t pin_obj, uint32_t speed);
+void mp_hal_pin_config(mp_hal_pin_obj_t pin, uint32_t dir, uint32_t type, uint32_t strength, uint32_t alt);
+bool mp_hal_pin_config_alt(mp_hal_pin_obj_t pin, uint32_t dir, uint32_t type, uint8_t fn, uint8_t unit);

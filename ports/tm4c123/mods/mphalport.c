@@ -1,5 +1,5 @@
 #include <string.h>
-
+#include "mphalport.h"
 #include "py/runtime.h"
 #include "py/mperrno.h"
 #include "py/mphal.h"
@@ -109,21 +109,49 @@ void mp_hal_gpio_clock_enable(GPIO_TypeDef *gpio) {
     while(!MAP_SysCtlPeripheralReady(gpio)) {};
 }
 
-void mp_hal_pin_config(mp_hal_pin_obj_t pin_obj, uint32_t mode, uint32_t pull, uint32_t alt) {
+void mp_hal_pin_config(mp_hal_pin_obj_t pin_obj, uint32_t dir, uint32_t type, uint32_t strength, uint32_t alt) {
     GPIO_TypeDef *gpio = pin_obj->gpio;
     uint32_t pin = pin_obj->pin;
     mp_hal_gpio_clock_enable(gpio);
-    gpio->MODER = (gpio->MODER & ~(3 << (2 * pin))) | ((mode & 3) << (2 * pin));
-    #if defined(GPIO_ASCR_ASC0)
-    // The L4 has a special analog switch to connect the GPIO to the ADC
-    gpio->OTYPER = (gpio->OTYPER & ~(1 << pin)) | (((mode >> 2) & 1) << pin);
-    gpio->ASCR = (gpio->ASCR & ~(1 << pin)) | ((mode >> 3) & 1) << pin;
-    #else
-    gpio->OTYPER = (gpio->OTYPER & ~(1 << pin)) | ((mode >> 2) << pin);
-    #endif
-    gpio->OSPEEDR = (gpio->OSPEEDR & ~(3 << (2 * pin))) | (2 << (2 * pin)); // full speed
-    gpio->PUPDR = (gpio->PUPDR & ~(3 << (2 * pin))) | (pull << (2 * pin));
-    gpio->AFR[pin >> 3] = (gpio->AFR[pin >> 3] & ~(15 << (4 * (pin & 7)))) | (alt << (4 * (pin & 7)));
+//    MAP_GPIODirModeSet(gpio, pin, mode);
+//    // gpio->MODER = (gpio->MODER & ~(3 << (2 * pin))) | ((mode & 3) << (2 * pin));
+//
+//    //gpio->OTYPER = (gpio->OTYPER & ~(1 << pin)) | ((mode >> 2) << pin);
+//    //gpio->OSPEEDR = (gpio->OSPEEDR & ~(3 << (2 * pin))) | (2 << (2 * pin)); // full speed
+//    MAP_GPIOPadConfigSet(gpio, pin, strength, pull);
+//    //gpio->PUPDR = (gpio->PUPDR & ~(3 << (2 * pin))) | (pull << (2 * pin));
+//    //gpio->AFR[pin >> 3] = (gpio->AFR[pin >> 3] & ~(15 << (4 * (pin & 7)))) | (alt << (4 * (pin & 7)));
+
+    if ( pin >= 8 ) return;
+    // does not consider the locked pins, which need special treatment
+    if (type == MP_HAL_TYPE_ANALOG) {
+        gpio->DEN &= ~(1 << pin);
+        gpio->AMSEL |= (1 << pin);
+    } else {
+        gpio->AMSEL &= ~(1 << pin);
+        gpio->DEN &= ~(1 << pin);
+    }
+
+    if (dir == MP_HAL_DIR_ALT) {
+        gpio->AFSEL |= (1 << pin);
+        gpio->PCTL = (gpio->PCTL & ~(0x000000F << (4 * pin))) | (alt << (4 * pin));
+    } else {
+        gpio->AFSEL &= ~(1 << pin);
+        gpio->DIR = (gpio->DIR & ~(1 << pin)) | ((dir & 1) << pin);
+    }
+
+    if (type == MP_HAL_TYPE_PULL_UP) {
+        gpio->PUR = (gpio->PUR & ~(1 << pin)) | (1 << pin);
+    } else if (type == MP_HAL_TYPE_PULL_DOWN) {
+        gpio->PDR = (gpio->PDR & ~(1 << pin)) | (1 << pin);
+    } else if (type == MP_HAL_TYPE_PULL_NONE) {
+        gpio->PUR &= ~(1 << pin);
+        gpio->PDR &= ~(1 << pin);
+    } else if (type == MP_HAL_TYPE_OPEN_DRAIN) {
+        gpio->PUR &= ~(1 << pin);
+        gpio->PDR &= ~(1 << pin);
+        gpio->ODR &= (1 << pin);
+    }
 }
 
 bool mp_hal_pin_config_alt(mp_hal_pin_obj_t pin, uint32_t mode, uint32_t pull, uint8_t fn, uint8_t unit) {
@@ -133,10 +161,4 @@ bool mp_hal_pin_config_alt(mp_hal_pin_obj_t pin, uint32_t mode, uint32_t pull, u
     }
     mp_hal_pin_config(pin, mode, pull, af->idx);
     return true;
-}
-
-void mp_hal_pin_config_speed(mp_hal_pin_obj_t pin_obj, uint32_t speed) {
-    GPIO_TypeDef *gpio = pin_obj->gpio;
-    uint32_t pin = pin_obj->pin;
-    gpio->OSPEEDR = (gpio->OSPEEDR & ~(3 << (2 * pin))) | (speed << (2 * pin));
 }
