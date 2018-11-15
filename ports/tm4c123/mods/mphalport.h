@@ -1,4 +1,5 @@
 // We use the ST Cube HAL library for most hardware peripherals
+#include <stdbool.h>
 #include "driverlib/gpio.h"
 #include "inc/hw_gpio.h"
 #include "driverlib/sysctl.h"
@@ -8,7 +9,7 @@
 
 extern const unsigned char mp_hal_status_to_errno_table[4];
 
-NORETURN void mp_hal_raise(HAL_StatusTypeDef status);
+NORETURN void mp_hal_raise(int status);
 void mp_hal_set_interrupt_char(int c); // -1 to disable
 
 // timing functions
@@ -52,6 +53,12 @@ static inline mp_uint_t mp_hal_ticks_cpu(void) {
 #define MP_HAL_TYPE_PULL_NONE       (GPIO_PIN_TYPE_STD)
 #define MP_HAL_TYPE_PULL_UP         (GPIO_PIN_TYPE_STD_WPU)
 #define MP_HAL_TYPE_PULL_DOWN       (GPIO_PIN_TYPE_STD_WPD)
+
+#define MP_HAL_INT_RISING           (GPIO_RISING_EDGE)
+#define MP_HAL_INT_FALLING          (GPIO_FALLING_EDGE)
+#define MP_HAL_INT_BOTH             (GPIO_BOTH_EDGES)
+#define MP_HAL_INT_HIGH             (GPIO_HIGH_LEVEL)
+#define MP_HAL_INT_LOW              (GPIO_LOW_LEVEL)
 
 #define MP_HAL_STREN_WEAK           (GPIO_STRENGTH_2MA)
 #define MP_HAL_STREN_MED            (GPIO_STRENGTH_4MA)

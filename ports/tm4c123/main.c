@@ -1,8 +1,10 @@
 #include <stdint.h>
 #include <stdio.h>
+#include <stdbool.h>
 #include <string.h>
 #include "cmsis_gcc.h"
 #include "driverlib/rom_map.h"
+#include "board/mpconfigboard.h"
 
 
 #include "py/compile.h"
@@ -13,6 +15,7 @@
 #include "lib/utils/pyexec.h"
 //#include "mods/pybpin.h"
 #include "mods/mpconfigport.h"
+
 #include "inc/hw_types.h"
 #include "inc/hw_gpio.h"
 #include "inc/hw_ints.h"

@@ -82,12 +82,12 @@ enum {
 #define GPIOF  ((periph_gpio_t*) 0x4005D000)
 
 enum {
-    PORT_A = GPIOA ,
-    PORT_B = GPIOB,
-    PORT_C = GPIOC,
-    PORT_D = GPIOD,
-    PORT_E = GPIOE,
-    PORT_F = GPIOF,
+    PORT_A = 0x40058000,
+    PORT_B = 0x40059000,
+    PORT_C = 0x4005A000,
+    PORT_D = 0x4005B000,
+    PORT_E = 0x4005C000,
+    PORT_F = 0x4005D000,
 };
 
 enum {
