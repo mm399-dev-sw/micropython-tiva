@@ -34,6 +34,7 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/micropython/periph}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/micropython/misc}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;C:\ti\TivaWare_C_Series-2.1.4.178&quot;"/>
+									<listOptionValue builtIn="false" value="/home/raphael/ti/tivaware_c_series_2_1_4_178"/>
 								</option>
 								<option id="gnu.c.compiler.option.preprocessor.def.symbols.1581719304" name="Defined symbols (-D)" superClass="gnu.c.compiler.option.preprocessor.def.symbols" useByScannerDiscovery="false" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="PART_TM4C123GHPM"/>
