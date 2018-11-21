@@ -27,13 +27,13 @@
 							</builder>
 							<tool id="cdt.managedbuild.tool.gnu.cross.c.compiler.1205696932" name="Cross GCC Compiler" superClass="cdt.managedbuild.tool.gnu.cross.c.compiler">
 								<option id="gnu.c.compiler.option.include.paths.1310175372" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/micropython/TivaWare}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/micropython/TivaWare/driverlib}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/micropython/build/genhdr}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/micropython/build}&quot;"/>
 									<listOptionValue builtIn="false" value="../../../py"/>
 									<listOptionValue builtIn="false" value="../../../"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/micropython/periph}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;C:\ti\TivaWare_C_Series-2.1.4.178&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;C:\ti\TivaWare_C_Series-2.1.4.178\driverlib&quot;"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.1735906583" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
 							</tool>

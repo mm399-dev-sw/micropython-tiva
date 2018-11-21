@@ -1,6 +1,9 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include "cmsis_gcc.h"
+#include "driverlib/rom_map.h"
+
 
 #include "py/compile.h"
 #include "py/runtime.h"
@@ -8,6 +11,16 @@
 #include "py/gc.h"
 #include "py/mperrno.h"
 #include "lib/utils/pyexec.h"
+//#include "mods/pybpin.h"
+#include "inc/hw_types.h"
+#include "inc/hw_gpio.h"
+#include "inc/hw_ints.h"
+#include "inc/hw_memmap.h"
+#include "inc/hw_hibernate.h"
+#include "driverlib/sysctl.h"
+#include "driverlib/pin_map.h"
+#include "driverlib/gpio.h"
+#include "driverlib/rom_map.h"
 
 #if MICROPY_ENABLE_COMPILER
 void do_str(const char *src, mp_parse_input_kind_t input_kind) {
@@ -279,43 +292,7 @@ typedef struct {
 
 #define SYSCTL ((periph_sysctl_t*)  0x400FE000)
 
-// simple GPIO interface
-#define GPIO_MODE_IN (0)
-#define GPIO_MODE_OUT (1)
-#define GPIO_MODE_ALT (2)
 
-#define GPIO_PULL_UP (0)
-#define GPIO_PULL_DOWN (1)
-#define GPIO_PULL_NONE (2)
-void gpio_init(periph_gpio_t *gpio, int pin, int mode, int pull, int alt) {
-    if ( pin >= 8 ) return;
-    // does not consider the locked pins, which need special treatment
-    if (mode == GPIO_MODE_ALT) {
-        gpio->DEN |= (1 << pin);
-        gpio->AFSEL |= (1 << pin);
-        gpio->PCTL = (gpio->PCTL & ~(0x000000F << (4 * pin))) | (alt << (4 * pin));
-    }
-    else {
-        gpio->AFSEL &= ~(1 << pin);
-        gpio->DEN |= (1 << pin);
-        gpio->DIR = (gpio->DIR & ~(1 << pin)) | ((mode & 1) << pin);
-    }
-
-    if (pull == GPIO_PULL_UP) { gpio->PUR = (gpio->PUR & ~(1 << pin)) | (1 << pin);}
-    else if (pull == GPIO_PULL_DOWN) { gpio->PDR = (gpio->PDR & ~(1 << pin)) | (1 << pin);}
-    else if (pull == GPIO_PULL_NONE) {
-        gpio->PUR &= ~(1 << pin);
-        gpio->PDR &= ~(1 << pin);
-        gpio->ODR &= (1 << pin);
-    }
-}
-
-// bits 9:2 as mask for GPIO ports
-#define gpio_get(gpio, pin) ((gpio->DATA >> (pin)) & 1)
-// https://stackoverflow.com/questions/257418/do-while-0-what-is-it-good-for#257425
-#define gpio_set(gpio, pin, value) do { gpio->DATA = (gpio->DATA & ~(1 << pin)) | (value << pin); } while (0)
-#define gpio_low(gpio, pin) gpio_set(gpio, pin, 0)
-#define gpio_high(gpio, pin) gpio_set(gpio, pin, 1)
 
 void tm4c123_init(void) {
     // basic MCU config
@@ -344,13 +321,13 @@ void tm4c123_init(void) {
     while( !(SYSCTL->PRGPIO & 0x00000020)){};
     //while( *((volatile uint32_t*)0x400FEA08) != 0x00000021){};
 
-    // turn on an LED! (on pyboard it's the red one)
-    gpio_init(GPIOF, 1, GPIO_MODE_OUT, GPIO_PULL_NONE, 0);
-    gpio_init(GPIOF, 2, GPIO_MODE_OUT, GPIO_PULL_NONE, 0);
-    gpio_init(GPIOF, 3, GPIO_MODE_OUT, GPIO_PULL_NONE, 0);
-
-    gpio_high(GPIOF, 3);
-    //*((volatile uint32_t*)0x4005D3FC) = 0x00000007;
+//    // turn on an LED! (on pyboard it's the red one)
+//    gpio_init(GPIOF, 1, GPIO_MODE_OUT, GPIO_PULL_NONE, 0);
+//    gpio_init(GPIOF, 2, GPIO_MODE_OUT, GPIO_PULL_NONE, 0);
+//    gpio_init(GPIOF, 3, GPIO_MODE_OUT, GPIO_PULL_NONE, 0);
+//
+//    gpio_high(GPIOF, 3);
+//    //*((volatile uint32_t*)0x4005D3FC) = 0x00000007;
 
     // enable UART0 at 9600 baud (TX=A1, RX=A0)
     // enable UART0
@@ -363,9 +340,11 @@ void tm4c123_init(void) {
     SYSCTL->RCGCGPIO |= 0x00000001;
     while( !(SYSCTL->PRGPIO & 0x00000001)){};
 
-    // GPIOA already configured for UART0 after reset
-    gpio_init(GPIOA, 0, GPIO_MODE_ALT, GPIO_PULL_NONE, 1);
-    gpio_init(GPIOA, 1, GPIO_MODE_ALT, GPIO_PULL_NONE, 1);
+//    // GPIOA already configured for UART0 after reset
+//    gpio_init(GPIOA, 0, GPIO_MODE_ALT, GPIO_PULL_NONE, 1);
+//    gpio_init(GPIOA, 1, GPIO_MODE_ALT, GPIO_PULL_NONE, 1);
+
+    MAP_GPIOPinTypeUART(GPIO_PORTA_AHB_BASE, GPIO_PIN_0 | GPIO_PIN_1);
 
     // BRD = IBRD + FRAC = UARTSysClk / (ClkDiv * BaudRate)
     // 520.8333 = 104  + 0.166 = 80MHz      / (16     * 9600    )
