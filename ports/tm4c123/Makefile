@@ -25,10 +25,11 @@ PROJECT_NAME = uPY_TM4C123
 
 # Location of the TivaWare library
 # Can be pointed to a newer version if desired
-TIVAWARE_LIB = TivaWare
+TIVAWARE_LIB = /mnt/c/ti/TivaWare_C_Series-2.1.4.178
 
 # qstr definitions (must come before including py.mk)
 QSTR_DEFS = qstrdefsport.h $(BUILD)/pins_qstr.h
+QSTR_GLOBAL_DEPENDENCIES = board/mpconfigboard.h
 
 # include py core make definitions
 include $(TOP)/py/py.mk
@@ -64,7 +65,7 @@ PYDFU = $(TOP)/tools/pydfu.py
 CFLAGS_CORTEX_M4 = -mthumb -mtune=cortex-m4 -mabi=aapcs-linux -mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mfloat-abi=hard -fsingle-precision-constant -Wdouble-promotion
 CFLAGS = $(INC) -Wall -Werror -std=c99 -nostdlib $(CFLAGS_CORTEX_M4) $(COPT)
 #Preprocessor Flags
-CFLAGS += -DPART_$(PART) -c -DTARGET_IS_TM4C123_RB1
+CFLAGS += -DPART_$(PART) -c -D$(PART) -DTARGET_IS_TM4C123_RB1 -DMICROPY_PIN_DEFS_PORT_H=\"mods/pin_defs_tm4c123.h\" -DMICROPY_MPHALPORT_H=\"mods/mphalport.h\"
 
 LDFLAGS = -nostdlib -T $(LINKER_FILE) --entry ResetISR -Map=$@.map --cref --gc-sections
 
@@ -107,7 +108,7 @@ PY_SRC_C = \
 	_frozen_mpy.c 
 		#lib/utils/printf.c 
 		
-SRC_C = $(CORE_SRC_C) $(MODS_SRC_C) $(PY_SRC_C)
+SRC_C = $(CORE_SRC_C) $(PY_SRC_C) $(MODS_SRC_C) 
 
 OBJ = $(PY_O) $(addprefix $(BUILD)/, $(SRC_C:.c=.o))
 
@@ -167,7 +168,7 @@ load:
 #load
 #monitor reset init
 
-CLEAN_EXTRA += $(TIVAWARE_LIB)/driverlib/gcc/* *.axf *.bin *.lst
+CLEAN_EXTRA += *.axf *.bin *.lst #$(TIVAWARE_LIB)/driverlib/gcc/* 
 
 include $(TOP)/py/mkrules.mk
 

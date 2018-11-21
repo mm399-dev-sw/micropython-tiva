@@ -3,7 +3,6 @@
  *
  * The MIT License (MIT)
  *
- * Copyright (c) 2013, 2014 Damien P. George
  * Copyright (c) 2015 Daniel Campora
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -24,11 +23,15 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+#ifndef MICROPY_INCLUDED_CC3200_MISC_ANTENNA_H
+#define MICROPY_INCLUDED_CC3200_MISC_ANTENNA_H
 
-// for machine module
-Q(/)
+typedef enum {
+    ANTENNA_TYPE_INTERNAL = 0,
+    ANTENNA_TYPE_EXTERNAL
+} antenna_type_t;
 
+extern void antenna_init0 (void);
+extern void antenna_select (antenna_type_t antenna_type);
 
-// entries for sys.path
-Q(/flash)
-Q(/flash/lib)
+#endif // MICROPY_INCLUDED_CC3200_MISC_ANTENNA_H

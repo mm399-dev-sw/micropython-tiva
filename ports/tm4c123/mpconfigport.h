@@ -24,6 +24,7 @@
 #define MICROPY_GC_ALLOC_THRESHOLD  (0)
 #define MICROPY_REPL_EVENT_DRIVEN   (0)
 #define MICROPY_HELPER_REPL         (1)
+#define MICROPY_REPL_AUTO_INDENT    (1)
 #define MICROPY_HELPER_LEXER_UNIX   (0)
 #define MICROPY_ENABLE_SOURCE_LINE  (0)
 #define MICROPY_ENABLE_DOC_STRING   (0)
@@ -72,15 +73,20 @@ typedef long mp_off_t;
 
 #define MP_PLAT_PRINT_STRN(str, len) mp_hal_stdout_tx_strn_cooked(str, len)
 
+extern const struct _mp_obj_module_t mp_module_test;
+extern const struct _mp_obj_module_t machine_module;
+
 // extra built in names to add to the global namespace
 #define MICROPY_PORT_BUILTINS \
-    { MP_ROM_QSTR(MP_QSTR_open), MP_ROM_PTR(&mp_builtin_open_obj) },
+    { MP_ROM_QSTR(MP_QSTR_umachine), MP_ROM_PTR(&machine_module) }, \
+    { MP_ROM_QSTR(MP_QSTR_open), MP_ROM_PTR(&mp_builtin_open_obj) },\
+    { MP_ROM_QSTR(MP_QSTR_test), MP_ROM_PTR(&mp_module_test) },
 
 // We need to provide a declaration/definition of alloca()
 #include <alloca.h>
 
-#define MICROPY_HW_BOARD_NAME "TM4C123GXL"
-#define MICROPY_HW_MCU_NAME " TM4C123GH6PM"
+#define MICROPY_HW_BOARD_NAME "Tiva Launch Pad"
+#define MICROPY_HW_MCU_NAME "TM4C123G6HPM"
 
 #ifdef __linux__
 #define MICROPY_MIN_USE_STDOUT (1)
@@ -94,4 +100,16 @@ typedef long mp_off_t;
 #define MP_STATE_PORT MP_STATE_VM
 
 #define MICROPY_PORT_ROOT_POINTERS \
-    const char *readline_hist[8];
+    const char *readline_hist[8]; \
+    mp_obj_t pyb_hid_report_desc; \
+    \
+    mp_obj_t pyb_config_main; \
+    mp_obj_t machine_config_main; \
+    \
+    mp_obj_t pyb_switch_callback; \
+    \
+    mp_obj_t pin_class_mapper; \
+    mp_obj_t pin_class_map_dict; \
+    \
+    mp_obj_t test_callback_obj; \
+

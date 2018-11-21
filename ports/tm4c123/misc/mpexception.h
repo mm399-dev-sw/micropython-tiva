@@ -24,11 +24,11 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+#ifndef MICROPY_INCLUDED_CC3200_MISC_MPEXCEPTION_H
+#define MICROPY_INCLUDED_CC3200_MISC_MPEXCEPTION_H
 
-// for machine module
-Q(/)
+extern const char mpexception_value_invalid_arguments[];
+extern const char mpexception_num_type_invalid_arguments[];
+extern const char mpexception_uncaught[];
 
-
-// entries for sys.path
-Q(/flash)
-Q(/flash/lib)
+#endif // MICROPY_INCLUDED_CC3200_MISC_MPEXCEPTION_H
