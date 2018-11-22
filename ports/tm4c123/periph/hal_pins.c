@@ -24,7 +24,12 @@
  * THE SOFTWARE.
  */
 
-#include "periph/_gpio.h"
+#include <hal_pins.h>
+#include "py/obj.h"
+#include "inc/hw_gpio.h"
+#include "driverlib/rom.h"
+#include "driverlib/rom_map.h"
+#include "driverlib/gpio.h"
 
 void gpio_init(periph_gpio_t *gpio, int pin, int mode, int pull, int alt) {
     if ( pin >= 8 ) return;
@@ -48,6 +53,64 @@ void gpio_init(periph_gpio_t *gpio, int pin, int mode, int pull, int alt) {
         gpio->PDR &= ~(1 << pin);
         gpio->ODR &= (1 << pin);
     }
+}
+
+uint32_t pin_get_mode(const pin_obj_t *pin) {
+    uint32_t mode = MAP_GPIODirModeGet(pin->port, pin->pin_mask);
+    uint32_t type;
+    MAP_GPIOPadConfigGet(pin->port, pin->pin_mask, NULL, &type);
+    if (mode == GPIO_DIR_MODE_IN) {
+        return GPIO_MODE_IN
+    } else if (mode == GPIO_DIR_MODE_OUT) {
+        if(type == GPIO_PIN_TYPE_OD) {
+            return GPIO_MODE_OPEN_DRAIN;
+        } else  {
+            return GPIO_MODE_OUT;
+        }
+    } else if(mode == GPIO_DIR_MODE_HW) {
+        if(type == GPIO_PIN_TYPE_OD) {
+            return GPIO_MODE_ALT_OD;
+        } else  {
+            return GPIO_MODE_ALT_PP;
+        }
+    }
+    return -1;
+}
+
+uint32_t pin_get_pull(const pin_obj_t *pin) {
+    uint32_t type;
+    MAP_GPIOPadConfigGet(pin->port, pin->pin_mask, NULL, &type);
+    if(type == GPIO_PIN_TYPE_OD || type == GPIO_PIN_TYPE_STD) {
+        return GPIO_PULL_NONE;
+    } else if (type == GPIO_PIN_TYPE_STD_WPU) {
+        return GPIO_PULL_UP;
+    } else if (type == GPIO_PIN_TYPE_STD_WPD) {
+        return GPIO_PULL_DOWN;
+    }
+    return -1;
+}
+
+uint32_t pin_get_strength(const pin_obj_t *pin) {
+    uint32_t strength;
+    MAP_GPIOPadConfigGet(pin->port, pin->pin_mask, &strength, NULL);
+    if (strength == GPIO_STRENGTH_2MA) {
+        return GPIO_DRIVE_LOW;
+    } else if (strength == GPIO_STRENGTH_4MA) {
+        return GPIO_DRIVE_MED;
+    } else if (strength == GPIO_STRENGTH_8MA) {
+        return GPIO_DRIVE_HI;
+    }
+    return -1;
+}
+
+uint32_t pin_get_af(const pin_obj_t *pin) {
+    uint32_t mode = MAP_GPIODirModeGet(pin->port, pin->pin_mask);
+    if (mode == GPIO_DIR_MODE_HW) {
+        return (pin->gpio->PCTL >> (pin->pin_num * 4)) & 0xF;
+    } else {
+        return -1;
+    }
+    return -1;
 }
 
 

@@ -34,6 +34,7 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/micropython/periph}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;C:\ti\TivaWare&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;C:\ti\TivaWare\driverlib&quot;"/>
+									<listOptionValue builtIn="false" value="/home/raphael/ti/tivaware"/>
 								</option>
 								<option id="gnu.c.compiler.option.preprocessor.def.symbols.1581719304" name="Defined symbols (-D)" superClass="gnu.c.compiler.option.preprocessor.def.symbols" useByScannerDiscovery="false" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="PART_TM4C123GHPM"/>
@@ -46,11 +47,11 @@
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.cross.c.linker.1826754469" name="Cross GCC Linker" superClass="cdt.managedbuild.tool.gnu.cross.c.linker"/>
 							<tool id="cdt.managedbuild.tool.gnu.cross.cpp.linker.299844243" name="Cross G++ Linker" superClass="cdt.managedbuild.tool.gnu.cross.cpp.linker">
-								<option id="gnu.cpp.link.option.paths.1350400128" superClass="gnu.cpp.link.option.paths" valueType="libPaths">
+								<option id="gnu.cpp.link.option.paths.1350400128" name="Library search path (-L)" superClass="gnu.cpp.link.option.paths" valueType="libPaths">
 									<listOptionValue builtIn="false" value="&quot;C:\ti\TivaWare&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;C:\ti\TivaWare\driverlib&quot;"/>
 								</option>
-								<option id="gnu.cpp.link.option.libs.1584512025" superClass="gnu.cpp.link.option.libs" valueType="libs">
+								<option id="gnu.cpp.link.option.libs.1584512025" name="Libraries (-l)" superClass="gnu.cpp.link.option.libs" valueType="libs">
 									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="&quot;C:\ti\TivaWare\driverlib\gcc\libdriver.a&quot;"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.linker.input.1417876333" superClass="cdt.managedbuild.tool.gnu.cpp.linker.input">
