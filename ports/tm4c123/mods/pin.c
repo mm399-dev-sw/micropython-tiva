@@ -24,10 +24,10 @@
  * THE SOFTWARE.
  */
 
+#include <pin.h>
 #include "py/runtime.h"
 #include "py/mphal.h"
 #include "extmod/virtpin.h"
-#include "pins.h"
 #include "extint.h"
 #include "driverlib/rom_map.h"
 #include "driverlib/rom.h"
@@ -192,13 +192,10 @@ STATIC void pin_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t
     uint32_t mode = pin_get_mode(self);
     uint32_t type = pin_get_type(self);
 
-    if (mode == GPIO_DIR_MODE_HW) {
-        // analog
-        if(type == GPIO_PIN_TYPE_ANALOG) {
-            mp_print_str(print, "ANALOG)");
-        } else {
 
-        }
+    if (type == GPIO_PIN_TYPE_ANALOG) {
+        // analog
+        mp_print_str(print, "ANALOG)");
 
     } else {
         // IO mode
@@ -247,7 +244,6 @@ STATIC void pin_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t
         } else {
             mp_print_str(print, ")");
         }
-    }
 }
 
 STATIC mp_obj_t pin_obj_init_helper(const pin_obj_t *pin, size_t n_args, const mp_obj_t *args, mp_map_t *kw_args);
@@ -277,7 +273,7 @@ STATIC mp_obj_t pin_call(mp_obj_t self_in, size_t n_args, size_t n_kw, const mp_
     pin_obj_t *self = MP_OBJ_TO_PTR(self_in);
     if (n_args == 0) {
         // get pin
-        return MP_OBJ_NEW_SMALL_INT(GPIOPinRead(self->gpio, self->));
+        return MP_OBJ_NEW_SMALL_INT(MAP_GPIOPinRead(self->gpio, self->pin_mask));
     } else {
         // set pin
         mp_hal_pin_write(self, mp_obj_is_true(args[0]));
@@ -315,8 +311,8 @@ STATIC mp_obj_t pin_af_list(mp_obj_t self_in) {
     pin_obj_t *self = MP_OBJ_TO_PTR(self_in);
     mp_obj_t result = mp_obj_new_list(0, NULL);
 
-    const pin_af_obj_t *af = self->af;
-    for (mp_uint_t i = 0; i < self->num_af; i++, af++) {
+    const pin_af_obj_t *af = self->af_list;
+    for (mp_uint_t i = 0; i < self->num_afs; i++, af++) {
         mp_obj_list_append(result, MP_OBJ_FROM_PTR(af));
     }
     return result;
@@ -340,6 +336,7 @@ STATIC mp_obj_t pin_obj_init_helper(const pin_obj_t *self, size_t n_args, const 
     static const mp_arg_t allowed_args[] = {
         { MP_QSTR_mode, MP_ARG_REQUIRED | MP_ARG_INT },
         { MP_QSTR_pull, MP_ARG_OBJ, {.u_rom_obj = MP_ROM_PTR(&mp_const_none_obj)}},
+        { MP_QSTR_drive, MP_ARG_OBJ, {.u_obj = MP_OBJ_NULL}},
         { MP_QSTR_af, MP_ARG_INT, {.u_int = -1}}, // legacy
         { MP_QSTR_value, MP_ARG_KW_ONLY | MP_ARG_OBJ, {.u_obj = MP_OBJ_NULL}},
         { MP_QSTR_alt, MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = -1}},
@@ -356,7 +353,7 @@ STATIC mp_obj_t pin_obj_init_helper(const pin_obj_t *self, size_t n_args, const 
     }
 
     // get pull mode
-    uint pull = GPIO_NOPULL;
+    uint pull = GPIO_PULL_NONE;
     if (args[1].u_obj != mp_const_none) {
         pull = mp_obj_get_int(args[1].u_obj);
     }
@@ -364,22 +361,31 @@ STATIC mp_obj_t pin_obj_init_helper(const pin_obj_t *self, size_t n_args, const 
         nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_ValueError, "invalid pin pull: %d", pull));
     }
 
+    uint drive = GPIO_DRIVE_2MA;
+    if (args[2].u_obj != MP_OBJ_NULL) {
+        drive = mp_obj_get_int(args[2].u_obj);
+    }
+    if (!IS_GPIO_DRIVE(drive)) {
+        nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_ValueError, "invalid pin drive: %d", drive));
+    }
+
     // get af (alternate function); alt-arg overrides af-arg
-    mp_int_t af = args[4].u_int;
+    mp_int_t af = args[5].u_int;
     if (af == -1) {
-        af = args[2].u_int;
+        af = args[3].u_int;
     }
     if ((mode == GPIO_MODE_AF_PP || mode == GPIO_MODE_AF_OD) && !IS_GPIO_AF(af)) {
         nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_ValueError, "invalid pin af: %d", af));
     }
 
     // enable the peripheral clock for the port of this pin
-    mp_hal_gpio_clock_enable(self->gpio);
+//    mp_hal_gpio_clock_enable(self->port);
 
     // if given, set the pin value before initialising to prevent glitches
-    if (args[3].u_obj != MP_OBJ_NULL) {
-        mp_hal_pin_write(self, mp_obj_is_true(args[3].u_obj));
-    }
+//    if (args[4].u_obj != MP_OBJ_NULL) {
+//        mp_hal_pin_write(self, mp_obj_is_true(args[3].u_obj));
+//    }
+    mp_hal_gpio_init(self->port, self->pin_mask, mode, pull, drive, value);
 
     return mp_const_none;
 }

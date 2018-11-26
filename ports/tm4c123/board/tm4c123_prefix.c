@@ -35,7 +35,7 @@
 #include "inc/hw_memmap.h"
 #include "driverlib/gpio.h"
 #include "pins.h"
-#include "pybpin.h"
+#include "pin.h"
 
 
 #define AF(af_name, af_idx, af_fn, af_unit, af_type) \

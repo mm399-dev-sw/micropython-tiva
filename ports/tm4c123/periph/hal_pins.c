@@ -27,35 +27,36 @@
 #include <hal_pins.h>
 #include "py/obj.h"
 #include "inc/hw_gpio.h"
+#include "driverlib/gpio.h"
 #include "driverlib/rom.h"
 #include "driverlib/rom_map.h"
-#include "driverlib/gpio.h"
 
-void gpio_init(periph_gpio_t *gpio, int pin, int mode, int pull, int alt) {
-    if ( pin >= 8 ) return;
-    // does not consider the locked pins, which need special treatment
-    if (mode == GPIO_MODE_ALT) {
-        gpio->DEN |= (1 << pin);
-        gpio->AFSEL |= (1 << pin);
-        gpio->PCTL = (gpio->PCTL & ~(0x000000F << (4 * pin))) | (alt << (4 * pin));
-    }
-    else {
-        gpio->AFSEL &= ~(1 << pin);
-        gpio->DEN |= (1 << pin);
-        gpio->DIR = (gpio->DIR & ~(1 << pin)) | ((mode & 1) << pin);
-    }
 
-    if (pull == GPIO_PULL_UP) { gpio->PUR = (gpio->PUR & ~(1 << pin)) | (1 << pin);}
-    else if (pull == GPIO_PULL_DOWN) {
-        gpio->PDR = (gpio->PDR & ~(1 << pin)) | (1 << pin);
-    } else if (pull == GPIO_PULL_NONE) {
-        gpio->PUR &= ~(1 << pin);
-        gpio->PDR &= ~(1 << pin);
-        gpio->ODR &= (1 << pin);
-    }
-}
+//void gpio_init(periph_gpio_t *gpio, int pin, int mode, int pull, int alt) {
+//    if ( pin >= 8 ) return;
+//    // does not consider the locked pins, which need special treatment
+//    if (mode == GPIO_MODE_ALT) {
+//        gpio->DEN |= (1 << pin);
+//        gpio->AFSEL |= (1 << pin);
+//        gpio->PCTL = (gpio->PCTL & ~(0x000000F << (4 * pin))) | (alt << (4 * pin));
+//    }
+//    else {
+//        gpio->AFSEL &= ~(1 << pin);
+//        gpio->DEN |= (1 << pin);
+//        gpio->DIR = (gpio->DIR & ~(1 << pin)) | ((mode & 1) << pin);
+//    }
+//
+//    if (pull == GPIO_PULL_UP) { gpio->PUR = (gpio->PUR & ~(1 << pin)) | (1 << pin);}
+//    else if (pull == GPIO_PULL_DOWN) {
+//        gpio->PDR = (gpio->PDR & ~(1 << pin)) | (1 << pin);
+//    } else if (pull == GPIO_PULL_NONE) {
+//        gpio->PUR &= ~(1 << pin);
+//        gpio->PDR &= ~(1 << pin);
+//        gpio->ODR &= (1 << pin);
+//    }
+//}
 
-uint32_t pin_get_mode(const pin_obj_t *pin) {
+uint32_t mp_hal_pin_get_mode(const pin_obj_t *pin) {
     uint32_t mode = MAP_GPIODirModeGet(pin->port, pin->pin_mask);
     uint32_t type;
     MAP_GPIOPadConfigGet(pin->port, pin->pin_mask, NULL, &type);
@@ -69,15 +70,15 @@ uint32_t pin_get_mode(const pin_obj_t *pin) {
         }
     } else if(mode == GPIO_DIR_MODE_HW) {
         if(type == GPIO_PIN_TYPE_OD) {
-            return GPIO_MODE_ALT_OD;
+            return GPIO_MODE_AF_OD;
         } else  {
-            return GPIO_MODE_ALT_PP;
+            return GPIO_MODE_AF_PP;
         }
     }
     return -1;
 }
 
-uint32_t pin_get_pull(const pin_obj_t *pin) {
+uint32_t mp_hal_pin_get_pull(const pin_obj_t *pin) {
     uint32_t type;
     MAP_GPIOPadConfigGet(pin->port, pin->pin_mask, NULL, &type);
     if(type == GPIO_PIN_TYPE_OD || type == GPIO_PIN_TYPE_STD) {
@@ -90,7 +91,7 @@ uint32_t pin_get_pull(const pin_obj_t *pin) {
     return -1;
 }
 
-uint32_t pin_get_strength(const pin_obj_t *pin) {
+uint32_t mp_hal_pin_get_strength(const pin_obj_t *pin) {
     uint32_t strength;
     MAP_GPIOPadConfigGet(pin->port, pin->pin_mask, &strength, NULL);
     if (strength == GPIO_STRENGTH_2MA) {
@@ -103,7 +104,7 @@ uint32_t pin_get_strength(const pin_obj_t *pin) {
     return -1;
 }
 
-uint32_t pin_get_af(const pin_obj_t *pin) {
+uint32_t mp_hal_pin_get_af(const pin_obj_t *pin) {
     uint32_t mode = MAP_GPIODirModeGet(pin->port, pin->pin_mask);
     if (mode == GPIO_DIR_MODE_HW) {
         return (pin->gpio->PCTL >> (pin->pin_num * 4)) & 0xF;
@@ -113,4 +114,73 @@ uint32_t pin_get_af(const pin_obj_t *pin) {
     return -1;
 }
 
+void mp_hal_gpio_clock_enable(const uint32_t port) {
+    MAP_SysCtlPeripheralEnable(port);
+    while(!MAP_SysCtlPeripheralReady(port)){};
+}
 
+uint32_t mp_hal_convert_mode_pull_to_dir_type(uint32_t mode, uint32_t pull, uint32_t* dir, uint32_t* type) {
+    uint32_t d;
+    uint32_t t;
+    switch (mode) {
+        case GPIO_MODE_IN:
+            d = GPIO_DIR_MODE_IN;
+            break;
+        case GPIO_MODE_OUT:
+            d = GPIO_DIR_MODE_OUT;
+            switch (pull) {
+                case GPIO_PULL_UP:
+                    t = GPIO_PIN_TYPE_STD_WPU;
+                    break;
+                case GPIO_PULL_DOWN:
+                    t = GPIO_PIN_TYPE_STD_WPD;
+                    break;
+                case GPIO_PULL_NONE:
+                    t = GPIO_PIN_TYPE_STD;
+                    break;
+                default:
+                    t = GPIO_PIN_TYPE_STD;
+                    break;
+            }
+            break;
+        case GPIO_MODE_OPEN_DRAIN:
+            d = GPIO_DIR_MODE_OUT;
+            t = GPIO_PIN_TYPE_OD;
+            break;
+        case GPIO_MODE_AF_PP:
+            d = GPIO_DIR_MODE_HW;
+            switch (pull) {
+                case GPIO_PULL_UP:
+                    t = GPIO_PIN_TYPE_STD_WPU;
+                    break;
+                case GPIO_PULL_DOWN:
+                    t = GPIO_PIN_TYPE_STD_WPD;
+                    break;
+                case GPIO_PULL_NONE:
+                    t = GPIO_PIN_TYPE_STD;
+                    break;
+                default:
+                    t = GPIO_PIN_TYPE_STD;
+                    break;
+            }
+            break;
+        case GPIO_MODE_AF_OD:
+            d = GPIO_DIR_MODE_HW;
+            t = GPIO_PIN_TYPE_OD;
+            break;
+        case GPIO_MODE_ANALOG:
+            d = GPIO_DIR_MODE_HW;
+            t = GPIO_PIN_TYPE_ANALOG;
+            break;
+        default:
+            d = GPIO_DIR_MODE_IN;
+            break;
+    }
+}
+
+void mp_hal_gpio_init(uint32_t port, uint32_t pin_mask, uint mode, uint pull, uint drive) {
+    mp_hal_gpio_clock_enable(port);
+
+    GPIODirModeSet(port, pin_mask, m);
+    GPIOPadConfigSet(port, pin_mask, drive, t);
+}

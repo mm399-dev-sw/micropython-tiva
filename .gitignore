@@ -45,6 +45,6 @@ user.props
 ######################
 genrst/
 
-ports/tm4c123/\.settings/language\.settings\.xml
-
 *.csv#
+
+ports/tm4c123/\.settings/

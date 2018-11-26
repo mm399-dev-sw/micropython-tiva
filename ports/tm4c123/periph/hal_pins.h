@@ -60,28 +60,37 @@ typedef struct {
     volatile uint32_t DMACTL;
 } periph_gpio_t;
 
+
+// GPIO drive strengths
 enum {
     GPIO_DRIVE_LOW = 0,
     GPIO_DRIVE_MED,
     GPIO_DRIVE_HI
 };
 
-// simple GPIO interface
+// these modes are used to interface with uPython, they will be converted to the correct values in this file
+// GPIO modes
 enum {
     GPIO_MODE_IN = 0,
     GPIO_MODE_OUT,
     GPIO_MODE_OPEN_DRAIN,
-    GPIO_MODE_ALT_PP,
-    GPIO_MODE_ALT_OD,
+    GPIO_MODE_AF_PP,
+    GPIO_MODE_AF_OD,
     GPIO_MODE_ANALOG,
 };
 
+#define IS_GPIO_MODE(m)     ((bool)(m > GPIO_MODE_IN && m < GPIO_MODE_ANALOG))
+
+// GPIO pull
 enum {
     GPIO_PULL_UP = 0,
     GPIO_PULL_DOWN,
     GPIO_PULL_NONE,
 };
 
+#define IS_GPIO_PULL(p)     ((bool)(p > GPIO_PULL_UP && p < GPIO_PULL_NONE))
+
+// GPIO ports
 enum {
     PORT_A = GPIO_PORTA_AHB_BASE,
     PORT_B = GPIO_PORTB_AHB_BASE,
@@ -91,6 +100,9 @@ enum {
     PORT_F = GPIO_PORTF_AHB_BASE,
 };
 
+#define IS_GPIO_PORT(p)     ((bool)(p > PORT_A && p < PORT_F))
+
+// GPIO afs
 enum {
     PIN_FN_ADC = 0,
     PIN_FN_UART,
@@ -103,98 +115,100 @@ enum {
     PIN_FN_CAN,
     PIN_FN_USB,
     PIN_FN_COMP,
-    PIN_FN_TR = 14,
+    PIN_FN_TR,
+};
+
+#define IS_GPIO_AF(a)     ((bool)(a > PIN_FN_UART && a < PIN_FN_TR))
+
+enum {
+    AF_UART_TX = 0,
+    AF_UART_RX,
+    AF_UART_RTS,
+    AF_UART_CTS,
 };
 
 enum {
-    PIN_TYPE_UART_TX = 0,
-    PIN_TYPE_UART_RX,
-    PIN_TYPE_UART_RTS,
-    PIN_TYPE_UART_CTS,
+    AF_SSI_CLK = 0,
+    AF_SSI_TX,
+    AF_SSI_RX,
+    AF_SSI_FSS,
 };
 
 enum {
-    PIN_TYPE_SSI_CLK = 0,
-    PIN_TYPE_SSI_TX,
-    PIN_TYPE_SSI_RX,
-    PIN_TYPE_SSI_FSS,
+    AF_I2C_SDA = 0,
+    AF_I2C_SCL,
 };
 
 enum {
-    PIN_TYPE_I2C_SDA = 0,
-    PIN_TYPE_I2C_SCL,
+    AF_TIM_CCP0 = 0,
+    AF_TIM_CCP1
 };
 
 enum {
-    PIN_TYPE_TIM_CCP0 = 0,
-    PIN_TYPE_TIM_CCP1
+    AF_WTIM_CCP0 = 0,
+    AF_WTIM_CCP1
 };
 
 enum {
-    PIN_TYPE_WTIM_CCP0 = 0,
-    PIN_TYPE_WTIM_CCP1
+    AF_QEI_PHA0 = 0,
+    AF_QEI_PHA1,
+    AF_QEI_PHB0,
+    AF_QEI_PHB1,
+    AF_QEI_IDX0,
+    AF_QEI_IDX1
 };
 
 enum {
-    PIN_TYPE_QEI_PHA0 = 0,
-    PIN_TYPE_QEI_PHA1,
-    PIN_TYPE_QEI_PHB0,
-    PIN_TYPE_QEI_PHB1,
-    PIN_TYPE_QEI_IDX0,
-    PIN_TYPE_QEI_IDX1
+    AF_USB_EPEN = 0,
+    AF_USB_PFLT,
+    AF_USB_DM,
+    AF_USB_DP,
+    AF_USB_ID,
+    AF_USB_VBUS
 };
 
 enum {
-    PIN_TYPE_USB_EPEN = 0,
-    PIN_TYPE_USB_PFLT,
-    PIN_TYPE_USB_DM,
-    PIN_TYPE_USB_DP,
-    PIN_TYPE_USB_ID,
-    PIN_TYPE_USB_VBUS
+    AF_COMP_POS = 0,
+    AF_COMP_NEG,
+    AF_COMP_OUT
 };
 
 enum {
-    PIN_TYPE_COMP_POS = 0,
-    PIN_TYPE_COMP_NEG,
-    PIN_TYPE_COMP_OUT
+    AF_CAN_TX = 0,
+    AF_CAN_RX
 };
 
 enum {
-    PIN_TYPE_CAN_TX = 0,
-    PIN_TYPE_CAN_RX
+    AF_TR_CLK = 0,
+    AF_TR_D0,
+    AF_TR_D1
 };
 
 enum {
-    PIN_TYPE_TR_CLK = 0,
-    PIN_TYPE_TR_D0,
-    PIN_TYPE_TR_D1
+    AF_MTRL_FAULT0 = 0,
+    AF_MTRL_PWM0 ,
+    AF_MTRL_PWM1 ,
+    AF_MTRL_PWM2 ,
+    AF_MTRL_PWM3 ,
+    AF_MTRL_PWM4 ,
+    AF_MTRL_PWM5 ,
+    AF_MTRL_PWM6 ,
+    AF_MTRL_PWM7 ,
 };
 
 enum {
-    PIN_TYPE_MTRL_FAULT0 = 0,
-    PIN_TYPE_MTRL_PWM0 ,
-    PIN_TYPE_MTRL_PWM1 ,
-    PIN_TYPE_MTRL_PWM2 ,
-    PIN_TYPE_MTRL_PWM3 ,
-    PIN_TYPE_MTRL_PWM4 ,
-    PIN_TYPE_MTRL_PWM5 ,
-    PIN_TYPE_MTRL_PWM6 ,
-    PIN_TYPE_MTRL_PWM7 ,
-};
-
-enum {
-    PIN_TYPE_ADC_AIN0 = 0,
-    PIN_TYPE_ADC_AIN1,
-    PIN_TYPE_ADC_AIN2,
-    PIN_TYPE_ADC_AIN3,
-    PIN_TYPE_ADC_AIN4,
-    PIN_TYPE_ADC_AIN5,
-    PIN_TYPE_ADC_AIN6,
-    PIN_TYPE_ADC_AIN7,
-    PIN_TYPE_ADC_AIN8,
-    PIN_TYPE_ADC_AIN9,
-    PIN_TYPE_ADC_AIN10,
-    PIN_TYPE_ADC_AIN11,
+    AF_ADC_AIN0 = 0,
+    AF_ADC_AIN1,
+    AF_ADC_AIN2,
+    AF_ADC_AIN3,
+    AF_ADC_AIN4,
+    AF_ADC_AIN5,
+    AF_ADC_AIN6,
+    AF_ADC_AIN7,
+    AF_ADC_AIN8,
+    AF_ADC_AIN9,
+    AF_ADC_AIN10,
+    AF_ADC_AIN11,
 };
 
 
@@ -214,11 +228,16 @@ enum {
 #define gpio_low(gpio, pin) gpio_set(gpio, pin, 0);
 #define gpio_high(gpio, pin) gpio_set(gpio, pin, 1);
 
+uint32_t mp_hal_convert_mode_pull_to_dir_type(pin_obj_t* pin, uint32_t* dir, uint32_t* type);
 
-uint32_t pin_get_mode(const pin_obj_t *pin);
-uint32_t pin_get_pull(const pin_obj_t *pin);
-uint32_t pin_get_strength(const pin_obj_t *pin)
-uint32_t pin_get_af(const pin_obj_t *pin);
+
+uint32_t mp_hal_pin_get_mode(const pin_obj_t *pin);
+uint32_t mp_hal_pin_get_pull(const pin_obj_t *pin);
+uint32_t mp_hal_pin_get_strength(const pin_obj_t *pin)
+uint32_t mp_hal_pin_get_af(const pin_obj_t *pin);
+
+void mp_hal_gpio_clock_enable(const uint32_t port);
+void mp_hal_gpio_init(uint32_t port, uint32_t pin_mask, uint mode, uint pull, uint drive);
 
 
 #endif // MICROPY_INCLUDED_TM4C_HAL_PINS_H
