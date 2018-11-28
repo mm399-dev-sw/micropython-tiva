@@ -29,10 +29,10 @@
 #include "py/mphal.h"
 #include "extmod/virtpin.h"
 #include "extint.h"
-#include "driverlib/rom_map.h"
-#include "driverlib/rom.h"
 #include "inc/hw_gpio.h"
 #include "driverlib/gpio.h"
+#include "driverlib/rom.h"
+#include "driverlib/rom_map.h"
 
 /// \moduleref pyb
 /// \class Pin - control I/O pins
@@ -347,21 +347,21 @@ STATIC mp_obj_t pin_obj_init_helper(const pin_obj_t *self, size_t n_args, const 
     mp_arg_parse_all(n_args, pos_args, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
 
     // get io mode
-    uint mode = args[0].u_int;
-    if (!IS_GPIO_MODE(mode)) {
-        nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_ValueError, "invalid pin mode: %d", mode));
+    uint32_t dir = args[0].u_int;
+    if (!IS_GPIO_DIR(dir)) {
+        nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_ValueError, "invalid pin direction: %d", dir));
     }
 
     // get pull mode
-    uint pull = GPIO_PULL_NONE;
+    uint type = GPIO_PIN_TYPE_STD;
     if (args[1].u_obj != mp_const_none) {
-        pull = mp_obj_get_int(args[1].u_obj);
+        type = mp_obj_get_int(args[1].u_obj);
     }
-    if (!IS_GPIO_PULL(pull)) {
-        nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_ValueError, "invalid pin pull: %d", pull));
+    if (!IS_GPIO_TYPE(type)) {
+        nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_ValueError, "invalid pin type: %d", type));
     }
 
-    uint drive = GPIO_DRIVE_2MA;
+    uint drive = GPIO_STRENGTH_2MA;
     if (args[2].u_obj != MP_OBJ_NULL) {
         drive = mp_obj_get_int(args[2].u_obj);
     }
@@ -374,7 +374,7 @@ STATIC mp_obj_t pin_obj_init_helper(const pin_obj_t *self, size_t n_args, const 
     if (af == -1) {
         af = args[3].u_int;
     }
-    if ((mode == GPIO_MODE_AF_PP || mode == GPIO_MODE_AF_OD) && !IS_GPIO_AF(af)) {
+    if ((dir == GPIO_DIR_MODE_HW) && !IS_GPIO_AF(af)) {
         nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_ValueError, "invalid pin af: %d", af));
     }
 
@@ -385,7 +385,9 @@ STATIC mp_obj_t pin_obj_init_helper(const pin_obj_t *self, size_t n_args, const 
 //    if (args[4].u_obj != MP_OBJ_NULL) {
 //        mp_hal_pin_write(self, mp_obj_is_true(args[3].u_obj));
 //    }
-    mp_hal_gpio_init(self->port, self->pin_mask, mode, pull, drive, value);
+    mp_hal_gpio_init(self->port, self->pin_mask, dir, type, drive);
+
+    mp_hal_pin_set_value(self, mp_obj_is_true(args[4].u_obj));
 
     return mp_const_none;
 }
@@ -555,12 +557,11 @@ STATIC const mp_rom_map_elem_t pin_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_cpu),     MP_ROM_PTR(&pin_cpu_pins_obj_type) },
 
     // class constants
-    { MP_ROM_QSTR(MP_QSTR_IN),        MP_ROM_INT(GPIO_MODE_IN) },
-    { MP_ROM_QSTR(MP_QSTR_OUT),       MP_ROM_INT(GPIO_MODE_OUT) },
-    { MP_ROM_QSTR(MP_QSTR_OPEN_DRAIN), MP_ROM_INT(GPIO_MODE_OPEN_DRAIN) },
-    { MP_ROM_QSTR(MP_QSTR_ALT),       MP_ROM_INT(GPIO_MODE_ALT_PP) },
-    { MP_ROM_QSTR(MP_QSTR_ALT_OPEN_DRAIN), MP_ROM_INT(GPIO_MODE_ALT_OD) },
-    { MP_ROM_QSTR(MP_QSTR_ANALOG),    MP_ROM_INT(GPIO_MODE_ANALOG) },
+    { MP_ROM_QSTR(MP_QSTR_IN),        MP_ROM_INT(GPIO_DIR_MODE_IN) },
+    { MP_ROM_QSTR(MP_QSTR_OUT),       MP_ROM_INT(GPIO_DIR_MODE_OUT) },
+    { MP_ROM_QSTR(MP_QSTR_OPEN_DRAIN), MP_ROM_INT(GPIO_PIN_TYPE_OD) },
+    { MP_ROM_QSTR(MP_QSTR_ALT),       MP_ROM_INT(GPIO_DIR_MODE_HW) },
+    { MP_ROM_QSTR(MP_QSTR_ANALOG),    MP_ROM_INT(GPIO_PIN_TYPE_ANALOG) },
     { MP_ROM_QSTR(MP_QSTR_PULL_UP),   MP_ROM_INT(GPIO_PIN_TYPE_STD_WPU) },
     { MP_ROM_QSTR(MP_QSTR_PULL_DOWN), MP_ROM_INT(GPIO_PIN_TYPE_STD_WPD) },
     { MP_ROM_QSTR(MP_QSTR_PULL_NONE), MP_ROM_INT(GPIO_PIN_TYPE_STD) },

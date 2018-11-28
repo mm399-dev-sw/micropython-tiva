@@ -56,57 +56,26 @@
 //    }
 //}
 
-uint32_t mp_hal_pin_get_mode(const pin_obj_t *pin) {
-    uint32_t mode = MAP_GPIODirModeGet(pin->port, pin->pin_mask);
-    uint32_t type;
-    MAP_GPIOPadConfigGet(pin->port, pin->pin_mask, NULL, &type);
-    if (mode == GPIO_DIR_MODE_IN) {
-        return GPIO_MODE_IN
-    } else if (mode == GPIO_DIR_MODE_OUT) {
-        if(type == GPIO_PIN_TYPE_OD) {
-            return GPIO_MODE_OPEN_DRAIN;
-        } else  {
-            return GPIO_MODE_OUT;
-        }
-    } else if(mode == GPIO_DIR_MODE_HW) {
-        if(type == GPIO_PIN_TYPE_OD) {
-            return GPIO_MODE_AF_OD;
-        } else  {
-            return GPIO_MODE_AF_PP;
-        }
-    }
-    return -1;
+uint32_t mp_hal_pin_get_dir(const pin_obj_t *pin) {
+    return MAP_GPIODirModeGet(pin->port, pin->pin_mask);
+
 }
 
-uint32_t mp_hal_pin_get_pull(const pin_obj_t *pin) {
+uint32_t mp_hal_pin_get_type(const pin_obj_t *pin) {
     uint32_t type;
     MAP_GPIOPadConfigGet(pin->port, pin->pin_mask, NULL, &type);
-    if(type == GPIO_PIN_TYPE_OD || type == GPIO_PIN_TYPE_STD) {
-        return GPIO_PULL_NONE;
-    } else if (type == GPIO_PIN_TYPE_STD_WPU) {
-        return GPIO_PULL_UP;
-    } else if (type == GPIO_PIN_TYPE_STD_WPD) {
-        return GPIO_PULL_DOWN;
-    }
-    return -1;
+    return type;
 }
 
-uint32_t mp_hal_pin_get_strength(const pin_obj_t *pin) {
-    uint32_t strength;
-    MAP_GPIOPadConfigGet(pin->port, pin->pin_mask, &strength, NULL);
-    if (strength == GPIO_STRENGTH_2MA) {
-        return GPIO_DRIVE_LOW;
-    } else if (strength == GPIO_STRENGTH_4MA) {
-        return GPIO_DRIVE_MED;
-    } else if (strength == GPIO_STRENGTH_8MA) {
-        return GPIO_DRIVE_HI;
-    }
-    return -1;
+uint32_t mp_hal_pin_get_drive(const pin_obj_t *pin) {
+    uint32_t drive;
+    MAP_GPIOPadConfigGet(pin->port, pin->pin_mask, &drive, NULL);
+    return drive;
 }
 
 uint32_t mp_hal_pin_get_af(const pin_obj_t *pin) {
-    uint32_t mode = MAP_GPIODirModeGet(pin->port, pin->pin_mask);
-    if (mode == GPIO_DIR_MODE_HW) {
+    uint32_t dir = MAP_GPIODirModeGet(pin->port, pin->pin_mask);
+    if (dir == GPIO_DIR_MODE_HW) {
         return (pin->gpio->PCTL >> (pin->pin_num * 4)) & 0xF;
     } else {
         return -1;
@@ -178,9 +147,17 @@ uint32_t mp_hal_convert_mode_pull_to_dir_type(uint32_t mode, uint32_t pull, uint
     }
 }
 
-void mp_hal_gpio_init(uint32_t port, uint32_t pin_mask, uint mode, uint pull, uint drive) {
+void mp_hal_gpio_init(uint32_t port, uint32_t pin_mask, uint dir, uint type, uint drive) {
     mp_hal_gpio_clock_enable(port);
 
-    GPIODirModeSet(port, pin_mask, m);
-    GPIOPadConfigSet(port, pin_mask, drive, t);
+    GPIODirModeSet(port, pin_mask, dir);
+    GPIOPadConfigSet(port, pin_mask, drive, type);
+}
+
+uint32_t mp_hal_pin_get_value(pin_obj_t* pin) {
+    return MAP_GPIOPinRead(pin->port, pin->pin_mask);
+}
+
+void mp_hal_pin_set_value(pin_obj_t* pin, uint32_t value) {
+    GPIOPinWrite(pin->port, pin->pin_mask, value);
 }

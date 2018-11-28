@@ -63,12 +63,12 @@ typedef struct {
     const uint32_t      port;   //Address of Port
     const periph_gpio_t gpio;   //Structure for register access
     const pin_af_obj_t  *af_list;
-    uint32_t            mode;
-    uint32_t            pull;
+    uint32_t            dir;
+    uint32_t            type;
+    uint32_t            drive;
     const uint8_t       pin_mask;
     const uint8_t       pin_num;
     int8_t              af;
-    uint8_t             strength;
     const uint8_t       num_afs;     // 255 AFs
     uint8_t             value;
     uint8_t             used;

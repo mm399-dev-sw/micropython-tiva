@@ -61,34 +61,21 @@ typedef struct {
 } periph_gpio_t;
 
 
-// GPIO drive strengths
-enum {
-    GPIO_DRIVE_LOW = 0,
-    GPIO_DRIVE_MED,
-    GPIO_DRIVE_HI
-};
+#define IS_GPIO_DIR(d)      ((d == GPIO_DIR_MODE_IN) || \
+                            (d == GPIO_DIR_MODE_OUT) || \
+                            (d == GPIO_DIR_MODE_HW))
 
-// these modes are used to interface with uPython, they will be converted to the correct values in this file
-// GPIO modes
-enum {
-    GPIO_MODE_IN = 0,
-    GPIO_MODE_OUT,
-    GPIO_MODE_OPEN_DRAIN,
-    GPIO_MODE_AF_PP,
-    GPIO_MODE_AF_OD,
-    GPIO_MODE_ANALOG,
-};
+#define IS_GPIO_TYPE(p)     ((p == GPIO_PIN_TYPE_STD) || \
+                            (p == GPIO_PIN_TYPE_STD_WPU) || \
+                            (p == GPIO_PIN_TYPE_STD_WPD) || \
+                            (p == GPIO_PIN_TYPE_OD) || \
+                            (p == GPIO_PIN_TYPE_WAKE_LOW) || \
+                            (p == GPIO_PIN_TYPE_WAKE_HIGH) || \
+                            (p == GPIO_PIN_TYPE_ANALOG))
 
-#define IS_GPIO_MODE(m)     ((bool)(m > GPIO_MODE_IN && m < GPIO_MODE_ANALOG))
-
-// GPIO pull
-enum {
-    GPIO_PULL_UP = 0,
-    GPIO_PULL_DOWN,
-    GPIO_PULL_NONE,
-};
-
-#define IS_GPIO_PULL(p)     ((bool)(p > GPIO_PULL_UP && p < GPIO_PULL_NONE))
+#define IS_GPIO_STRENGTH(s) ((s == GPIO_STRENGTH_2MA) || \
+                            (s == GPIO_STRENGTH_4MA) || \
+                            (s == GPIO_STRENGTH_8MA))
 
 // GPIO ports
 enum {
@@ -100,7 +87,7 @@ enum {
     PORT_F = GPIO_PORTF_AHB_BASE,
 };
 
-#define IS_GPIO_PORT(p)     ((bool)(p > PORT_A && p < PORT_F))
+#define IS_GPIO_PORT(p)     (_GPIOBaseValid(p))
 
 // GPIO afs
 enum {
@@ -231,10 +218,13 @@ enum {
 uint32_t mp_hal_convert_mode_pull_to_dir_type(pin_obj_t* pin, uint32_t* dir, uint32_t* type);
 
 
-uint32_t mp_hal_pin_get_mode(const pin_obj_t *pin);
-uint32_t mp_hal_pin_get_pull(const pin_obj_t *pin);
-uint32_t mp_hal_pin_get_strength(const pin_obj_t *pin)
+uint32_t mp_hal_pin_get_dir(const pin_obj_t *pin);
+uint32_t mp_hal_pin_get_type(const pin_obj_t *pin);
+uint32_t mp_hal_pin_get_drive(const pin_obj_t *pin)
 uint32_t mp_hal_pin_get_af(const pin_obj_t *pin);
+
+uint32_t mp_hal_pin_get_value(const pin_obj_t* pin);
+void mp_hal_pin_set_value(const pin_obj_t* pin, uint32_t value);
 
 void mp_hal_gpio_clock_enable(const uint32_t port);
 void mp_hal_gpio_init(uint32_t port, uint32_t pin_mask, uint mode, uint pull, uint drive);
