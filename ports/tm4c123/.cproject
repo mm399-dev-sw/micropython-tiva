@@ -39,6 +39,7 @@
 								<option id="gnu.c.compiler.option.preprocessor.def.symbols.1581719304" name="Defined symbols (-D)" superClass="gnu.c.compiler.option.preprocessor.def.symbols" useByScannerDiscovery="false" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="PART_TM4C123GHPM"/>
 									<listOptionValue builtIn="false" value="MICROPY_PIN_DEFS_PORT_H=&quot;pin_defs_tm4c123.h&quot;"/>
+									<listOptionValue builtIn="false" value="mp_uint_t=uint"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.1735906583" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
 							</tool>

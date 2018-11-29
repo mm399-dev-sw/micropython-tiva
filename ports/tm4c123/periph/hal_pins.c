@@ -88,76 +88,84 @@ void mp_hal_gpio_clock_enable(const uint32_t port) {
     while(!MAP_SysCtlPeripheralReady(port)){};
 }
 
-uint32_t mp_hal_convert_mode_pull_to_dir_type(uint32_t mode, uint32_t pull, uint32_t* dir, uint32_t* type) {
-    uint32_t d;
-    uint32_t t;
-    switch (mode) {
-        case GPIO_MODE_IN:
-            d = GPIO_DIR_MODE_IN;
-            break;
-        case GPIO_MODE_OUT:
-            d = GPIO_DIR_MODE_OUT;
-            switch (pull) {
-                case GPIO_PULL_UP:
-                    t = GPIO_PIN_TYPE_STD_WPU;
-                    break;
-                case GPIO_PULL_DOWN:
-                    t = GPIO_PIN_TYPE_STD_WPD;
-                    break;
-                case GPIO_PULL_NONE:
-                    t = GPIO_PIN_TYPE_STD;
-                    break;
-                default:
-                    t = GPIO_PIN_TYPE_STD;
-                    break;
-            }
-            break;
-        case GPIO_MODE_OPEN_DRAIN:
-            d = GPIO_DIR_MODE_OUT;
-            t = GPIO_PIN_TYPE_OD;
-            break;
-        case GPIO_MODE_AF_PP:
-            d = GPIO_DIR_MODE_HW;
-            switch (pull) {
-                case GPIO_PULL_UP:
-                    t = GPIO_PIN_TYPE_STD_WPU;
-                    break;
-                case GPIO_PULL_DOWN:
-                    t = GPIO_PIN_TYPE_STD_WPD;
-                    break;
-                case GPIO_PULL_NONE:
-                    t = GPIO_PIN_TYPE_STD;
-                    break;
-                default:
-                    t = GPIO_PIN_TYPE_STD;
-                    break;
-            }
-            break;
-        case GPIO_MODE_AF_OD:
-            d = GPIO_DIR_MODE_HW;
-            t = GPIO_PIN_TYPE_OD;
-            break;
-        case GPIO_MODE_ANALOG:
-            d = GPIO_DIR_MODE_HW;
-            t = GPIO_PIN_TYPE_ANALOG;
-            break;
-        default:
-            d = GPIO_DIR_MODE_IN;
-            break;
-    }
-}
+//uint32_t mp_hal_convert_mode_pull_to_dir_type(uint32_t mode, uint32_t pull, uint32_t* dir, uint32_t* type) {
+//    uint32_t d;
+//    uint32_t t;
+//    switch (mode) {
+//        case GPIO_MODE_IN:
+//            d = GPIO_DIR_MODE_IN;
+//            break;
+//        case GPIO_MODE_OUT:
+//            d = GPIO_DIR_MODE_OUT;
+//            switch (pull) {
+//                case GPIO_PULL_UP:
+//                    t = GPIO_PIN_TYPE_STD_WPU;
+//                    break;
+//                case GPIO_PULL_DOWN:
+//                    t = GPIO_PIN_TYPE_STD_WPD;
+//                    break;
+//                case GPIO_PULL_NONE:
+//                    t = GPIO_PIN_TYPE_STD;
+//                    break;
+//                default:
+//                    t = GPIO_PIN_TYPE_STD;
+//                    break;
+//            }
+//            break;
+//        case GPIO_MODE_OPEN_DRAIN:
+//            d = GPIO_DIR_MODE_OUT;
+//            t = GPIO_PIN_TYPE_OD;
+//            break;
+//        case GPIO_MODE_AF_PP:
+//            d = GPIO_DIR_MODE_HW;
+//            switch (pull) {
+//                case GPIO_PULL_UP:
+//                    t = GPIO_PIN_TYPE_STD_WPU;
+//                    break;
+//                case GPIO_PULL_DOWN:
+//                    t = GPIO_PIN_TYPE_STD_WPD;
+//                    break;
+//                case GPIO_PULL_NONE:
+//                    t = GPIO_PIN_TYPE_STD;
+//                    break;
+//                default:
+//                    t = GPIO_PIN_TYPE_STD;
+//                    break;
+//            }
+//            break;
+//        case GPIO_MODE_AF_OD:
+//            d = GPIO_DIR_MODE_HW;
+//            t = GPIO_PIN_TYPE_OD;
+//            break;
+//        case GPIO_MODE_ANALOG:
+//            d = GPIO_DIR_MODE_HW;
+//            t = GPIO_PIN_TYPE_ANALOG;
+//            break;
+//        default:
+//            d = GPIO_DIR_MODE_IN;
+//            break;
+//    }
+//}
 
 void mp_hal_gpio_init(uint32_t port, uint32_t pin_mask, uint dir, uint type, uint drive) {
     mp_hal_gpio_clock_enable(port);
 
-    GPIODirModeSet(port, pin_mask, dir);
-    GPIOPadConfigSet(port, pin_mask, drive, type);
+    MAP_GPIODirModeSet(port, pin_mask, dir);
+    MAP_GPIOPadConfigSet(port, pin_mask, drive, type);
 }
 
-uint32_t mp_hal_pin_get_value(pin_obj_t* pin) {
+uint32_t mp_hal_pin_read(const pin_obj_t* pin) {
     return MAP_GPIOPinRead(pin->port, pin->pin_mask);
 }
 
-void mp_hal_pin_set_value(pin_obj_t* pin, uint32_t value) {
-    GPIOPinWrite(pin->port, pin->pin_mask, value);
+void mp_hal_pin_write(const pin_obj_t* pin, uint32_t value) {
+    MAP_GPIOPinWrite(pin->port, pin->pin_mask, value ? pin->pin_mask : 0);
+}
+
+void mp_hal_pin_low(const pin_obj_t* pin) {
+    MAP_GPIOPinWrite(pin->port, pin->pin_mask, 0);
+}
+
+void mp_hal_pin_hi(const pin_obj_t* pin) {
+    MAP_GPIOPinWrite(pin->port, pin->pin_mask, pin->pin_mask);
 }

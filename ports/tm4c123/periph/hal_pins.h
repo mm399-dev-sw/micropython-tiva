@@ -223,8 +223,10 @@ uint32_t mp_hal_pin_get_type(const pin_obj_t *pin);
 uint32_t mp_hal_pin_get_drive(const pin_obj_t *pin)
 uint32_t mp_hal_pin_get_af(const pin_obj_t *pin);
 
-uint32_t mp_hal_pin_get_value(const pin_obj_t* pin);
-void mp_hal_pin_set_value(const pin_obj_t* pin, uint32_t value);
+uint32_t mp_hal_pin_read(const pin_obj_t* pin);
+void mp_hal_pin_write(const pin_obj_t* pin, uint32_t value);
+void mp_hal_pin_low(const pin_obj_t* pin);
+void mp_hal_pin_high(const pin_obj_t* pin);
 
 void mp_hal_gpio_clock_enable(const uint32_t port);
 void mp_hal_gpio_init(uint32_t port, uint32_t pin_mask, uint mode, uint pull, uint drive);
