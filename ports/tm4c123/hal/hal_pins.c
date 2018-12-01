@@ -24,7 +24,8 @@
  * THE SOFTWARE.
  */
 
-#include <hal_pins.h>
+#include <hal/hal_pins.h>
+#include "pin.h"
 #include "py/obj.h"
 #include "inc/hw_gpio.h"
 #include "driverlib/gpio.h"
@@ -56,24 +57,24 @@
 //    }
 //}
 
-uint32_t mp_hal_pin_get_dir(const pin_obj_t *pin) {
+uint32_t pin_get_dir(const pin_obj_t *pin) {
     return MAP_GPIODirModeGet(pin->port, pin->pin_mask);
 
 }
 
-uint32_t mp_hal_pin_get_type(const pin_obj_t *pin) {
+uint32_t pin_get_type(const pin_obj_t *pin) {
     uint32_t type;
     MAP_GPIOPadConfigGet(pin->port, pin->pin_mask, NULL, &type);
     return type;
 }
 
-uint32_t mp_hal_pin_get_drive(const pin_obj_t *pin) {
+uint32_t pin_get_drive(const pin_obj_t *pin) {
     uint32_t drive;
     MAP_GPIOPadConfigGet(pin->port, pin->pin_mask, &drive, NULL);
     return drive;
 }
 
-uint32_t mp_hal_pin_get_af(const pin_obj_t *pin) {
+uint32_t pin_get_af(const pin_obj_t *pin) {
     uint32_t dir = MAP_GPIODirModeGet(pin->port, pin->pin_mask);
     if (dir == GPIO_DIR_MODE_HW) {
         return (pin->gpio->PCTL >> (pin->pin_num * 4)) & 0xF;
@@ -83,12 +84,12 @@ uint32_t mp_hal_pin_get_af(const pin_obj_t *pin) {
     return -1;
 }
 
-void mp_hal_gpio_clock_enable(const uint32_t port) {
+void gpio_clock_enable(const uint32_t port) {
     MAP_SysCtlPeripheralEnable(port);
     while(!MAP_SysCtlPeripheralReady(port)){};
 }
 
-//uint32_t mp_hal_convert_mode_pull_to_dir_type(uint32_t mode, uint32_t pull, uint32_t* dir, uint32_t* type) {
+//uint32_t convert_mode_pull_to_dir_type(uint32_t mode, uint32_t pull, uint32_t* dir, uint32_t* type) {
 //    uint32_t d;
 //    uint32_t t;
 //    switch (mode) {
@@ -147,25 +148,25 @@ void mp_hal_gpio_clock_enable(const uint32_t port) {
 //    }
 //}
 
-void mp_hal_gpio_init(uint32_t port, uint32_t pin_mask, uint dir, uint type, uint drive) {
-    mp_hal_gpio_clock_enable(port);
+void gpio_init(uint32_t port, uint32_t pin_mask, uint dir, uint type, uint drive) {
+    gpio_clock_enable(port);
 
     MAP_GPIODirModeSet(port, pin_mask, dir);
     MAP_GPIOPadConfigSet(port, pin_mask, drive, type);
 }
 
-uint32_t mp_hal_pin_read(const pin_obj_t* pin) {
+uint32_t pin_read(const pin_obj_t* pin) {
     return MAP_GPIOPinRead(pin->port, pin->pin_mask);
 }
 
-void mp_hal_pin_write(const pin_obj_t* pin, uint32_t value) {
+void pin_write(const pin_obj_t* pin, uint32_t value) {
     MAP_GPIOPinWrite(pin->port, pin->pin_mask, value ? pin->pin_mask : 0);
 }
 
-void mp_hal_pin_low(const pin_obj_t* pin) {
+void pin_low(const pin_obj_t* pin) {
     MAP_GPIOPinWrite(pin->port, pin->pin_mask, 0);
 }
 
-void mp_hal_pin_hi(const pin_obj_t* pin) {
+void pin_high(const pin_obj_t* pin) {
     MAP_GPIOPinWrite(pin->port, pin->pin_mask, pin->pin_mask);
 }

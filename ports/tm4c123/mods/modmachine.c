@@ -36,10 +36,10 @@
 #include "extmod/machine_pulse.h"
 #include "extmod/machine_i2c.h"
 #include "lib/utils/pyexec.h"
-#include "lib/oofatfs/ff.h"
-#include "extmod/vfs.h"
-#include "extmod/vfs_fat.h"
-#include "gccollect.h"
+//#include "lib/oofatfs/ff.h"
+//#include "extmod/vfs.h"
+//#include "extmod/vfs_fat.h"
+//#include "gccollect.h"
 #include "driverlib/sysctl.h"
 //#include "irq.h"
 //#include "pybthread.h"
@@ -61,7 +61,7 @@
 #define PYB_RESET_WDT       (3)
 #define PYB_RESET_DEEPSLEEP (4)
 #define PYB_RESET_BROWNOUT  (5)
-#define PYB_RESET_MOSCFAIL  (6)
+#define PYB_RESET_OTHER     (6)
 
 STATIC uint32_t reset_cause;
 
@@ -69,22 +69,22 @@ void machine_init(void) {
 
     // get reset cause from RCC flags
     uint32_t state = MAP_SysCtlResetCauseGet();
-    if (state & (1 << 5) || state & (1 << 3) {
+    if ((state & SYSCTL_CAUSE_WDOG0) || (state & SYSCTL_CAUSE_WDOG1)) {
         reset_cause = PYB_RESET_WDT;
-    } else if (state & (1 << 1))  {
+    } else if (state & SYSCTL_CAUSE_POR)  {
         reset_cause = PYB_RESET_POWER_ON;
-    } else if (state & (1 << 2)) {
+    } else if (state & SYSCTL_CAUSE_BOR) {
         reset_cause = PYB_RESET_BROWNOUT;
-    } else if (state & 1) {
+    } else if (state & SYSCTL_CAUSE_EXT) {
         reset_cause = PYB_RESET_HARD;
-    } else if (state & (1 << 16)){
-        reset_cause = PYB_RESET_MOSCFAIL;
+    } else if ((state & SYSCTL_CAUSE_HSRVREQ) || (state & SYSCTL_CAUSE_HIB)){
+        reset_cause = PYB_RESET_OTHER;
     } else {
         // default is soft reset
         reset_cause = PYB_RESET_SOFT;
     }
     // clear RCC reset flags
-    MAP_SysCtlResetCauseClear();
+    MAP_SysCtlResetCauseClear(state);
 }
 
 void machine_deinit(void) {
@@ -99,7 +99,7 @@ STATIC mp_obj_t machine_info(size_t n_args, const mp_obj_t *args) {
     {
         uint32_t id = SYSCTL->DID0;
 
-        printf("ID: CLASS=%02x, v%02u.%02u", (id & 0x00ff0000) >> 16, (id & 0xff00) >> 8, id & 0xff);
+        printf("ID: CLASS=%02x, v%02u.%02u", (uint8_t)((id >> 16) & 0xff), (uint8_t)((id >> 8) & 0xff), (uint8_t)(id & 0xff));
     }
 
     // get and print clock speeds
@@ -191,30 +191,30 @@ MP_DEFINE_CONST_FUN_OBJ_0(machine_soft_reset_obj, machine_soft_reset);
 
 // Activate the bootloader without BOOT* pins.
 STATIC NORETURN mp_obj_t machine_bootloader(void) {
-    #if MICROPY_HW_ENABLE_USB
-    pyb_usb_dev_deinit();
-    #endif
-    #if MICROPY_HW_ENABLE_STORAGE
-    storage_flush();
-    #endif
-
-    HAL_RCC_DeInit();
-    HAL_DeInit();
-
-    #if (__MPU_PRESENT == 1)
-    // MPU must be disabled for bootloader to function correctly
-    HAL_MPU_Disable();
-    #endif
-
-    __HAL_SYSCFG_REMAPMEMORY_SYSTEMFLASH();
-
-    // arm-none-eabi-gcc 4.9.0 does not correctly inline this
-    // MSP function, so we write it out explicitly here.
-    //__set_MSP(*((uint32_t*) 0x00000000));
-    __ASM volatile ("movs r3, #0\nldr r3, [r3, #0]\nMSR msp, r3\n" : : : "r3", "sp");
-
-    ((void (*)(void)) *((uint32_t*) 0x00000004))();
-
+//    #if MICROPY_HW_ENABLE_USB
+//    pyb_usb_dev_deinit();
+//    #endif
+//    #if MICROPY_HW_ENABLE_STORAGE
+//    storage_flush();
+//    #endif
+//
+////    HAL_RCC_DeInit();
+////    HAL_DeInit();
+//
+//    #if (__MPU_PRESENT == 1)
+//    // MPU must be disabled for bootloader to function correctly
+//    HAL_MPU_Disable();
+//    #endif
+//
+////    __HAL_SYSCFG_REMAPMEMORY_SYSTEMFLASH();
+//
+//    // arm-none-eabi-gcc 4.9.0 does not correctly inline this
+//    // MSP function, so we write it out explicitly here.
+//    //__set_MSP(*((uint32_t*) 0x00000000));
+//    __ASM volatile ("movs r3, #0\nldr r3, [r3, #0]\nMSR msp, r3\n" : : : "r3", "sp");
+//
+//    ((void (*)(void)) *((uint32_t*) 0x00000004))();
+//
     while (1);
 }
 MP_DEFINE_CONST_FUN_OBJ_0(machine_bootloader_obj, machine_bootloader);
@@ -423,17 +423,19 @@ STATIC const mp_rom_map_elem_t machine_module_globals_table[] = {
 #if MICROPY_HW_ENABLE_RNG
     { MP_ROM_QSTR(MP_QSTR_rng),                 MP_ROM_PTR(&pyb_rng_get_obj) },
 #endif
+#ifdef MICROPY_INCLUDED_TM4C_MODS_SLEEP_H_ // pybsleep included
     { MP_ROM_QSTR(MP_QSTR_idle),                MP_ROM_PTR(&pyb_wfi_obj) },
     { MP_ROM_QSTR(MP_QSTR_sleep),               MP_ROM_PTR(&machine_sleep_obj) },
     { MP_ROM_QSTR(MP_QSTR_deepsleep),           MP_ROM_PTR(&machine_deepsleep_obj) },
     { MP_ROM_QSTR(MP_QSTR_reset_cause),         MP_ROM_PTR(&machine_reset_cause_obj) },
+#endif
 #if 0
     { MP_ROM_QSTR(MP_QSTR_wake_reason),         MP_ROM_PTR(&machine_wake_reason_obj) },
 #endif
-
+#ifdef MICROPY_INCLUDED_TM4C_MODS_IRQ_H_
     { MP_ROM_QSTR(MP_QSTR_disable_irq),         MP_ROM_PTR(&pyb_disable_irq_obj) },
     { MP_ROM_QSTR(MP_QSTR_enable_irq),          MP_ROM_PTR(&pyb_enable_irq_obj) },
-
+#endif
     { MP_ROM_QSTR(MP_QSTR_time_pulse_us),       MP_ROM_PTR(&machine_time_pulse_us_obj) },
 
     { MP_ROM_QSTR(MP_QSTR_mem8),                MP_ROM_PTR(&machine_mem8_obj) },
@@ -450,9 +452,11 @@ STATIC const mp_rom_map_elem_t machine_module_globals_table[] = {
 #if MICROPY_PY_MACHINE_I2C
     { MP_ROM_QSTR(MP_QSTR_I2C),                 MP_ROM_PTR(&machine_i2c_type) },
 #endif
+#ifdef MICROPY_INCLUDED_TM4C_MODS_SPI_H_
     { MP_ROM_QSTR(MP_QSTR_SPI),                 MP_ROM_PTR(&machine_hard_spi_type) },
     { MP_ROM_QSTR(MP_QSTR_UART),                MP_ROM_PTR(&pyb_uart_type) },
     { MP_ROM_QSTR(MP_QSTR_WDT),                 MP_ROM_PTR(&pyb_wdt_type) },
+#endif
 #if 0
     { MP_ROM_QSTR(MP_QSTR_Timer),               MP_ROM_PTR(&pyb_timer_type) },
     { MP_ROM_QSTR(MP_QSTR_HeartBeat),           MP_ROM_PTR(&pyb_heartbeat_type) },

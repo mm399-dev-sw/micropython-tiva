@@ -28,7 +28,9 @@
 #define MICROPY_INCLUDED_TM4C_MODS_PINS_H_
 
 #include <stdint.h>
-
+#include <stdio.h>
+#include <string.h>
+#include "hal/hal_pins.h"
 #include "py/runtime.h"
 #include "py/gc.h"
 #include "py/qstr.h"
@@ -44,8 +46,36 @@
 #include "driverlib/gpio.h"
 #include "driverlib/rom_map.h"
 #include "driverlib/interrupt.h"
-#include "hal_pins.h"
 
+
+typedef struct {
+    uint32_t _1[255];
+    volatile uint32_t DATA;
+    volatile uint32_t DIR;
+    volatile uint32_t IS;
+    volatile uint32_t IBE;
+    volatile uint32_t IEV;
+    volatile uint32_t IM;
+    volatile uint32_t RIS;
+    volatile uint32_t MIS;
+    volatile uint32_t ICR;
+    volatile uint32_t AFSEL;
+    uint32_t _2[55];
+    volatile uint32_t DR2R;
+    volatile uint32_t DR4R;
+    volatile uint32_t DR8R;
+    volatile uint32_t ODR;
+    volatile uint32_t PUR;
+    volatile uint32_t PDR;
+    volatile uint32_t SLR;
+    volatile uint32_t DEN;
+    volatile uint32_t LOCK;
+    volatile uint32_t CR;
+    volatile uint32_t AMSEL;
+    volatile uint32_t PCTL;
+    volatile uint32_t ADCCTL;
+    volatile uint32_t DMACTL;
+} periph_gpio_t;
 
 
 typedef struct {
@@ -54,7 +84,7 @@ typedef struct {
   uint8_t fn;
   uint8_t unit;
   uint8_t type;
-  void* reg;
+  //void* reg;
 } pin_af_obj_t;
 
 typedef struct {
@@ -81,14 +111,13 @@ extern const mp_obj_type_t pin_af_type;
 
 #include "genhdr/pins.h"
 
-extern const pin_named_pin_t pin_board_pins[];
-extern const pin_named_pin_t pin_cpu_pins[];
-
-
 typedef struct {
     const char *name;
     const pin_obj_t *pin;
 } pin_named_pin_t;
+
+extern const pin_named_pin_t pin_board_pins[];
+extern const pin_named_pin_t pin_cpu_pins[];
 
 typedef struct {
     mp_obj_base_t base;

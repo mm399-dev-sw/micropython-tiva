@@ -75,7 +75,7 @@ class Pin:
     def print(self):
         print('// {}'.format(self.name))
         if len(self.afs):
-            print('const pin_af_t pin_{}_af[] = {{'.format(self.name))
+            print('const pin_af_obj_t pin_{}_af[] = {{'.format(self.name))
             for af in self.afs:
                 af.print()
             print('};')

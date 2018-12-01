@@ -30,35 +30,9 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-
-typedef struct {
-    uint32_t _1[255];
-    volatile uint32_t DATA;
-    volatile uint32_t DIR;
-    volatile uint32_t IS;
-    volatile uint32_t IBE;
-    volatile uint32_t IEV;
-    volatile uint32_t IM;
-    volatile uint32_t RIS;
-    volatile uint32_t MIS;
-    volatile uint32_t ICR;
-    volatile uint32_t AFSEL;
-    uint32_t _2[55];
-    volatile uint32_t DR2R;
-    volatile uint32_t DR4R;
-    volatile uint32_t DR8R;
-    volatile uint32_t ODR;
-    volatile uint32_t PUR;
-    volatile uint32_t PDR;
-    volatile uint32_t SLR;
-    volatile uint32_t DEN;
-    volatile uint32_t LOCK;
-    volatile uint32_t CR;
-    volatile uint32_t AMSEL;
-    volatile uint32_t PCTL;
-    volatile uint32_t ADCCTL;
-    volatile uint32_t DMACTL;
-} periph_gpio_t;
+#include "mods/pin.h"
+#include "inc/hw_gpio.h"
+#include "driverlib/gpio.h"
 
 
 #define IS_GPIO_DIR(d)      ((d == GPIO_DIR_MODE_IN) || \
@@ -78,14 +52,14 @@ typedef struct {
                             (s == GPIO_STRENGTH_8MA))
 
 // GPIO ports
-enum {
-    PORT_A = GPIO_PORTA_AHB_BASE,
-    PORT_B = GPIO_PORTB_AHB_BASE,
-    PORT_C = GPIO_PORTC_AHB_BASE,
-    PORT_D = GPIO_PORTD_AHB_BASE,
-    PORT_E = GPIO_PORTE_AHB_BASE,
-    PORT_F = GPIO_PORTF_AHB_BASE,
-};
+//enum {
+//    PORT_A = GPIO_PORTA_AHB_BASE,
+//    PORT_B = GPIO_PORTB_AHB_BASE,
+//    PORT_C = GPIO_PORTC_AHB_BASE,
+//    PORT_D = GPIO_PORTD_AHB_BASE,
+//    PORT_E = GPIO_PORTE_AHB_BASE,
+//    PORT_F = GPIO_PORTF_AHB_BASE,
+//};
 
 #define IS_GPIO_PORT(p)     (_GPIOBaseValid(p))
 
@@ -215,21 +189,20 @@ enum {
 #define gpio_low(gpio, pin) gpio_set(gpio, pin, 0);
 #define gpio_high(gpio, pin) gpio_set(gpio, pin, 1);
 
-uint32_t mp_hal_convert_mode_pull_to_dir_type(pin_obj_t* pin, uint32_t* dir, uint32_t* type);
+uint32_t convert_mode_pull_to_dir_type(pin_obj_t* pin, uint32_t* dir, uint32_t* type);
 
+uint32_t pin_get_dir(const pin_obj_t *pin);
+uint32_t pin_get_type(const pin_obj_t *pin);
+uint32_t pin_get_drive(const pin_obj_t *pin);
+uint32_t pin_get_af(const pin_obj_t *pin);
 
-uint32_t mp_hal_pin_get_dir(const pin_obj_t *pin);
-uint32_t mp_hal_pin_get_type(const pin_obj_t *pin);
-uint32_t mp_hal_pin_get_drive(const pin_obj_t *pin)
-uint32_t mp_hal_pin_get_af(const pin_obj_t *pin);
+uint32_t pin_read(const pin_obj_t* pin);
+void pin_write(const pin_obj_t* pin, uint32_t value);
+void pin_low(const pin_obj_t* pin);
+void pin_high(const pin_obj_t* pin);
 
-uint32_t mp_hal_pin_read(const pin_obj_t* pin);
-void mp_hal_pin_write(const pin_obj_t* pin, uint32_t value);
-void mp_hal_pin_low(const pin_obj_t* pin);
-void mp_hal_pin_high(const pin_obj_t* pin);
-
-void mp_hal_gpio_clock_enable(const uint32_t port);
-void mp_hal_gpio_init(uint32_t port, uint32_t pin_mask, uint mode, uint pull, uint drive);
+void gpio_clock_enable(const uint32_t port);
+void gpio_init(uint32_t port, uint32_t pin_mask, uint dir, uint type, uint drive);
 
 
 #endif // MICROPY_INCLUDED_TM4C_HAL_PINS_H

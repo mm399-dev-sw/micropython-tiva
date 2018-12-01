@@ -28,7 +28,7 @@
 #include "py/runtime.h"
 #include "py/mphal.h"
 #include "extmod/virtpin.h"
-#include "extint.h"
+//#include "extint.h"
 #include "inc/hw_gpio.h"
 #include "inc/hw_ints.h"
 #include "driverlib/gpio.h"
