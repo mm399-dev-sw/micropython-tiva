@@ -30,7 +30,6 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-#include "hal/hal_pins.h"
 #include "py/runtime.h"
 #include "py/gc.h"
 #include "py/qstr.h"
@@ -91,7 +90,7 @@ typedef struct {
     const mp_obj_base_t base;
     const qstr          name;
     const uint32_t      port;   //Address of Port
-    const periph_gpio_t gpio;   //Structure for register access
+    const periph_gpio_t* gpio;   //Structure for register access
     const pin_af_obj_t  *af_list;
     uint32_t            dir;
     uint32_t            type;
@@ -106,7 +105,7 @@ typedef struct {
     uint32_t            irq_flags;
 } pin_obj_t;
 
-extern const mp_obj_type_t pin_type;
+extern const mp_obj_type_t pin_mod;
 extern const mp_obj_type_t pin_af_type;
 
 #include "genhdr/pins.h"

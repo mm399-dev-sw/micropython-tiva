@@ -24,6 +24,10 @@
  * THE SOFTWARE.
  */
 
+#include <string.h>
+#include <stdio.h>
+#include <stdint.h>
+#include <stdbool.h>
 #include <pin.h>
 #include "py/runtime.h"
 #include "py/mphal.h"
@@ -108,7 +112,7 @@ const pin_obj_t *pin_find(mp_obj_t user_obj) {
     const pin_obj_t *pin_obj;
 
     // If a pin was provided, then use it
-    if (MP_OBJ_IS_TYPE(user_obj, &pin_type)) {
+    if (MP_OBJ_IS_TYPE(user_obj, &pin_mod)) {
         pin_obj = MP_OBJ_TO_PTR(user_obj);
         if (pin_class_debug) {
             printf("Pin map passed pin ");
@@ -121,7 +125,7 @@ const pin_obj_t *pin_find(mp_obj_t user_obj) {
     if (MP_STATE_PORT(pin_class_mapper) != mp_const_none) {
         mp_obj_t o = mp_call_function_1(MP_STATE_PORT(pin_class_mapper), user_obj);
         if (o != mp_const_none) {
-            if (!MP_OBJ_IS_TYPE(o, &pin_type)) {
+            if (!MP_OBJ_IS_TYPE(o, &pin_mod)) {
                 mp_raise_ValueError("Pin.mapper didn't return a Pin object");
             }
             if (pin_class_debug) {
@@ -185,16 +189,18 @@ const pin_obj_t *pin_find(mp_obj_t user_obj) {
 /// \method __str__()
 /// Return a string describing the pin object.
 STATIC void pin_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t kind) {
+
     pin_obj_t *self = MP_OBJ_TO_PTR(self_in);
 
     // pin name
     mp_printf(print, "Pin(Pin.cpu.%q, mode=Pin.", self->name);
 
-    uint32_t dir = pin_get_mode(self);
-    uint32_t type = pin_get_type(self);
+    uint32_t dir = MAP_GPIODirModeGet(self->port, self->pin_mask);
+    uint32_t type;
+    MAP_GPIOPadConfigGet(self->port, self->pin_mask, NULL, &type);
 
 
-    if (type == GPIO_PIN_TYPE_ANALOG) {
+    if (type & GPIO_PIN_TYPE_ANALOG) {
         // analog
         mp_print_str(print, "ANALOG)");
 
@@ -202,18 +208,18 @@ STATIC void pin_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t
         // IO mode
         bool af = false;
         qstr mode_qst;
-        if (dir == GPIO_DIR_MODE_IN) {
+        if (dir & GPIO_DIR_MODE_IN) {
             mode_qst = MP_QSTR_IN;
-        } else if (dir == GPIO_DIR_MODE_OUT) {
-            if (type == GPIO_PIN_TYPE_OD){
+        } else if (dir & GPIO_DIR_MODE_OUT) {
+            if (type & GPIO_PIN_TYPE_OD){
                 mode_qst = MP_QSTR_OPEN_DRAIN;
             } else {
                 mode_qst = MP_QSTR_OUT;
             }
         } else {
             af = true;
-            if (dir == GPIO_DIR_MODE_HW) {
-                if (type == GPIO_PIN_TYPE_OD){
+            if (dir & GPIO_DIR_MODE_HW) {
+                if (type & GPIO_PIN_TYPE_OD){
                    mode_qst = MP_QSTR_ALT_OPEN_DRAIN;
                 } else {
                     mode_qst = MP_QSTR_ALT;
@@ -235,7 +241,7 @@ STATIC void pin_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t
 
         // AF mode
         if (af) {
-            mp_uint_t af_idx = pin_get_af(self);
+            mp_uint_t af_idx = mp_hal_pin_get_af(self);
             const pin_af_obj_t *af_obj = pin_find_af_by_index(self, af_idx);
             if (af_obj == NULL) {
                 mp_printf(print, ", af=%d)", af_idx);
@@ -245,6 +251,7 @@ STATIC void pin_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t
         } else {
             mp_print_str(print, ")");
         }
+    }
 }
 
 STATIC mp_obj_t pin_obj_init_helper(const pin_obj_t *pin, size_t n_args, const mp_obj_t *args, mp_map_t *kw_args);
@@ -274,7 +281,7 @@ STATIC mp_obj_t pin_call(mp_obj_t self_in, size_t n_args, size_t n_kw, const mp_
     pin_obj_t *self = MP_OBJ_TO_PTR(self_in);
     if (n_args == 0) {
         // get pin
-        return MP_OBJ_NEW_SMALL_INT(mp_hal_pin_read(self_in));
+        return MP_OBJ_NEW_SMALL_INT(mp_hal_pin_read(self));
     } else {
         // set pin
         mp_hal_pin_write(self, mp_obj_is_true(args[0]));
@@ -366,7 +373,7 @@ STATIC mp_obj_t pin_obj_init_helper(const pin_obj_t *self, size_t n_args, const 
     if (args[2].u_obj != MP_OBJ_NULL) {
         drive = mp_obj_get_int(args[2].u_obj);
     }
-    if (!IS_GPIO_DRIVE(drive)) {
+    if (!IS_GPIO_STRENGTH(drive)) {
         nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_ValueError, "invalid pin drive: %d", drive));
     }
 
@@ -386,7 +393,7 @@ STATIC mp_obj_t pin_obj_init_helper(const pin_obj_t *self, size_t n_args, const 
 //    if (args[4].u_obj != MP_OBJ_NULL) {
 //        mp_hal_pin_write(self, mp_obj_is_true(args[3].u_obj));
 //    }
-    mp_hal_gpio_init(self->port, self->pin_mask, dir, type, drive);
+    mp_hal_pin_config(self, dir, type, drive);
 
     if (args[4].u_obj != MP_OBJ_NULL) {
         mp_hal_pin_write(self, mp_obj_is_true(args[4].u_obj));
@@ -428,23 +435,23 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_1(pin_on_obj, pin_on);
 
 // pin.irq(handler=None, trigger=IRQ_RISING, hard=False)
 STATIC mp_obj_t pin_irq(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
-    enum { ARG_handler, ARG_trigger, ARG_hard };
-    static const mp_arg_t allowed_args[] = {
-        { MP_QSTR_handler, MP_ARG_OBJ, {.u_rom_obj = MP_ROM_PTR(&mp_const_none_obj)} },
-        { MP_QSTR_trigger, MP_ARG_INT, {.u_int = GPIO_RISING_EDGE} },
-        { MP_QSTR_hard, MP_ARG_BOOL, {.u_bool = false} },
-    };
-    pin_obj_t *self = MP_OBJ_TO_PTR(pos_args[0]);
-    mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
-    mp_arg_parse_all(n_args - 1, pos_args + 1, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
-
-    if (n_args > 1 || kw_args->used != 0) {
-        // configure irq
-        extint_register_pin(self, args[ARG_trigger].u_int,
-            args[ARG_hard].u_bool, args[ARG_handler].u_obj);
-    }
-
-    // TODO should return an IRQ object
+//    enum { ARG_handler, ARG_trigger, ARG_hard };
+//    static const mp_arg_t allowed_args[] = {
+//        { MP_QSTR_handler, MP_ARG_OBJ, {.u_rom_obj = MP_ROM_PTR(&mp_const_none_obj)} },
+//        { MP_QSTR_trigger, MP_ARG_INT, {.u_int = GPIO_RISING_EDGE} },
+//        { MP_QSTR_hard, MP_ARG_BOOL, {.u_bool = false} },
+//    };
+//    pin_obj_t *self = MP_OBJ_TO_PTR(pos_args[0]);
+//    mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
+//    mp_arg_parse_all(n_args - 1, pos_args + 1, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
+//
+//    if (n_args > 1 || kw_args->used != 0) {
+//        // configure irq
+//        extint_register_pin(self, args[ARG_trigger].u_int,
+//            args[ARG_hard].u_bool, args[ARG_handler].u_obj);
+//    }
+//
+//    // TODO should return an IRQ object
     return mp_const_none;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(pin_irq_obj, 1, pin_irq);
@@ -505,7 +512,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_1(pin_gpio_obj, pin_gpio);
 /// will match one of the allowed constants for the mode argument to the init
 /// function.
 STATIC mp_obj_t pin_dir(mp_obj_t self_in) {
-    return MP_OBJ_NEW_SMALL_INT(mp_hal_pin_get_dir(MP_OBJ_TO_PTR(self_in)));
+    return MP_OBJ_NEW_SMALL_INT(mp_hal_pin_get_dir((pin_obj_t*)MP_OBJ_TO_PTR(self_in)));
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(pin_dir_obj, pin_dir);
 
@@ -514,7 +521,11 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_1(pin_dir_obj, pin_dir);
 /// will match one of the allowed constants for the pull argument to the init
 /// function.
 STATIC mp_obj_t pin_type(mp_obj_t self_in) {
-    return MP_OBJ_NEW_SMALL_INT(mp_hal_pin_get_type(MP_OBJ_TO_PTR(self_in)));
+    uint32_t type;
+    pin_obj_t* self = MP_OBJ_TO_PTR(self_in);
+    MAP_GPIOPadConfigGet(self->port, self->pin_mask, NULL, &type);
+
+    return MP_OBJ_NEW_SMALL_INT(type);
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(pin_type_obj, pin_type);
 
@@ -523,7 +534,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_1(pin_type_obj, pin_type);
 /// integer returned will match one of the allowed constants for the af
 /// argument to the init function.
 STATIC mp_obj_t pin_af(mp_obj_t self_in) {
-    return MP_OBJ_NEW_SMALL_INT(pin_get_af(MP_OBJ_TO_PTR(self_in)));
+    return MP_OBJ_NEW_SMALL_INT(mp_hal_pin_get_af((pin_obj_t*)MP_OBJ_TO_PTR(self_in)));
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(pin_af_obj, pin_af);
 
@@ -576,11 +587,11 @@ STATIC const mp_rom_map_elem_t pin_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_LOW_POWER),     MP_ROM_INT(GPIO_STRENGTH_2MA) },
     { MP_ROM_QSTR(MP_QSTR_MED_POWER),     MP_ROM_INT(GPIO_STRENGTH_4MA) },
     { MP_ROM_QSTR(MP_QSTR_HI_POWER),     MP_ROM_INT(GPIO_STRENGTH_8MA) },
-}
+};
 
 STATIC MP_DEFINE_CONST_DICT(pin_locals_dict, pin_locals_dict_table);
 
-const mp_obj_type_t pin_type = {
+const mp_obj_type_t pin_mod = {
     { &mp_type_type },
     .name = MP_QSTR_Pin,
     .print = pin_print,
@@ -589,12 +600,12 @@ const mp_obj_type_t pin_type = {
     .locals_dict = (mp_obj_t)&pin_locals_dict,
 };
 
-STATIC const mp_irq_methods_t pin_irq_methods = {
-    .init = pin_irq,
-    .enable = pin_irq_enable,
-    .disable = pin_irq_disable,
-    .flags = pin_irq_flags,
-};
+//STATIC const mp_irq_methods_t pin_irq_methods = {
+//    .init = pin_irq,
+//    .enable = pin_irq_enable,
+//    .disable = pin_irq_disable,
+//    .flags = pin_irq_flags,
+//};
 
 STATIC void pin_named_pins_obj_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t kind) {
     pin_named_pins_obj_t *self = self_in;

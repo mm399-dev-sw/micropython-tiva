@@ -3,15 +3,28 @@
 #include <stdbool.h>
 #include <string.h>
 #include "cmsis_gcc.h"
-#include "driverlib/rom_map.h"
+
+#include "py/runtime.h"
+#include "py/stackctrl.h"
+#include "py/gc.h"
+#include "py/mphal.h"
+#include "lib/mp-readline/readline.h"
+#include "lib/utils/pyexec.h"
+//#include "lib/oofatfs/ff.h"
+//#include "lwip/init.h"
+//#include "extmod/vfs.h"
+//#include "extmod/vfs_fat.h"
+
+
+
 
 
 #include "py/compile.h"
 #include "py/runtime.h"
 #include "py/repl.h"
-#include "py/gc.h"
 #include "py/mperrno.h"
-#include "lib/utils/pyexec.h"
+#include "mods/modmachine.h"
+#include "mods/pin.h"
 //#include "mods/pybpin.h"
 #include "inc/hw_types.h"
 #include "inc/hw_gpio.h"
@@ -184,85 +197,85 @@ void _start(void) {
 
 #if MICROPY_MIN_USE_TM4C123_MCU
 
-typedef struct {
-    volatile uint32_t DID0;
-    volatile uint32_t DID1;
-    uint32_t _1[10];
-    volatile uint32_t PBORCTL;
-    uint32_t _2[7];
-    volatile uint32_t RIS;
-    volatile uint32_t IMC;
-    volatile uint32_t MISC;
-    volatile uint32_t RESC;
-    volatile uint32_t RCC;
-    uint32_t _3[2];
-    volatile uint32_t GPIOHBCTL;
-    volatile uint32_t RCC2;
-    uint32_t _4[2];
-    volatile uint32_t MOSCCTL;
-    uint32_t _5[49];
-    volatile uint32_t DSLPCLKCFG;
-    uint32_t _6;
-    volatile uint32_t SYSPROP;
-    volatile uint32_t PIOSCCAL;
-    volatile uint32_t PIOSCSTAT;
-    uint32_t _7[2];
-    volatile uint32_t PLLFREQ0;
-    volatile uint32_t PLLFREQ1;
-    volatile uint32_t PLLSTAT;
-    uint32_t _8[7];                 // 0x16C - 0x187
-    uint32_t LPCR[18];              // LPWR Config Registers 0x188 - 0x1CF
-    uint32_t _9[76];                // 0x1D0 - 0x2FF
-    uint32_t PPR[24];               // Peripheral Present Registers 0x300 - 0x35F
-    uint32_t _10[104];              // 0x360 - 0x4FF
-    uint32_t PRR[24];               // Peripheral Reset Registers 0x500 - 0x55F
-    uint32_t _11[40];               // 0x560 - 0x5FF
-    volatile uint32_t RCGCWD;       // Peripheral Run Mode Clock Gating Control begin
-    volatile uint32_t RCGCTIMER;
-    volatile uint32_t RCGCGPIO;
-    volatile uint32_t RCGCDMA;
-    uint32_t _12;
-    volatile uint32_t RCGCHIB;
-    volatile uint32_t RCGCUART;
-    volatile uint32_t RCGCSSI;
-    volatile uint32_t RCGCI2C;
-    uint32_t _13;
-    volatile uint32_t RCGCUSB;
-    uint32_t _14[2];
-    volatile uint32_t RCGCCAN;
-    volatile uint32_t RCGCADC;
-    volatile uint32_t RCGCACMP;
-    volatile uint32_t RCGCPWM;
-    volatile uint32_t RCGCQEI;
-    uint32_t _15[4];
-    volatile uint32_t RCGCEEPROM;
-    volatile uint32_t RCGCWTIMER;
-    uint32_t _16[40];               // 0x660 - 0x6FF
-    uint32_t SCGC[24];              // Peripheral Sleep Mode Clock Gating Control
-    uint32_t _17[40];               // 0x760 - 0x7FF
-    uint32_t DCGC[24];              // Peripheral Deep-Sleep Mode Clock Gating Control
-    uint32_t _18[104];              // 0x860 - 0x9FF
-    volatile uint32_t PRWD;         // Peripheral Ready begin
-    volatile uint32_t PRTIMER;
-    volatile uint32_t PRGPIO;
-    volatile uint32_t PRDMA;
-    uint32_t _19;
-    volatile uint32_t PRHIB;
-    volatile uint32_t PRUART;
-    volatile uint32_t PRSSI;
-    volatile uint32_t PRI2C;
-    uint32_t _20;
-    volatile uint32_t PRUSB;
-    uint32_t _21[2];
-    volatile uint32_t PRCAN;
-    volatile uint32_t PRADC;
-    volatile uint32_t PRACMP;
-    volatile uint32_t PRPWM;
-    volatile uint32_t PRQEI;
-    uint32_t _22[4];
-    volatile uint32_t PREEPROM;
-    volatile uint32_t PRWTIMER;
-} periph_sysctl_t;
+//typedef struct {
+//    volatile uint32_t DID0;
+//    volatile uint32_t DID1;
+//    uint32_t _1[10];
+//    volatile uint32_t PBORCTL;
+//    uint32_t _2[7];
+//    volatile uint32_t RIS;
+//    volatile uint32_t IMC;
+//    volatile uint32_t MISC;
+//    volatile uint32_t RESC;
+//    volatile uint32_t RCC;
+//    uint32_t _3[2];
+//    volatile uint32_t GPIOHBCTL;
+//    volatile uint32_t RCC2;
+//    uint32_t _4[2];
+//    volatile uint32_t MOSCCTL;
+//    uint32_t _5[49];
+//    volatile uint32_t DSLPCLKCFG;
+//    uint32_t _6;
+//    volatile uint32_t SYSPROP;
+//    volatile uint32_t PIOSCCAL;
+//    volatile uint32_t PIOSCSTAT;
+//    uint32_t _7[2];
+//    volatile uint32_t PLLFREQ0;
+//    volatile uint32_t PLLFREQ1;
+//    volatile uint32_t PLLSTAT;
+//    uint32_t _8[7];                 // 0x16C - 0x187
+//    uint32_t LPCR[18];              // LPWR Config Registers 0x188 - 0x1CF
+//    uint32_t _9[76];                // 0x1D0 - 0x2FF
+//    uint32_t PPR[24];               // Peripheral Present Registers 0x300 - 0x35F
+//    uint32_t _10[104];              // 0x360 - 0x4FF
+//    uint32_t PRR[24];               // Peripheral Reset Registers 0x500 - 0x55F
+//    uint32_t _11[40];               // 0x560 - 0x5FF
+//    volatile uint32_t RCGCWD;       // Peripheral Run Mode Clock Gating Control begin
+//    volatile uint32_t RCGCTIMER;
+//    volatile uint32_t RCGCGPIO;
+//    volatile uint32_t RCGCDMA;
+//    uint32_t _12;
+//    volatile uint32_t RCGCHIB;
+//    volatile uint32_t RCGCUART;
+//    volatile uint32_t RCGCSSI;
+//    volatile uint32_t RCGCI2C;
+//    uint32_t _13;
+//    volatile uint32_t RCGCUSB;
+//    uint32_t _14[2];
+//    volatile uint32_t RCGCCAN;
+//    volatile uint32_t RCGCADC;
+//    volatile uint32_t RCGCACMP;
+//    volatile uint32_t RCGCPWM;
+//    volatile uint32_t RCGCQEI;
+//    uint32_t _15[4];
+//    volatile uint32_t RCGCEEPROM;
+//    volatile uint32_t RCGCWTIMER;
+//    uint32_t _16[40];               // 0x660 - 0x6FF
+//    uint32_t SCGC[24];              // Peripheral Sleep Mode Clock Gating Control
+//    uint32_t _17[40];               // 0x760 - 0x7FF
+//    uint32_t DCGC[24];              // Peripheral Deep-Sleep Mode Clock Gating Control
+//    uint32_t _18[104];              // 0x860 - 0x9FF
+//    volatile uint32_t PRWD;         // Peripheral Ready begin
+//    volatile uint32_t PRTIMER;
+//    volatile uint32_t PRGPIO;
+//    volatile uint32_t PRDMA;
+//    uint32_t _19;
+//    volatile uint32_t PRHIB;
+//    volatile uint32_t PRUART;
+//    volatile uint32_t PRSSI;
+//    volatile uint32_t PRI2C;
+//    uint32_t _20;
+//    volatile uint32_t PRUSB;
+//    uint32_t _21[2];
+//    volatile uint32_t PRCAN;
+//    volatile uint32_t PRADC;
+//    volatile uint32_t PRACMP;
+//    volatile uint32_t PRPWM;
+//    volatile uint32_t PRQEI;
+//    uint32_t _22[4];
+//    volatile uint32_t PREEPROM;
+//    volatile uint32_t PRWTIMER;
+//} periph_sysctl_t;
 
 
 
@@ -292,7 +305,7 @@ typedef struct {
 
 #define UART0  ((periph_uart_t*) 0x4000C000)
 
-#define SYSCTL ((periph_sysctl_t*)  0x400FE000)
+//#define SYSCTL ((periph_sysctl_t*)  0x400FE000)
 
 
 
