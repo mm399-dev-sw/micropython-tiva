@@ -21,10 +21,13 @@ SUPPORTED_AFS = {
 	'TR'	: ('Clk', 'D0', 'D1'), # Trace
 	'CAN'	: ('Tx', 'Rx'),
 	'NMI'	: (''),
-	'JTAG'	: ('TDO/SWO', 'TDI', 'TMS/SWDIO', 'TCK/SWCLK'),
+	'JTAG'	: ('TDO', 'SWO', 'TDI', 'TMS', 'SWDIO', 'TCK/SWCLK'),
 	'USB'	: ('DM', 'DP', 'EPEN', 'ID', 'PFLT', 'VBUS')
                 }
 SINGLE_UNIT_AF = ('ADC','QEI','NMI','TR', 'JTAG') # These do not have Unit numbers
+
+AF_SHORT_DICT = {
+	
      
 
 def parse_port_pin(name_str):

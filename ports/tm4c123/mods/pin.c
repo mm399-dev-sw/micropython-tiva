@@ -28,10 +28,12 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include <pin.h>
+
 #include "py/runtime.h"
 #include "py/mphal.h"
 #include "extmod/virtpin.h"
+
+#include <pin.h>
 //#include "extint.h"
 #include "inc/hw_gpio.h"
 #include "inc/hw_ints.h"
@@ -121,6 +123,7 @@ const pin_obj_t *pin_find(mp_obj_t user_obj) {
         }
         return pin_obj;
     }
+
 
     if (MP_STATE_PORT(pin_class_mapper) != mp_const_none) {
         mp_obj_t o = mp_call_function_1(MP_STATE_PORT(pin_class_mapper), user_obj);
@@ -607,14 +610,4 @@ const mp_obj_type_t pin_mod = {
 //    .flags = pin_irq_flags,
 //};
 
-STATIC void pin_named_pins_obj_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t kind) {
-    pin_named_pins_obj_t *self = self_in;
-    mp_printf(print, "<Pin.%q>", self->name);
-}
 
-const mp_obj_type_t pin_board_pins_obj_type = {
-    { &mp_type_type },
-    .name = MP_QSTR_board,
-    .print = pin_named_pins_obj_print,
-    .locals_dict = (mp_obj_t)&pin_board_pins_locals_dict,
-};

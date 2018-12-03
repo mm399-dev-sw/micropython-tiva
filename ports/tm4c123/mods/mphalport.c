@@ -32,6 +32,10 @@ void mp_hal_ticks_cpu_enable(void) {
 //    }
 }
 
+mp_uint_t mp_hal_ticks_cpu(void) {
+    return 0;
+}
+
 void mp_hal_gpio_clock_enable(const uint32_t port) {
     MAP_SysCtlPeripheralEnable(port);
     while(!MAP_SysCtlPeripheralReady(port)){};

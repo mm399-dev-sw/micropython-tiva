@@ -33,18 +33,20 @@
 #include "py/obj.h"
 #include "inc/hw_gpio.h"
 #include "inc/hw_memmap.h"
+#include "driverlib/pin_map.h"
 #include "driverlib/gpio.h"
-#include "pins.h"
+//#include "pins.h"
 #include "pin.h"
 
 
-#define AF(af_name, af_idx, af_fn, af_unit, af_type) \
+#define AF(af_name, af_idx, af_fn, af_unit, af_type, af_short) \
 { \
     .name = MP_QSTR_ ## af_name, \
     .idx = (af_idx), \
     .fn = PIN_FN_ ## af_fn, \
     .unit = (af_unit), \
-    .type = PIN_TYPE_ ## af_fn ## _ ## af_type, \
+    .type = (af_type), \
+    .abbr = af_short ## af_type, \ // For accessing config later
 }
 
 
@@ -54,15 +56,16 @@
     .name           = MP_QSTR_ ## p_pin_name, \
     .port           = GPIO_PORT ## p_port ## _AHB_BASE, \
     .af_list        = (p_af_list), \
-    .pull           = GPIO_PIN_TYPE_STD, \
-    .port_pin       = GPIO_PIN_ ## (p_port_pin), \
+    .type           = GPIO_PIN_TYPE_STD, \
+    .pin_mask       = GPIO_PIN_ ## p_port_pin, \
     .pin_num        = (p_pin_num), \
     .af             = (p_def_af), \
-    .strength       = GPIO_STRENGTH_2MA, \
-    .mode           = GPIO_DIR_MODE_IN, \
+    .drive          = GPIO_STRENGTH_2MA, \
+    .dir            = GPIO_DIR_MODE_IN, \
     .num_afs        = (p_num_afs), \
     .value          = 0, \
     .used           = false, \
+    .abbr           = p_port ## p_port_pin, \ // For accessing config later
     .irq_trigger    = 0, \
     .irq_flags      = 0, \
 }

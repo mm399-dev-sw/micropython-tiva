@@ -34,6 +34,7 @@
 #include "py/gc.h"
 #include "py/qstr.h"
 
+
 //#include "inc/tm4c123gh6pm.h"
 #include "inc/hw_types.h"
 #include "inc/hw_gpio.h"
@@ -83,7 +84,7 @@ typedef struct {
   uint8_t fn;
   uint8_t unit;
   uint8_t type;
-  //void* reg;
+  uint32_t config;
 } pin_af_obj_t;
 
 typedef struct {

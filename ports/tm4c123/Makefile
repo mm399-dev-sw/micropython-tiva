@@ -71,7 +71,7 @@ LDFLAGS = -nostdlib -T $(LINKER_FILE) --entry ResetISR -Map=$@.map --cref --gc-s
 
 # Tune for Debugging or Optimization
 ifeq ($(DEBUG), 1)
-CFLAGS += -O0 -ggdb -D DEBUG
+CFLAGS += -O0 -ggdb -DDEBUG
 else
 CFLAGS += -Os -DNDEBUG
 CFLAGS += -fdata-sections -ffunction-sections
@@ -85,10 +85,12 @@ LIBM := ${shell ${CC} ${CFLAGS} -print-file-name=libm.a}
 
 # Sources	
 
+
 # Module sources
 MODS_SRC_C = $(addprefix mods/,\
 	mphalport.c \
 	pin.c \
+	pin_named_pins.c \
 	modmachine.c \
 	)
 
@@ -109,7 +111,7 @@ PY_SRC_C = \
 	_frozen_mpy.c 
 		#lib/utils/printf.c 
 		
-SRC_C = $(CORE_SRC_C) $(PY_SRC_C) $(MODS_SRC_C) 
+SRC_C = $(CORE_SRC_C) $(MODS_SRC_C) $(GEN_PINS_SRC) $(PY_SRC_C) 
 
 OBJ = $(PY_O) $(addprefix $(BUILD)/, $(SRC_C:.c=.o))
 
