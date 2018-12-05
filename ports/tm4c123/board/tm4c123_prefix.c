@@ -39,14 +39,14 @@
 #include "pin.h"
 
 
-#define AF(af_name, af_idx, af_fn, af_unit, af_type, af_short) \
+#define AF(af_name, af_idx, af_fn, af_unit, af_type, af_short, pin_board_name) \
 { \
     .name = MP_QSTR_ ## af_name, \
     .idx = (af_idx), \
     .fn = PIN_FN_ ## af_fn, \
     .unit = (af_unit), \
     .type = (af_type), \
-    .abbr = af_short ## af_type, \ // For accessing config later
+    .conf = GPIO_ ## pin_board_name ## _ ## af_short ## af_type, \ // For accessing config later
 }
 
 
@@ -65,7 +65,6 @@
     .num_afs        = (p_num_afs), \
     .value          = 0, \
     .used           = false, \
-    .abbr           = p_port ## p_port_pin, \ // For accessing config later
     .irq_trigger    = 0, \
     .irq_flags      = 0, \
 }

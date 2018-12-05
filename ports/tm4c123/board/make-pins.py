@@ -21,12 +21,22 @@ SUPPORTED_AFS = {
 	'TR'	: ('Clk', 'D0', 'D1'), # Trace
 	'CAN'	: ('Tx', 'Rx'),
 	'NMI'	: (''),
-	'JTAG'	: ('TDO', 'SWO', 'TDI', 'TMS', 'SWDIO', 'TCK/SWCLK'),
+	'JTAG'	: ('TDO', 'SWO', 'TDI', 'TMS', 'SWDIO', 'TCK', 'SWCLK'),
 	'USB'	: ('DM', 'DP', 'EPEN', 'ID', 'PFLT', 'VBUS')
                 }
-SINGLE_UNIT_AF = ('ADC','QEI','NMI','TR', 'JTAG') # These do not have Unit numbers
+SINGLE_UNIT_AF = ('NMI','TR') # These do not have Unit numbers
 
-AF_SHORT_DICT = {
+NO_PREFIX_UNIT_AF = ('ADC', 'QEI', 'JTAG') # these units dont have the unit type in the af name
+
+AF_SHORT_DICT = {   # some af names are shortened in the datasheet and driverlib
+        'UART'  : 'U',
+        'TIM'   : 'T',
+        'WTIM'  : 'WT',
+        'MTRL'  : 'M',
+        'COMP'  : 'C'
+        }
+        
+    # hier die abkürzungen, unten dann diese in die jeweiligen structs einfügen, das ganze GPIO_PA2_U3RX dann später zusammenfügen
 	
      
 
