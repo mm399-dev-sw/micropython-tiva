@@ -28,16 +28,13 @@ SINGLE_UNIT_AF = ('NMI','TR') # These do not have Unit numbers
 
 NO_PREFIX_UNIT_AF = ('ADC', 'QEI', 'JTAG') # these units dont have the unit type in the af name
 
-AF_SHORT_DICT = {   # some af names are shortened in the datasheet and driverlib
+AF_SHORT_DICT = {   
         'UART'  : 'U',
         'TIM'   : 'T',
         'WTIM'  : 'WT',
         'MTRL'  : 'M',
         'COMP'  : 'C'
-        }
-        
-    # hier die abkürzungen, unten dann diese in die jeweiligen structs einfügen, das ganze GPIO_PA2_U3RX dann später zusammenfügen
-	
+        }	# some af names are shortened in the datasheet and driverlib
      
 
 def parse_port_pin(name_str):
@@ -57,7 +54,7 @@ def parse_port_pin(name_str):
 
 class AF:
     """Holds the description of an alternate function"""
-    def __init__(self, name, idx, fn, unit, type):
+    def __init__(self, name, idx, fn, unit, type, pin_name):
         self.name = name
         self.idx = idx
 	"""AF from 0 to 9 and 14 to 15"""
@@ -66,9 +63,23 @@ class AF:
         self.fn = fn
         self.unit = unit
         self.type = type
+	self.pin_name = pin_name	
+	if fn in AF_SHORT_DICT:
+		self.short = AF_SHORT_DICT[fn] + str(unit)
+	elif fn in NO_PREFIX_UNIT_AF:
+		self.short = ''
+	elif unit < 0 :
+		self.short = fn
+	else:
+		self.short = fn + str(unit)
 
     def print(self):
-        print ('    AF({:16s}, {:4d}, {:8s}, {:4d}, {:8s}),    // {}'.format(self.name, self.idx, self.fn, self.unit, self.type, self.name))
+	if self.idx == 0:
+		print ('    AF_AN({:16s}, {:4d}, {:8s}, {:4d}, {:8s}),    // {}'.format(self.name, self.idx, self.fn, self.unit, self.type, self.name))
+	elif self.short == '':
+		print ('    AF_2({:16s}, {:4d}, {:8s}, {:4d}, {:8s}, {:3s}),    // {}'.format(self.name, self.idx, self.fn, self.unit, self.type, self.pin_name, self.name))	
+	else:
+        	print ('    AF_1({:16s}, {:4d}, {:8s}, {:4d}, {:8s}, {}, {:3s}),    // {}'.format(self.name, self.idx, self.fn, self.unit, self.type, self.short, self.pin_name, self.name))
 
 
 class Pin:
@@ -154,9 +165,11 @@ class Pins:
                         if type_name in SUPPORTED_AFS[fn_name]:
                             if fn_name in SINGLE_UNIT_AF: # Dont have numbers
 				unit_idx = -1
+			    elif fn_name in NO_PREFIX_UNIT_AF:
+				unit_idx = -1
 			    else:			
 				unit_idx = af_splitted[0][-1]
-                            pin.add_af(AF(af, af_idx, fn_name, int(unit_idx), type_name))
+                            pin.add_af(AF(af, af_idx, fn_name, int(unit_idx), type_name, pin.name))
                     af_idx += 1
 
     def parse_board_file(self, filename, cpu_pin_col):

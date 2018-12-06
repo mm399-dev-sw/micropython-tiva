@@ -37,22 +37,44 @@
 #include "driverlib/gpio.h"
 //#include "pins.h"
 #include "pin.h"
+#include "mphalport.h"
 
+#define GPIO_ADC 0xFFFFFFFF
 
-#define AF(af_name, af_idx, af_fn, af_unit, af_type, af_short, pin_board_name) \
+#define AF_1(af_name, af_idx, af_fn, af_unit, af_type, af_short, pin_board_name) \
 { \
     .name = MP_QSTR_ ## af_name, \
     .idx = (af_idx), \
     .fn = PIN_FN_ ## af_fn, \
     .unit = (af_unit), \
-    .type = (af_type), \
-    .conf = GPIO_ ## pin_board_name ## _ ## af_short ## af_type, \ // For accessing config later
+    .type = AF_ ## af_fn ## _ ## af_type, \
+    .conf = GPIO_ ## pin_board_name ## _ ## af_short ## af_type, \
+}
+
+#define AF_2(af_name, af_idx, af_fn, af_unit, af_type, pin_board_name) \
+{ \
+    .name = MP_QSTR_ ## af_name, \
+    .idx = (af_idx), \
+    .fn = PIN_FN_ ## af_fn, \
+    .unit = (af_unit), \
+    .type = AF_ ## af_fn ## _ ## af_type, \
+    .conf = GPIO_ ## pin_board_name ## _ ## af_type, \
+}
+
+#define AF_AN(af_name, af_idx, af_fn, af_unit, af_type) \
+{ \
+    .name = MP_QSTR_ ## af_name, \
+    .idx = (af_idx), \
+    .fn = PIN_FN_ ## af_fn, \
+    .unit = (af_unit), \
+    .type = AF_ ## af_fn ## _ ## af_type, \
+    .conf = GPIO_ADC, \
 }
 
 
 #define PIN(p_pin_name, p_port, p_port_pin, p_pin_num, p_af_list, p_def_af, p_num_afs) \
 { \
-    { &pin_type }, \
+    { &pin_mod }, \
     .name           = MP_QSTR_ ## p_pin_name, \
     .port           = GPIO_PORT ## p_port ## _AHB_BASE, \
     .af_list        = (p_af_list), \

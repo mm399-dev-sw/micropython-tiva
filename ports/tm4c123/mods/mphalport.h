@@ -26,6 +26,7 @@
 
 #ifndef MICROPY_INCLUDED_TM4C_MPHALPORT_H
 #define MICROPY_INCLUDED_TM4C_MPHALPORT_H
+#define MICROPY_MPHALPORT_H "mods/mphalport.h"
 
 
 //extern const unsigned char mp_hal_status_to_errno_table[4];
@@ -41,6 +42,7 @@ void mp_hal_ticks_cpu_enable(void);
 #include <string.h>
 #include "mods/pin.h"
 #include "inc/hw_gpio.h"
+#include "driverlib/sysctl.h"
 #include "driverlib/gpio.h"
 #include "driverlib/rom.h"
 #include "driverlib/rom_map.h"
@@ -71,6 +73,8 @@ enum {
     PIN_FN_MTRL,
     PIN_FN_WTIM,
     PIN_FN_TIM,
+    PIN_FN_JTAG,
+    PIN_FN_NMI,
     PIN_FN_CAN,
     PIN_FN_USB,
     PIN_FN_COMP,
@@ -98,12 +102,12 @@ enum {
 
 enum {
     AF_TIM_CCP0 = 0,
-    AF_TIM_CCP1
+    AF_TIM_CCP1,
 };
 
 enum {
     AF_WTIM_CCP0 = 0,
-    AF_WTIM_CCP1
+    AF_WTIM_CCP1,
 };
 
 enum {
@@ -112,7 +116,7 @@ enum {
     AF_QEI_PHB0,
     AF_QEI_PHB1,
     AF_QEI_IDX0,
-    AF_QEI_IDX1
+    AF_QEI_IDX1,
 };
 
 enum {
@@ -121,24 +125,38 @@ enum {
     AF_USB_DM,
     AF_USB_DP,
     AF_USB_ID,
-    AF_USB_VBUS
+    AF_USB_VBUS,
 };
 
 enum {
     AF_COMP_POS = 0,
     AF_COMP_NEG,
-    AF_COMP_OUT
+    AF_COMP_OUT,
 };
 
 enum {
     AF_CAN_TX = 0,
-    AF_CAN_RX
+    AF_CAN_RX,
+};
+
+enum {
+    AF_JTAG_SWO = 0,
+    AF_JTAG_TDO,
+    AF_JTAG_SWCLK,
+    AF_JTAG_TCK,
+    AF_JTAG_TDI,
+    AF_JTAG_TMS,
+    AF_JTAG_SWDIO,
 };
 
 enum {
     AF_TR_CLK = 0,
     AF_TR_D0,
-    AF_TR_D1
+    AF_TR_D1,
+};
+
+enum {
+    AF_NMI_ = 0, // Underscore bc makro always appends one
 };
 
 enum {
@@ -209,9 +227,17 @@ enum {
 //#define mp_hal_pin_get_drive(p)
 
 
+#define mp_hal_delay_ms(ms)     (MAP_SysCtlDelay( MAP_SysCtlClockGet()/3000 * ms))
+#define mp_hal_delay_us(us)     (MAP_SysCtlDelay( MAP_SysCtlClockGet()/3000000 * us))
+//#define mp_hal_ticks_ms         (mp_hal_ticks_cpu / (MAP_SysCtlClockGet()*3000))
+//#define mp_hal_ticks_us         (mp_hal_ticks_cpu / (MAP_SysCtlClockGet()*3000000))
+
+
+
+
 void mp_hal_gpio_clock_enable(const uint32_t port);
 void mp_hal_pin_config(mp_hal_pin_obj_t pin_obj, uint32_t dir, uint32_t type, uint32_t drive);
 bool mp_hal_pin_config_alt(mp_hal_pin_obj_t pin_obj, uint32_t dir, uint32_t type, uint8_t fn, uint8_t unit);
-
+void mp_hal_pin_set_af(mp_hal_pin_obj_t pin_obj, uint8_t af_id);
 
 #endif // MICROPY_INCLUDED_TM4C_HAL_PINS_H

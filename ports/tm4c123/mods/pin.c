@@ -174,17 +174,17 @@ const pin_obj_t *pin_find(mp_obj_t user_obj) {
     }
 
     // See if the pin name matches a cpu pin
-    pin_obj = pin_find_named_pin(&pin_cpu_pins_locals_dict, user_obj);
-    if (pin_obj) {
-        if (pin_class_debug) {
-            printf("Pin.cpu maps ");
-            mp_obj_print(user_obj, PRINT_REPR);
-            printf(" to ");
-            mp_obj_print(MP_OBJ_FROM_PTR(pin_obj), PRINT_STR);
-            printf("\n");
-        }
-        return pin_obj;
-    }
+//    pin_obj = pin_find_named_pin(&pin_cpu_pins_locals_dict, user_obj);
+//    if (pin_obj) {
+//        if (pin_class_debug) {
+//            printf("Pin.cpu maps ");
+//            mp_obj_print(user_obj, PRINT_REPR);
+//            printf(" to ");
+//            mp_obj_print(MP_OBJ_FROM_PTR(pin_obj), PRINT_STR);
+//            printf("\n");
+//        }
+//        return pin_obj;
+//    }
 
     nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_ValueError, "Pin(%s) doesn't exist", mp_obj_str_get_str(user_obj)));
 }
@@ -397,6 +397,7 @@ STATIC mp_obj_t pin_obj_init_helper(const pin_obj_t *self, size_t n_args, const 
 //        mp_hal_pin_write(self, mp_obj_is_true(args[3].u_obj));
 //    }
     mp_hal_pin_config(self, dir, type, drive);
+    mp_hal_pin_set_af(self, af);
 
     if (args[4].u_obj != MP_OBJ_NULL) {
         mp_hal_pin_write(self, mp_obj_is_true(args[4].u_obj));
@@ -544,6 +545,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_1(pin_af_obj, pin_af);
 
 
 STATIC const mp_rom_map_elem_t pin_locals_dict_table[] = {
+    { MP_ROM_QSTR(MP_QSTR___name__), MP_OBJ_NEW_QSTR(MP_QSTR_Pin) },
     // instance methods
     { MP_ROM_QSTR(MP_QSTR_init),    MP_ROM_PTR(&pin_init_obj) },
     { MP_ROM_QSTR(MP_QSTR_value),   MP_ROM_PTR(&pin_value_obj) },
@@ -571,7 +573,7 @@ STATIC const mp_rom_map_elem_t pin_locals_dict_table[] = {
 
     // class attributes
     { MP_ROM_QSTR(MP_QSTR_board),   MP_ROM_PTR(&pin_board_pins_obj_type) },
-    { MP_ROM_QSTR(MP_QSTR_cpu),     MP_ROM_PTR(&pin_cpu_pins_obj_type) },
+//    { MP_ROM_QSTR(MP_QSTR_cpu),     MP_ROM_PTR(&pin_cpu_pins_obj_type) },
 
     // class constants
     { MP_ROM_QSTR(MP_QSTR_IN),        MP_ROM_INT(GPIO_DIR_MODE_IN) },
@@ -601,6 +603,11 @@ const mp_obj_type_t pin_mod = {
     .make_new = pin_make_new,
     .call = pin_call,
     .locals_dict = (mp_obj_t)&pin_locals_dict,
+};
+
+const mp_obj_module_t pin_module = {
+    .base = { &pin_mod },
+    .globals = (mp_obj_dict_t*)&pin_locals_dict,
 };
 
 //STATIC const mp_irq_methods_t pin_irq_methods = {

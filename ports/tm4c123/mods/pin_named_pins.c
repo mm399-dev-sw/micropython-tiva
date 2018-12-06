@@ -31,11 +31,11 @@
 #include "py/mphal.h"
 #include "pin.h"
 
-const mp_obj_type_t pin_cpu_pins_obj_type = {
-    { &mp_type_type },
-    .name = MP_QSTR_cpu,
-    .locals_dict = (mp_obj_dict_t*)&pin_cpu_pins_locals_dict,
-};
+//const mp_obj_type_t pin_cpu_pins_obj_type = {
+//    { &mp_type_type },
+//    .name = MP_QSTR_cpu,
+//    .locals_dict = (mp_obj_dict_t*)&pin_cpu_pins_locals_dict,
+//};
 
 STATIC void pin_named_pins_obj_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t kind) {
     pin_named_pins_obj_t *self = self_in;

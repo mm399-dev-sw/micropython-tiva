@@ -33,7 +33,15 @@ void mp_hal_ticks_cpu_enable(void) {
 }
 
 mp_uint_t mp_hal_ticks_cpu(void) {
-    return 0;
+    return (*((volatile uint32_t *)0xE000E018));
+}
+
+mp_uint_t mp_hal_ticks_ms(void) {
+    return (*((volatile uint32_t *)0xE000E018)) / (MAP_SysCtlClockGet()*3000);
+}
+
+mp_uint_t mp_hal_ticks_us(void) {
+    return (*((volatile uint32_t *)0xE000E018)) / (MAP_SysCtlClockGet()*3000000);
 }
 
 void mp_hal_gpio_clock_enable(const uint32_t port) {
@@ -46,6 +54,16 @@ void mp_hal_pin_config(mp_hal_pin_obj_t pin_obj, uint32_t dir, uint32_t type, ui
 
     MAP_GPIODirModeSet(pin_obj->port, pin_obj->pin_mask, dir);
     MAP_GPIOPadConfigSet(pin_obj->port, pin_obj->pin_mask, drive, type);
+}
+
+void mp_hal_pin_set_af(mp_hal_pin_obj_t pin_obj, uint8_t af_id) {
+    MAP_GPIODirModeSet(pin_obj->port, pin_obj->pin_mask, GPIO_DIR_MODE_HW);
+    MAP_GPIOPadConfigSet(pin_obj->port, pin_obj->pin_mask, GPIO_STRENGTH_2MA, GPIO_PIN_TYPE_STD);
+    MAP_GPIOPinConfigure((pin_obj->af_list)[af_id].conf);
+}
+
+void mp_hal_set_interrupt_char(int c) {
+
 }
 
 //MP_WEAK int mp_hal_stdin_rx_chr(void) {

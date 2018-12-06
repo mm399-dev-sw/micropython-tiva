@@ -83,8 +83,8 @@ typedef struct {
   int8_t  idx;
   uint8_t fn;
   uint8_t unit;
-  uint8_t type;
-  uint32_t config;
+  uint32_t type;
+  uint32_t conf;
 } pin_af_obj_t;
 
 typedef struct {
@@ -127,8 +127,8 @@ typedef struct {
 
 extern const mp_obj_type_t pin_board_pins_obj_type;
 extern const mp_obj_dict_t pin_board_pins_locals_dict;
-extern const mp_obj_type_t pin_cpu_pins_obj_type;
-extern const mp_obj_dict_t pin_cpu_pins_locals_dict;
+//extern const mp_obj_type_t pin_cpu_pins_obj_type;
+//extern const mp_obj_dict_t pin_cpu_pins_locals_dict;
 
 MP_DECLARE_CONST_FUN_OBJ_KW(pin_init_obj);
 
