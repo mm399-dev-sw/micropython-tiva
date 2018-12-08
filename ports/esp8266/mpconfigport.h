@@ -3,6 +3,7 @@
 // options to control how MicroPython is built
 
 #define MICROPY_OBJ_REPR            (MICROPY_OBJ_REPR_C)
+#define MICROPY_GC_STACK_ENTRY_TYPE uint16_t
 #define MICROPY_ALLOC_PATH_MAX      (128)
 #define MICROPY_ALLOC_LEXER_INDENT_INIT (8)
 #define MICROPY_ALLOC_PARSE_RULE_INIT   (48)
@@ -13,8 +14,8 @@
 #define MICROPY_EMIT_XTENSA         (1)
 #define MICROPY_EMIT_INLINE_XTENSA  (1)
 #define MICROPY_MEM_STATS           (0)
+#define MICROPY_DEBUG_PRINTER       (&mp_debug_print)
 #define MICROPY_DEBUG_PRINTERS      (1)
-#define MICROPY_DEBUG_PRINTER_DEST  mp_debug_print
 #define MICROPY_READER_VFS          (MICROPY_VFS)
 #define MICROPY_ENABLE_GC           (1)
 #define MICROPY_ENABLE_FINALISER    (1)
@@ -145,6 +146,9 @@ typedef uint32_t sys_prot_t; // for modlwip
 void *esp_native_code_commit(void*, size_t);
 #define MP_PLAT_COMMIT_EXEC(buf, len) esp_native_code_commit(buf, len)
 
+// printer for debugging output, goes to UART only
+extern const struct _mp_print_t mp_debug_print;
+
 #define mp_type_fileio mp_type_vfs_fat_fileio
 #define mp_type_textio mp_type_vfs_fat_textio
 
@@ -197,6 +201,7 @@ extern const struct _mp_obj_module_t mp_module_onewire;
 #define MICROPY_PORT_ROOT_POINTERS \
     const char *readline_hist[8]; \
     mp_obj_t pin_irq_handler[16]; \
+    byte *uart0_rxbuf; \
 
 // We need to provide a declaration/definition of alloca()
 #include <alloca.h>
