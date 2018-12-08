@@ -19,9 +19,10 @@
 #define MICROPY_COMP_DOUBLE_TUPLE_ASSIGN (0)
 #define MICROPY_COMP_TRIPLE_TUPLE_ASSIGN (0)
 #define MICROPY_MEM_STATS           (0)
-#define MICROPY_DEBUG_PRINTERS      (0)
+#define MICROPY_DEBUG_VERBOSE       (1)
+#define MICROPY_DEBUG_PRINTERS      MICROPY_DEBUG_VERBOSE
 #define MICROPY_ENABLE_GC           (1)
-#define MICROPY_GC_ALLOC_THRESHOLD  (0)
+#define MICROPY_GC_ALLOC_THRESHOLD  (1)
 #define MICROPY_REPL_EVENT_DRIVEN   (0)
 #define MICROPY_HELPER_REPL         (1)
 #define MICROPY_REPL_AUTO_INDENT    (1)
@@ -55,7 +56,7 @@
 #define MICROPY_CPYTHON_COMPAT      (0)
 #define MICROPY_LONGINT_IMPL        (MICROPY_LONGINT_IMPL_NONE)
 #define MICROPY_FLOAT_IMPL          (MICROPY_FLOAT_IMPL_NONE)
-#define MICROPY_DEBUG_VERBOSE       (1)
+
 
 // type definitions for the specific machine
 
@@ -74,12 +75,13 @@ typedef long mp_off_t;
 
 #define MP_PLAT_PRINT_STRN(str, len) mp_hal_stdout_tx_strn_cooked(str, len)
 
-//extern const struct _mp_obj_module_t machine_module;
-extern const struct _mp_obj_module_t pin_module;
+extern const struct _mp_obj_module_t machine_module;
+//extern const struct _mp_obj_module_t pin_module;
 
 // extra built in names to add to the global namespace
 #define MICROPY_PORT_BUILTINS \
-      { MP_ROM_QSTR(MP_QSTR_Pin),                 MP_ROM_PTR(&pin_module) },
+      { MP_ROM_QSTR(MP_QSTR_umachine), MP_ROM_PTR(&machine_module) },
+//      { MP_ROM_QSTR(MP_QSTR_Pin),                 MP_ROM_PTR(&pin_module) },
 //    { MP_ROM_QSTR(MP_QSTR_umachine), MP_ROM_PTR(&machine_module) },
 //    { MP_ROM_QSTR(MP_QSTR_open), MP_ROM_PTR(&mp_builtin_open_obj) },
 

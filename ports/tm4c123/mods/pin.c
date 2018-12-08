@@ -200,10 +200,11 @@ STATIC void pin_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t
 
     uint32_t dir = MAP_GPIODirModeGet(self->port, self->pin_mask);
     uint32_t type;
-    MAP_GPIOPadConfigGet(self->port, self->pin_mask, NULL, &type);
+    uint32_t strength;
+    MAP_GPIOPadConfigGet(self->port, self->pin_mask, &strength, &type);
 
 
-    if (type & GPIO_PIN_TYPE_ANALOG) {
+    if (dir == GPIO_DIR_MODE_HW && type == GPIO_PIN_TYPE_ANALOG) {
         // analog
         mp_print_str(print, "ANALOG)");
 
@@ -211,18 +212,18 @@ STATIC void pin_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t
         // IO mode
         bool af = false;
         qstr mode_qst;
-        if (dir & GPIO_DIR_MODE_IN) {
+        if (dir == GPIO_DIR_MODE_IN) {
             mode_qst = MP_QSTR_IN;
-        } else if (dir & GPIO_DIR_MODE_OUT) {
-            if (type & GPIO_PIN_TYPE_OD){
+        } else if (dir == GPIO_DIR_MODE_OUT) {
+            if (type == GPIO_PIN_TYPE_OD){
                 mode_qst = MP_QSTR_OPEN_DRAIN;
             } else {
                 mode_qst = MP_QSTR_OUT;
             }
         } else {
             af = true;
-            if (dir & GPIO_DIR_MODE_HW) {
-                if (type & GPIO_PIN_TYPE_OD){
+            if (dir == GPIO_DIR_MODE_HW) {
+                if (type == GPIO_PIN_TYPE_OD){
                    mode_qst = MP_QSTR_ALT_OPEN_DRAIN;
                 } else {
                     mode_qst = MP_QSTR_ALT;
@@ -545,7 +546,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_1(pin_af_obj, pin_af);
 
 
 STATIC const mp_rom_map_elem_t pin_locals_dict_table[] = {
-    { MP_ROM_QSTR(MP_QSTR___name__), MP_OBJ_NEW_QSTR(MP_QSTR_Pin) },
+//    { MP_ROM_QSTR(MP_QSTR___name__), MP_OBJ_NEW_QSTR(MP_QSTR_Pin) },
     // instance methods
     { MP_ROM_QSTR(MP_QSTR_init),    MP_ROM_PTR(&pin_init_obj) },
     { MP_ROM_QSTR(MP_QSTR_value),   MP_ROM_PTR(&pin_value_obj) },
@@ -604,11 +605,11 @@ const mp_obj_type_t pin_mod = {
     .call = pin_call,
     .locals_dict = (mp_obj_t)&pin_locals_dict,
 };
-
-const mp_obj_module_t pin_module = {
-    .base = { &pin_mod },
-    .globals = (mp_obj_dict_t*)&pin_locals_dict,
-};
+//
+//const mp_obj_module_t pin_module = {
+//    .base = { &pin_mod },
+//    .globals = (mp_obj_dict_t*)&pin_locals_dict,
+//};
 
 //STATIC const mp_irq_methods_t pin_irq_methods = {
 //    .init = pin_irq,

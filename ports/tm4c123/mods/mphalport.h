@@ -47,6 +47,10 @@ void mp_hal_ticks_cpu_enable(void);
 #include "driverlib/rom.h"
 #include "driverlib/rom_map.h"
 
+//#ifdef MICROPY_DEBUG_VERBOSE
+//#define DEBUG_printf printf
+//#endif
+
 #define MP_HAL_PIN_FMT                  "%q"
 #define MP_HAL_PIN_MODE_INPUT           (GPIO_DIR_MODE_IN)
 #define MP_HAL_PIN_MODE_OUTPUT          (GPIO_DIR_MODE_OUT)
