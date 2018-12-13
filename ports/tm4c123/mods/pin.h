@@ -91,6 +91,7 @@ typedef struct {
     const mp_obj_base_t base;
     const qstr          name;
     const uint32_t      port;   //Address of Port
+    const uint32_t      periph;
     const periph_gpio_t* gpio;   //Structure for register access
     const pin_af_obj_t  *af_list;
     uint32_t            dir;
@@ -127,8 +128,8 @@ typedef struct {
 
 extern const mp_obj_type_t pin_board_pins_obj_type;
 extern const mp_obj_dict_t pin_board_pins_locals_dict;
-//extern const mp_obj_type_t pin_cpu_pins_obj_type;
-//extern const mp_obj_dict_t pin_cpu_pins_locals_dict;
+extern const mp_obj_type_t pin_cpu_pins_obj_type;
+extern const mp_obj_dict_t pin_cpu_pins_locals_dict;
 
 MP_DECLARE_CONST_FUN_OBJ_KW(pin_init_obj);
 

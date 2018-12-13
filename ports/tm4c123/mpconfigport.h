@@ -19,7 +19,7 @@
 #define MICROPY_COMP_DOUBLE_TUPLE_ASSIGN (0)
 #define MICROPY_COMP_TRIPLE_TUPLE_ASSIGN (0)
 #define MICROPY_MEM_STATS           (0)
-#define MICROPY_DEBUG_VERBOSE       (1)
+#define MICROPY_DEBUG_VERBOSE       (0)
 #define MICROPY_DEBUG_PRINTERS      MICROPY_DEBUG_VERBOSE
 #define MICROPY_ENABLE_GC           (1)
 #define MICROPY_GC_ALLOC_THRESHOLD  (1)
@@ -80,7 +80,7 @@ extern const struct _mp_obj_module_t machine_module;
 
 // extra built in names to add to the global namespace
 #define MICROPY_PORT_BUILTINS \
-      { MP_ROM_QSTR(MP_QSTR_umachine), MP_ROM_PTR(&machine_module) },
+//      { MP_ROM_QSTR(MP_QSTR_umachine), MP_ROM_PTR(&machine_module) },
 //      { MP_ROM_QSTR(MP_QSTR_Pin),                 MP_ROM_PTR(&pin_module) },
 //    { MP_ROM_QSTR(MP_QSTR_umachine), MP_ROM_PTR(&machine_module) },
 //    { MP_ROM_QSTR(MP_QSTR_open), MP_ROM_PTR(&mp_builtin_open_obj) },
@@ -99,6 +99,13 @@ extern const struct _mp_obj_module_t machine_module;
 #define MICROPY_MIN_USE_CORTEX_CPU (1)
 #define MICROPY_MIN_USE_TM4C123_MCU (1)
 #endif
+
+#define MICROPY_PORT_BUILTIN_MODULES \
+        { MP_ROM_QSTR(MP_QSTR_umachine), MP_ROM_PTR(&machine_module) },
+
+#define MICROPY_PORT_CONSTANTS \
+    { MP_ROM_QSTR(MP_QSTR_umachine), MP_ROM_PTR(&machine_module) }, \
+    { MP_ROM_QSTR(MP_QSTR_machine), MP_ROM_PTR(&machine_module) },
 
 #define MP_STATE_PORT MP_STATE_VM
 

@@ -77,6 +77,7 @@
     { &pin_mod }, \
     .name           = MP_QSTR_ ## p_pin_name, \
     .port           = GPIO_PORT ## p_port ## _AHB_BASE, \
+    .periph         = SYSCTL_PERIPH_GPIO ## p_port, \
     .af_list        = (p_af_list), \
     .type           = GPIO_PIN_TYPE_STD, \
     .pin_mask       = GPIO_PIN_ ## p_port_pin, \
