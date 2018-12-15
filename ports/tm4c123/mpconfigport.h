@@ -20,9 +20,10 @@
 #define MICROPY_COMP_TRIPLE_TUPLE_ASSIGN (0)
 #define MICROPY_MEM_STATS           (0)
 #define MICROPY_DEBUG_VERBOSE       (0)
-#define MICROPY_DEBUG_PRINTERS      MICROPY_DEBUG_VERBOSE
+#define MICROPY_DEBUG_PRINTERS      (MICROPY_DEBUG_VERBOSE)
 #define MICROPY_ENABLE_GC           (1)
 #define MICROPY_GC_ALLOC_THRESHOLD  (1)
+#define MICROPY_ENABLE_FINALISER    (1)
 #define MICROPY_REPL_EVENT_DRIVEN   (0)
 #define MICROPY_HELPER_REPL         (1)
 #define MICROPY_REPL_AUTO_INDENT    (1)
@@ -43,7 +44,7 @@
 #define MICROPY_PY_BUILTINS_PROPERTY (0)
 #define MICROPY_PY_BUILTINS_MIN_MAX (0)
 #define MICROPY_PY___FILE__         (0)
-#define MICROPY_PY_GC               (0)
+#define MICROPY_PY_GC               (1) // 0
 #define MICROPY_PY_ARRAY            (0)
 #define MICROPY_PY_ATTRTUPLE        (0)
 #define MICROPY_PY_COLLECTIONS      (0)
@@ -52,7 +53,7 @@
 #define MICROPY_PY_IO               (0)
 #define MICROPY_PY_STRUCT           (0)
 #define MICROPY_PY_SYS              (0)
-#define MICROPY_MODULE_FROZEN_MPY   (1)
+#define MICROPY_MODULE_FROZEN_MPY   (0) //was 1
 #define MICROPY_CPYTHON_COMPAT      (0)
 #define MICROPY_LONGINT_IMPL        (MICROPY_LONGINT_IMPL_NONE)
 #define MICROPY_FLOAT_IMPL          (MICROPY_FLOAT_IMPL_NONE)
