@@ -42,3 +42,7 @@ user.props
 # Generated rst files
 ######################
 genrst/
+
+*.axf
+
+ports/tm4c123/uPY_TM4C123\.lst

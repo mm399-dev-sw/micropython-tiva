@@ -7,6 +7,7 @@
 #include "py/runtime.h"
 #include "py/stackctrl.h"
 #include "py/gc.h"
+#include "py/obj.h"
 #include "py/mphal.h"
 #include "lib/mp-readline/readline.h"
 #include "lib/utils/pyexec.h"
@@ -67,6 +68,10 @@ int main(int argc, char **argv) {
     gc_init(heap, heap + sizeof(heap));
     #endif
     mp_init();
+
+    readline_init0();
+    pin_init0();
+
     #if MICROPY_ENABLE_COMPILER
     #if MICROPY_REPL_EVENT_DRIVEN
     pyexec_event_repl_init();
@@ -97,6 +102,30 @@ void gc_collect(void) {
     gc_collect_end();
     gc_dump_info();
 }
+
+//void gc_collect(void) {
+//
+//    gc_collect_start();
+//    // get the registers and the sp
+//    uintptr_t regs[10];
+//    uintptr_t sp = gc_helper_get_regs_and_sp(regs);
+//
+//    // trace the stack, including the registers (since they live on the stack in this function)
+//    #if MICROPY_PY_THREAD
+//    gc_collect_root((void**)sp, ((uint32_t)MP_STATE_THREAD(stack_top) - sp) / sizeof(uint32_t));
+//    #else
+//    gc_collect_root((void**)sp, ((uint32_t)&_ram_end - sp) / sizeof(uint32_t));
+//    #endif
+//
+//    // trace root pointers from any threads
+//    #if MICROPY_PY_THREAD
+//    mp_thread_gc_others();
+//    #endif
+//
+//    // end the GC
+//    gc_collect_end();
+//    gc_dump_info();
+//}
 
 mp_lexer_t *mp_lexer_new_from_file(const char *filename) {
     mp_raise_OSError(MP_ENOENT);

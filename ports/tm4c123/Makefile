@@ -104,6 +104,8 @@ CORE_SRC_C = \
 	main.c \
 	startup_gcc.c \
 	uart_core.c 
+	#gccollect.c \
+	gchelper.s
 
 PY_SRC_C = \
 	lib/utils/stdout_helpers.c \
@@ -115,7 +117,7 @@ PY_SRC_C = \
 		
 SRC_C = $(CORE_SRC_C) $(MODS_SRC_C) $(GEN_PINS_SRC) $(PY_SRC_C) 
 
-OBJ = $(PY_O) $(addprefix $(BUILD)/, $(SRC_C:.c=.o))
+OBJ = $(PY_O) $(addprefix $(BUILD)/, $(SRC_C:.c=.o))#build/gchelper.o
 
 
 all: $(OBJ) ${PROJECT_NAME}.axf ${PROJECT_NAME}
