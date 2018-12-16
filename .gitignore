@@ -8,6 +8,8 @@
 *.hex
 *.dis
 *.exe
+*.axf
+*.lst
 
 # Packages
 ############
@@ -43,6 +45,4 @@ user.props
 ######################
 genrst/
 
-*.axf
 
-ports/tm4c123/uPY_TM4C123\.lst

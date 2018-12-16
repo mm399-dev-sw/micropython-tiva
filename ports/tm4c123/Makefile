@@ -103,8 +103,10 @@ SRC_QSTR += $(MODS_SRC_C)
 CORE_SRC_C = \
 	main.c \
 	startup_gcc.c \
-	uart_core.c 
-	#gccollect.c \
+	uart_core.c \
+	gccollect.c 
+	
+ASM_SRC_S = \
 	gchelper.s
 
 PY_SRC_C = \
@@ -117,7 +119,11 @@ PY_SRC_C = \
 		
 SRC_C = $(CORE_SRC_C) $(MODS_SRC_C) $(GEN_PINS_SRC) $(PY_SRC_C) 
 
-OBJ = $(PY_O) $(addprefix $(BUILD)/, $(SRC_C:.c=.o))#build/gchelper.o
+ASM_OBJ = $(addprefix $(BUILD)/, $(ASM_SRC_S:.s=.o))
+
+C_OBJ = $(addprefix $(BUILD)/, $(SRC_C:.c=.o))
+
+OBJ = $(PY_O) $(ASM_OBJ) $(C_OBJ) 
 
 
 all: $(OBJ) ${PROJECT_NAME}.axf ${PROJECT_NAME}

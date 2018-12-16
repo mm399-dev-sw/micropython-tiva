@@ -53,7 +53,9 @@ void gc_collect(void) {
     #if MICROPY_PY_THREAD
     gc_collect_root((void**)sp, ((uint32_t)MP_STATE_THREAD(stack_top) - sp) / sizeof(uint32_t));
     #else
-    gc_collect_root((void**)sp, ((uint32_t)&_ram_end - sp) / sizeof(uint32_t));
+    //gc_collect_root((void**)sp, ((uint32_t)&_ram_end - sp) / sizeof(uint32_t));
+    //gc_collect_root((void**)sp, ((uint32_t)0x20007FFF - sp) / sizeof(uint32_t));
+    gc_collect_root((void**)sp, ((uint32_t)0x20008000 - sp) / sizeof(uint32_t));
     #endif
 
     // trace root pointers from any threads
@@ -64,12 +66,12 @@ void gc_collect(void) {
     // end the GC
     gc_collect_end();
 
-    #if 0
+    #if 1
     // print GC info
-    uint32_t ticks = mp_hal_ticks_us() - start;
+//    uint32_t ticks = mp_hal_ticks_us() - start;
     gc_info_t info;
     gc_info(&info);
-    printf("GC@%lu %lums\n", start, ticks);
+    printf("GC");
     printf(" " UINT_FMT " total\n", info.total);
     printf(" " UINT_FMT " : " UINT_FMT "\n", info.used, info.free);
     printf(" 1=" UINT_FMT " 2=" UINT_FMT " m=" UINT_FMT "\n", info.num_1block, info.num_2block, info.max_block);

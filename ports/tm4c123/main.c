@@ -93,15 +93,15 @@ int main(int argc, char **argv) {
     return 0;
 }
 
-void gc_collect(void) {
-    // WARNING: This gc_collect implementation doesn't try to get root
-    // pointers from CPU registers, and thus may function incorrectly.
-    void *dummy;
-    gc_collect_start();
-    gc_collect_root(&dummy, ((mp_uint_t)stack_top - (mp_uint_t)&dummy) / sizeof(mp_uint_t));
-    gc_collect_end();
-    gc_dump_info();
-}
+//void gc_collect(void) {
+//    // WARNING: This gc_collect implementation doesn't try to get root
+//    // pointers from CPU registers, and thus may function incorrectly.
+//    void *dummy;
+//    gc_collect_start();
+//    gc_collect_root(&dummy, ((mp_uint_t)stack_top - (mp_uint_t)&dummy) / sizeof(mp_uint_t));
+//    gc_collect_end();
+//    gc_dump_info();
+//}
 
 //void gc_collect(void) {
 //
