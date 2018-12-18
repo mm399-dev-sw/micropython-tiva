@@ -68,7 +68,7 @@ CFLAGS = $(INC) -Wall -Werror -std=c99 -nostdlib $(CFLAGS_CORTEX_M4) $(COPT)
 #Preprocessor Flags
 CFLAGS += -DPART_$(PART) -c -D$(PART) -DTARGET_IS_TM4C123_RB1 -DMICROPY_PIN_DEFS_PORT_H=\"mods/pin_defs_tm4c123.h\" #-DMICROPY_MPHALPORT_H=\"mphalport.h\"
 
-LDFLAGS = -nostdlib -T $(LINKER_FILE) --entry ResetISR -Map=$@.map --cref --gc-sections
+LDFLAGS = -nostdlib -T $(LINKER_FILE) -Map=$@.map --cref --gc-sections
 
 # Tune for Debugging or Optimization
 ifeq ($(DEBUG), 1)

@@ -55,18 +55,33 @@ void do_str(const char *src, mp_parse_input_kind_t input_kind) {
 }
 #endif
 
-static char *stack_top;
+//extern uint32_t pui32Stack[128];
+extern char * __StackTop;
+extern char * _heap_start;
+extern char *_heap_end;
+//static char *stack_top;
 #if MICROPY_ENABLE_GC
-static char heap[2048];
+//static char heap[2048];
 #endif
 
 int main(int argc, char **argv) {
-    int stack_dummy;
-    stack_top = (char*)&stack_dummy;
+//    int stack_dummy;
+    mp_stack_ctrl_init();
+
+    mp_stack_set_top(&__StackTop);
+    //mp_stack_set_limit((char*)&_estack - (char*)&_heap_end - 1024);
 
     #if MICROPY_ENABLE_GC
-    gc_init(heap, heap + sizeof(heap));
+    gc_init(&_heap_start, &_heap_end);
     #endif
+
+    // Python threading init
+#if MICROPY_PY_THREAD
+    mp_thread_init();
+#endif
+
+    machine_init();
+
     mp_init();
 
     readline_init0();
