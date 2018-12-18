@@ -323,29 +323,7 @@ void _start(void) {
 
 
 
-typedef struct {
-    volatile uint32_t DR; // Data Register 0x00
-    volatile uint32_t RSR; // Status Register 0x04
-    uint32_t _1[4];
-    volatile uint32_t FR; // Flag Register 0x18
-    uint32_t _2;
-    volatile uint32_t ILPR; // IrDA Low-Power Register 0x20
-    volatile uint32_t IBRD; // Integer Baud Rate Divisor 0x24
-    volatile uint32_t FBRD; // Fractional Baud Rate divisor 0x28
-    volatile uint32_t LCRH;
-    volatile uint32_t CTL;
-    volatile uint32_t IFLS;
-    volatile uint32_t IM;
-    volatile uint32_t RIS;
-    volatile uint32_t MIS;
-    volatile uint32_t ICR;
-    volatile uint32_t DMACTL;
-    uint32_t _3[16];
-    volatile uint32_t _9BITADDR;
-    volatile uint32_t _9BITAMASK;
-    volatile uint32_t PP;
-    volatile uint32_t CC;
-} periph_uart_t;
+
 
 #define UART0  ((periph_uart_t*) 0x4000C000)
 
