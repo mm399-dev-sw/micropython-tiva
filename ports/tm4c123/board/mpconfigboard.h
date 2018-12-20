@@ -24,3 +24,7 @@
  * THE SOFTWARE.
  */
 
+#define MICROPY_HW_BOARD_NAME       "Tiva Launch Pad"
+#define MICROPY_HW_MCU_NAME         "TM4C123GH6PM"
+
+#define MICROPY_HW_UART0_RX         (pin_PA0)
