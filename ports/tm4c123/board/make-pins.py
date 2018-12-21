@@ -8,34 +8,34 @@ import sys
 import csv
 
 
-SUPPORTED_AFS = { 
-	'UART'	: ('Tx', 'Rx', 'RTS', 'CTS'), #UART
-        'SSI'	: ('Clk', 'Tx', 'Rx', 'Fss'), #SPI
-        'I2C'	: ('SDA', 'SCL'),
-        'TIM'	: ('CCP0', 'CCP1'), #16 bit Timer
-	'WTIM' 	: ('CCP0', 'CCP1'), #32 bit Wide Timer
-	'MTRL' 	: ('PWM0', 'PWM1', 'PWM2', 'PWM3', 'PWM4', 'PWM5','PWM6','PWM7', 'FAULT0'), # Motion Control      
-        'ADC'	: ( 'AIN0','AIN1','AIN2','AIN3','AIN4','AIN5','AIN6','AIN7','AIN8','AIN9','AIN10', 			'AIN11'),
-	'COMP'	: ('-','+', 'o' ), # Analog Comparator
-	'QEI'	: ('PhA0', 'PhA1', 'PhB0', 'PhB1', 'IDX0', 'IDX1'), # Quadrature Encoder Interface
-	'TR'	: ('Clk', 'D0', 'D1'), # Trace
-	'CAN'	: ('Tx', 'Rx'),
-	'NMI'	: (''),
-	'JTAG'	: ('TDO', 'SWO', 'TDI', 'TMS', 'SWDIO', 'TCK', 'SWCLK'),
-	'USB'	: ('DM', 'DP', 'EPEN', 'ID', 'PFLT', 'VBUS')
-                }
+SUPPORTED_AFS = {
+    'UART'	: ('TX', 'RX', 'RTS', 'CTS'), #UART
+    'SSI'	: ('CLK', 'TX', 'RX', 'FSS'), #SPI
+    'I2C'	: ('SDA', 'SCL'),
+    'TIM'	: ('CCP0', 'CCP1'), #16 bit Timer
+    'WTIM' 	: ('CCP0', 'CCP1'), #32 bit Wide Timer
+    'MTRL' 	: ('PWM0', 'PWM1', 'PWM2', 'PWM3', 'PWM4', 'PWM5','PWM6','PWM7', 'FAULT0'), # Motion Control
+    'ADC'	: ( 'AIN0','AIN1','AIN2','AIN3','AIN4','AIN5','AIN6','AIN7','AIN8','AIN9','AIN10', 			'AIN11'),
+    'COMP'	: ('NEG','POS', 'OUT' ), # Analog Comparator
+    'QEI'	: ('PHA0', 'PHA1', 'PHB0', 'PHB1', 'IDX0', 'IDX1'), # Quadrature Encoder Interface
+    'TR'	: ('CLK', 'D0', 'D1'), # Trace
+    'CAN'	: ('TX', 'RX'),
+    'NMI'	: (''),
+    'JTAG'	: ('TDO', 'SWO', 'TDI', 'TMS', 'SWDIO', 'TCK', 'SWCLK'),
+    'USB'	: ('DM', 'DP', 'EPEN', 'ID', 'PFLT', 'VBUS')
+}
 SINGLE_UNIT_AF = ('NMI','TR') # These do not have Unit numbers
 
 NO_PREFIX_UNIT_AF = ('ADC', 'QEI', 'JTAG') # these units dont have the unit type in the af name
 
-AF_SHORT_DICT = {   
-        'UART'  : 'U',
-        'TIM'   : 'T',
-        'WTIM'  : 'WT',
-        'MTRL'  : 'M',
-        'COMP'  : 'C'
-        }	# some af names are shortened in the datasheet and driverlib
-     
+AF_SHORT_DICT = {
+    'UART'  : 'U',
+    'TIM'   : 'T',
+    'WTIM'  : 'WT',
+    'MTRL'  : 'M',
+    'COMP'  : 'C'
+}	# some af names are shortened in the datasheet and driverlib
+
 
 def parse_port_pin(name_str):
     """Parses a string and returns a (port, port_pin) tuple."""
@@ -57,29 +57,29 @@ class AF:
     def __init__(self, name, idx, fn, unit, type, pin_name):
         self.name = name
         self.idx = idx
-	"""AF from 0 to 9 and 14 to 15"""
+        """AF from 0 to 9 and 14 to 15"""
         if self.idx > 15 or (10 <= self.idx <= 13):
             self.idx = -1
         self.fn = fn
         self.unit = unit
         self.type = type
-	self.pin_name = pin_name	
-	if fn in AF_SHORT_DICT:
-		self.short = AF_SHORT_DICT[fn] + str(unit)
-	elif fn in NO_PREFIX_UNIT_AF:
-		self.short = ''
-	elif unit < 0 :
-		self.short = fn
-	else:
-		self.short = fn + str(unit)
+        self.pin_name = pin_name
+        if fn in AF_SHORT_DICT:
+            self.short = AF_SHORT_DICT[fn] + str(unit)
+        elif fn in NO_PREFIX_UNIT_AF:
+            self.short = ''
+        elif unit < 0 :
+            self.short = fn
+        else:
+            self.short = fn + str(unit)
 
     def print(self):
-	if self.idx == 0:
-		print ('    AF_AN({:16s}, {:4d}, {:8s}, {:4d}, {:8s}),    // {}'.format(self.name, self.idx, self.fn, self.unit, self.type, self.name))
-	elif self.short == '':
-		print ('    AF_2({:16s}, {:4d}, {:8s}, {:4d}, {:8s}, {:3s}),    // {}'.format(self.name, self.idx, self.fn, self.unit, self.type, self.pin_name, self.name))	
-	else:
-        	print ('    AF_1({:16s}, {:4d}, {:8s}, {:4d}, {:8s}, {}, {:3s}),    // {}'.format(self.name, self.idx, self.fn, self.unit, self.type, self.short, self.pin_name, self.name))
+        if self.idx == 0:
+            print ('    AF_AN({:16s}, {:4d}, {:8s}, {:4d}, {:8s}),    // {}'.format(self.name, self.idx, self.fn, self.unit, self.type, self.name))
+        elif self.short == '':
+            print ('    AF_2({:16s}, {:4d}, {:8s}, {:4d}, {:8s}, {:3s}),    // {}'.format(self.name, self.idx, self.fn, self.unit, self.type, self.pin_name, self.name))
+        else:
+            print ('    AF_1({:16s}, {:4d}, {:8s}, {:4d}, {:8s}, {}, {:3s}),    // {}'.format(self.name, self.idx, self.fn, self.unit, self.type, self.short, self.pin_name, self.name))
 
 
 class Pin:
@@ -104,10 +104,10 @@ class Pin:
                 af.print()
             print('};')
             print('pin_obj_t pin_{:4s} = PIN({:6s}, {}, {:3d}, {:2d}, pin_{}_af, {}, {});\n'.format(
-                   self.name, self.name, self.port, self.port_pin, self.pin_num, self.name, self.def_af, len(self.afs)))
+                self.name, self.name, self.port, self.port_pin, self.pin_num, self.name, self.def_af, len(self.afs)))
         else:
             print('pin_obj_t pin_{:4s} = PIN({:6s}, {}, {:3d}, {:2d}, NULL, 0, 0);\n'.format(
-                   self.name, self.name, self.port, self.port_pin, self.pin_num))
+                self.name, self.name, self.port, self.port_pin, self.pin_num))
 
     def print_header(self, hdr_file):
         hdr_file.write('extern pin_obj_t pin_{:s};\n'.format(self.name))
@@ -141,16 +141,16 @@ class Pins:
                 except:
                     continue
                 if not row[pin_col].isdigit():
-                    raise ValueError("Invalid pin number {:s} in row {:s}".format(row[pin_col]), row)
-                pin_num = int(row[pin_col]);
+                    raise ValueError("Invalid pin number {:s} in row {:s}".format(row[pin_col], row))
+                pin_num = int(row[pin_col])
                 # find the default af
                 if row[defaf_col] != '' and row[defaf_col] != row[pinname_col]:
-                    for cell in row[af_start_col:]: 
-                         if cell == row[defaf_col]:
-                             def_af = row[af_start_col:].index(cell)
-                             break   
+                    for cell in row[af_start_col:]:
+                        if cell == row[defaf_col]:
+                            def_af = row[af_start_col:].index(cell)
+                            break
                 else:
-                    def_af = 0       
+                    def_af = 0
                 pin = Pin(row[pinname_col], port_num, port_pin, def_af, pin_num)
                 self.board_pins.append(pin)
                 af_idx = 0
@@ -164,11 +164,11 @@ class Pins:
                             type_name = ''
                         if type_name in SUPPORTED_AFS[fn_name]:
                             if fn_name in SINGLE_UNIT_AF: # Dont have numbers
-				unit_idx = -1
-			    elif fn_name in NO_PREFIX_UNIT_AF:
-				unit_idx = -1
-			    else:			
-				unit_idx = af_splitted[0][-1]
+                                unit_idx = -1
+                            elif fn_name in NO_PREFIX_UNIT_AF:
+                                unit_idx = -1
+                            else:
+                                unit_idx = af_splitted[0][-1]
                             pin.add_af(AF(af, af_idx, fn_name, int(unit_idx), type_name, pin.name))
                     af_idx += 1
 
@@ -190,14 +190,14 @@ class Pins:
             if pin.board_pin:
                 print('    {{ MP_ROM_QSTR(MP_QSTR_{:3s}), MP_ROM_PTR(&pin_{:3s}) }},'.format(pin.name, pin.name))
         print('};')
-        print('MP_DEFINE_CONST_DICT(pin_{:s}_pins_locals_dict, pin_{:s}_pins_locals_dict_table);'.format(label, label));
+        print('MP_DEFINE_CONST_DICT(pin_{:s}_pins_locals_dict, pin_{:s}_pins_locals_dict_table);'.format(label, label))
 
     def print(self):
         for pin in self.board_pins:
             if pin.board_pin:
                 pin.print()
         self.print_named('board', self.board_pins)
-	self.print_named('cpu', self.board_pins)
+        self.print_named('cpu', self.board_pins)
         print('')
 
     def print_header(self, hdr_filename):
