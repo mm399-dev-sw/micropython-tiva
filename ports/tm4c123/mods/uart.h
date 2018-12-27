@@ -51,7 +51,8 @@ typedef struct {
 } periph_uart_t;
 
 typedef enum {
-    PYB_UART_NONE = 0,
+    PYB_UART_NONE = -1,
+    PYB_UART_0 = 0,
     PYB_UART_1 = 1,
     PYB_UART_2 = 2,
     PYB_UART_3 = 3,
@@ -59,7 +60,6 @@ typedef enum {
     PYB_UART_5 = 5,
     PYB_UART_6 = 6,
     PYB_UART_7 = 7,
-    PYB_UART_8 = 8,
 } pyb_uart_t;
 
 typedef struct _pyb_uart_obj_t pyb_uart_obj_t;

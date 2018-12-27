@@ -82,7 +82,7 @@ extern const struct _mp_obj_module_t mp_module_uos;
 //extern const struct _mp_obj_module_t pin_module;
 
 // extra built in names to add to the global namespace
-#define MICROPY_PORT_BUILTINS \
+#define MICROPY_PORT_BUILTINS
 //      { MP_ROM_QSTR(MP_QSTR_umachine), MP_ROM_PTR(&machine_module) },
 //      { MP_ROM_QSTR(MP_QSTR_Pin),                 MP_ROM_PTR(&pin_module) },
 //    { MP_ROM_QSTR(MP_QSTR_umachine), MP_ROM_PTR(&machine_module) },
