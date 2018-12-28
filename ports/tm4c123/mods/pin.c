@@ -198,10 +198,10 @@ STATIC void pin_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t
     // pin name
     mp_printf(print, "Pin(Pin.cpu.%q, mode=Pin.", self->name);
 
-    uint32_t dir = MAP_GPIODirModeGet(self->port, self->pin_mask);
+    uint32_t dir = MAP_GPIODirModeGet(self->gpio, self->pin_mask);
     uint32_t type;
     uint32_t strength;
-    MAP_GPIOPadConfigGet(self->port, self->pin_mask, &strength, &type);
+    MAP_GPIOPadConfigGet(self->gpio, self->pin_mask, &strength, &type);
 
 
     if (dir == GPIO_DIR_MODE_HW && type == GPIO_PIN_TYPE_ANALOG) {
@@ -492,7 +492,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_1(pin_names_obj, pin_names);
 /// Get the pin port.
 STATIC mp_obj_t pin_port(mp_obj_t self_in) {
     pin_obj_t *self = MP_OBJ_TO_PTR(self_in);
-    return MP_OBJ_NEW_SMALL_INT(self->port);
+    return MP_OBJ_NEW_SMALL_INT(self->gpio);
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(pin_port_obj, pin_port);
 
@@ -508,7 +508,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_1(pin_pin_obj, pin_pin);
 /// Returns the base address of the GPIO block associated with this pin.
 STATIC mp_obj_t pin_gpio(mp_obj_t self_in) {
     pin_obj_t *self = MP_OBJ_TO_PTR(self_in);
-    return MP_OBJ_NEW_SMALL_INT((intptr_t)self->port);
+    return MP_OBJ_NEW_SMALL_INT((intptr_t)self->gpio);
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(pin_gpio_obj, pin_gpio);
 
@@ -528,7 +528,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_1(pin_dir_obj, pin_dir);
 STATIC mp_obj_t pin_type(mp_obj_t self_in) {
     uint32_t type;
     pin_obj_t* self = MP_OBJ_TO_PTR(self_in);
-    MAP_GPIOPadConfigGet(self->port, self->pin_mask, NULL, &type);
+    MAP_GPIOPadConfigGet(self->gpio, self->pin_mask, NULL, &type);
 
     return MP_OBJ_NEW_SMALL_INT(type);
 }

@@ -58,26 +58,26 @@
 //}
 
 uint32_t pin_get_dir(const pin_obj_t *pin) {
-    return MAP_GPIODirModeGet(pin->port, pin->pin_mask);
+    return MAP_GPIODirModeGet(pin->gpio, pin->pin_mask);
 
 }
 
 uint32_t pin_get_type(const pin_obj_t *pin) {
     uint32_t type;
-    MAP_GPIOPadConfigGet(pin->port, pin->pin_mask, NULL, &type);
+    MAP_GPIOPadConfigGet(pin->gpio, pin->pin_mask, NULL, &type);
     return type;
 }
 
 uint32_t pin_get_drive(const pin_obj_t *pin) {
     uint32_t drive;
-    MAP_GPIOPadConfigGet(pin->port, pin->pin_mask, &drive, NULL);
+    MAP_GPIOPadConfigGet(pin->gpio, pin->pin_mask, &drive, NULL);
     return drive;
 }
 
 uint32_t pin_get_af(const pin_obj_t *pin) {
-    uint32_t dir = MAP_GPIODirModeGet(pin->port, pin->pin_mask);
+    uint32_t dir = MAP_GPIODirModeGet(pin->gpio, pin->pin_mask);
     if (dir == GPIO_DIR_MODE_HW) {
-        return (pin->gpio->PCTL >> (pin->pin_num * 4)) & 0xF;
+        return (pin->regs->PCTL >> (pin->pin_num * 4)) & 0xF;
     } else {
         return -1;
     }
@@ -156,17 +156,17 @@ void gpio_init(uint32_t port, uint32_t pin_mask, uint dir, uint type, uint drive
 }
 
 uint32_t pin_read(const pin_obj_t* pin) {
-    return MAP_GPIOPinRead(pin->port, pin->pin_mask);
+    return MAP_GPIOPinRead(pin->gpio, pin->pin_mask);
 }
 
 void pin_write(const pin_obj_t* pin, uint32_t value) {
-    MAP_GPIOPinWrite(pin->port, pin->pin_mask, value ? pin->pin_mask : 0);
+    MAP_GPIOPinWrite(pin->gpio, pin->pin_mask, value ? pin->pin_mask : 0);
 }
 
 void pin_low(const pin_obj_t* pin) {
-    MAP_GPIOPinWrite(pin->port, pin->pin_mask, 0);
+    MAP_GPIOPinWrite(pin->gpio, pin->pin_mask, 0);
 }
 
 void pin_high(const pin_obj_t* pin) {
-    MAP_GPIOPinWrite(pin->port, pin->pin_mask, pin->pin_mask);
+    MAP_GPIOPinWrite(pin->gpio, pin->pin_mask, pin->pin_mask);
 }
