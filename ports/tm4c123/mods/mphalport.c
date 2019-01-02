@@ -56,14 +56,14 @@ void mp_hal_gpio_clock_enable(const uint32_t periph) {
 void mp_hal_pin_config(mp_hal_pin_obj_t pin_obj, uint32_t dir, uint32_t type, uint32_t drive) {
     mp_hal_gpio_clock_enable(pin_obj->periph);
 
-    MAP_GPIODirModeSet(pin_obj->port, pin_obj->pin_mask, dir);
-    MAP_GPIOPadConfigSet(pin_obj->port, pin_obj->pin_mask, drive, type);
+    MAP_GPIODirModeSet(pin_obj->gpio, pin_obj->pin_mask, dir);
+    MAP_GPIOPadConfigSet(pin_obj->gpio, pin_obj->pin_mask, drive, type);
 }
 
 void mp_hal_pin_set_af(mp_hal_pin_obj_t pin_obj, uint8_t af_id) {
     if (af_id == 0xFF) return;
-    MAP_GPIODirModeSet(pin_obj->port, pin_obj->pin_mask, GPIO_DIR_MODE_HW);
-    MAP_GPIOPadConfigSet(pin_obj->port, pin_obj->pin_mask, GPIO_STRENGTH_2MA, GPIO_PIN_TYPE_STD);
+    MAP_GPIODirModeSet(pin_obj->gpio, pin_obj->pin_mask, GPIO_DIR_MODE_HW);
+    MAP_GPIOPadConfigSet(pin_obj->gpio, pin_obj->pin_mask, GPIO_STRENGTH_2MA, GPIO_PIN_TYPE_STD);
     MAP_GPIOPinConfigure((pin_obj->af_list)[af_id].conf);
 }
 

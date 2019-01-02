@@ -72,12 +72,14 @@
 }
 
 
+
 #define PIN(p_pin_name, p_port, p_port_pin, p_pin_num, p_af_list, p_def_af, p_num_afs) \
 { \
     { &pin_mod }, \
     .name           = MP_QSTR_ ## p_pin_name, \
-    .port           = GPIO_PORT ## p_port ## _AHB_BASE, \
+    .gpio           = GPIO_PORT ## p_port ## _AHB_BASE, \
     .periph         = SYSCTL_PERIPH_GPIO ## p_port, \
+    .regs           = (periph_gpio_t*)GPIO_PORT ## p_port ## _AHB_BASE, \
     .af_list        = (p_af_list), \
     .type           = GPIO_PIN_TYPE_STD, \
     .pin_mask       = GPIO_PIN_ ## p_port_pin, \

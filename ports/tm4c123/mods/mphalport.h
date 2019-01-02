@@ -213,20 +213,20 @@ enum {
 #define mp_hal_pin_obj_t const pin_obj_t*
 #define mp_hal_get_pin_obj(o)   pin_find(o)
 #define mp_hal_pin_name(p)      ((p)->name)
-#define mp_hal_pin_input(p)     mp_hal_pin_config((p)->port, (p)->pin_mask, MP_HAL_PIN_MODE_INPUT, MP_HAL_PIN_PULL_NONE, MP_HAL_PIN_STRENGTH_LOW)
-#define mp_hal_pin_output(p)    mp_hal_pin_config((p)->port, (p)->pin_mask, MP_HAL_PIN_MODE_OUTPUT, MP_HAL_PIN_PULL_NONE, MP_HAL_PIN_STRENGTH_LOW)
-#define mp_hal_pin_open_drain(p) mp_hal_pin_config((p)->port, (p)->pin_mask, MP_HAL_PIN_MODE_OUTPUT, MP_HAL_PIN_MODE_OPEN_DRAIN, MP_HAL_PIN_STRENGTH_LOW)
+#define mp_hal_pin_input(p)     mp_hal_pin_config((p)->gpio, (p)->pin_mask, MP_HAL_PIN_MODE_INPUT, MP_HAL_PIN_PULL_NONE, MP_HAL_PIN_STRENGTH_LOW)
+#define mp_hal_pin_output(p)    mp_hal_pin_config((p)->gpio, (p)->pin_mask, MP_HAL_PIN_MODE_OUTPUT, MP_HAL_PIN_PULL_NONE, MP_HAL_PIN_STRENGTH_LOW)
+#define mp_hal_pin_open_drain(p) mp_hal_pin_config((p)->gpio, (p)->pin_mask, MP_HAL_PIN_MODE_OUTPUT, MP_HAL_PIN_MODE_OPEN_DRAIN, MP_HAL_PIN_STRENGTH_LOW)
 
-#define mp_hal_pin_high(p)      MAP_GPIOPinWrite((p)->port, (p)->pin_mask, (p)->pin_mask)
-#define mp_hal_pin_low(p)       MAP_GPIOPinWrite((p)->port, (p)->pin_mask,  0)
+#define mp_hal_pin_high(p)      MAP_GPIOPinWrite((p)->gpio, (p)->pin_mask, (p)->pin_mask)
+#define mp_hal_pin_low(p)       MAP_GPIOPinWrite((p)->gpio, (p)->pin_mask,  0)
 
 #define mp_hal_pin_od_low(p)    mp_hal_pin_low(p)
 #define mp_hal_pin_od_high(p)   mp_hal_pin_high(p)
-#define mp_hal_pin_read(p)      MAP_GPIOPinRead((p)->port, (p)->pin_mask)
-#define mp_hal_pin_write(p, v)  MAP_GPIOPinWrite((p)->port, (p)->pin_mask, (v) ? (p)->pin_mask : 0)
+#define mp_hal_pin_read(p)      MAP_GPIOPinRead((p)->gpio, (p)->pin_mask)
+#define mp_hal_pin_write(p, v)  MAP_GPIOPinWrite((p)->gpio, (p)->pin_mask, (v) ? (p)->pin_mask : 0)
 
-#define mp_hal_pin_get_af(p)    (((p)->gpio->PCTL >> ((p)->pin_num * 4)) & 0xF)
-#define mp_hal_pin_get_dir(p)   (MAP_GPIODirModeGet((p)->port, (p)->pin_mask))
+#define mp_hal_pin_get_af(p)    (((p)->regs->PCTL >> ((p)->pin_num * 4)) & 0xF)
+#define mp_hal_pin_get_dir(p)   (MAP_GPIODirModeGet((p)->gpio, (p)->pin_mask))
 //#define mp_hal_pin_get_type(p)  ()
 //#define mp_hal_pin_get_drive(p)
 
