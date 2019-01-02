@@ -28,37 +28,37 @@
 #define MICROPY_HW_MCU_NAME         "TM4C123GH6PM"
 
 // UART config
-#define MICROPY_HW_UART0_NAME   "UART0"
+#define MICROPY_HW_UART0_NAME   "0"
 #define MICROPY_HW_UART0_RX     (pin_PA0)
 #define MICROPY_HW_UART0_TX     (pin_PA1)
 
-#define MICROPY_HW_UART1_NAME   "UART1"
+#define MICROPY_HW_UART1_NAME   "1"
 #define MICROPY_HW_UART1_TX     (pin_PB0)
 #define MICROPY_HW_UART1_RX     (pin_PB1)
 #define MICROPY_HW_UART1_RTS    (pin_PF0) //pin_PC4
 #define MICROPY_HW_UART1_CTS    (pin_PF1) //pin_PC5
 
-#define MICROPY_HW_UART2_NAME   "UART2"
+#define MICROPY_HW_UART2_NAME   "2"
 #define MICROPY_HW_UART2_RX     (pin_PD6)
 #define MICROPY_HW_UART2_TX     (pin_PD7)
 
-#define MICROPY_HW_UART3_NAME   "UART3"
+#define MICROPY_HW_UART3_NAME   "3"
 #define MICROPY_HW_UART3_RX     (pin_PC6)
 #define MICROPY_HW_UART3_TX     (pin_PC7)
 
-#define MICROPY_HW_UART4_NAME   "UART4"
+#define MICROPY_HW_UART4_NAME   "4"
 #define MICROPY_HW_UART4_RX     (pin_PC4)
 #define MICROPY_HW_UART4_TX     (pin_PC5)
 
-#define MICROPY_HW_UART5_NAME   "UART5"
+#define MICROPY_HW_UART5_NAME   "5"
 #define MICROPY_HW_UART5_RX     (pin_PE4)
 #define MICROPY_HW_UART5_TX     (pin_PE5)
 
-#define MICROPY_HW_UART6_NAME   "UART6"
+#define MICROPY_HW_UART6_NAME   "6"
 #define MICROPY_HW_UART6_RX     (pin_PD4)
 #define MICROPY_HW_UART6_TX     (pin_PD5)
 
-#define MICROPY_HW_UART7_NAME   "UART7"
+#define MICROPY_HW_UART7_NAME   "7"
 #define MICROPY_HW_UART7_RX     (pin_PE0)
 #define MICROPY_HW_UART7_TX     (pin_PE1)
 

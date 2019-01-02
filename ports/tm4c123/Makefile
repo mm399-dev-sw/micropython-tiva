@@ -92,6 +92,7 @@ MODS_SRC_C = $(addprefix mods/,\
 	mphalport.c \
 	pin.c \
 	pin_named_pins.c \
+	uart.c \
 	modmachine.c \
 	)
 	#	modmachine.c \

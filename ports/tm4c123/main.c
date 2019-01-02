@@ -26,6 +26,7 @@
 #include "py/mperrno.h"
 #include "mods/modmachine.h"
 #include "mods/pin.h"
+#include "mods/uart.h"
 //#include "mods/pybpin.h"
 #include "inc/hw_types.h"
 #include "inc/hw_gpio.h"
@@ -86,6 +87,7 @@ int main(int argc, char **argv) {
 
     readline_init0();
     pin_init0();
+    uart_init0();
 
     #if MICROPY_ENABLE_COMPILER
     #if MICROPY_REPL_EVENT_DRIVEN

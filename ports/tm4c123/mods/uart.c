@@ -81,8 +81,15 @@
 ///
 ///     uart.any()               # returns True if any characters waiting
 
-#define CHAR_WIDTH_8BIT (0)
-#define CHAR_WIDTH_9BIT (1)
+
+
+enum {
+    CHAR_WIDTH_8BIT = 0,
+    CHAR_WIDTH_7BIT,
+    CHAR_WIDTH_6BIT,
+    CHAR_WIDTH_5BIT,
+    CHAR_WIDTH_9BIT
+};
 
 struct _pyb_uart_obj_t {
     mp_obj_base_t base;
@@ -313,6 +320,8 @@ STATIC bool uart_init2(pyb_uart_obj_t *uart_obj) {
 
     // init uart_base
 //    HAL_UART_Init(&uart_obj->uart);
+        MAP_SysCtlPeripheralEnable(uart_obj->periph);
+    while(!MAP_SysCtlPeripheralReady(uart_obj->periph)) {};
 
 
     uart_obj->is_enabled = true;
@@ -380,12 +389,12 @@ int uart_rx_char(pyb_uart_obj_t *self) {
         self->read_buf_tail = (self->read_buf_tail + 1) % self->read_buf_len;
         if (!(self->regs->FR & UART_FR_RXFE)) {
             // UART was stalled by flow ctrl: re-enable IRQ now we have room in buffer
-            UARTIntEnable(self->uart, UART_INT_RX);
+            MAP_UARTIntEnable(self->uart, UART_INT_RX);
         }
         return data;
     } else {
         // no buffering
-        return UARTCharGetNonBlocking(self->uart) & self->char_mask;
+        return MAP_UARTCharGetNonBlocking(self->uart) & self->char_mask;
     }
 }
 
@@ -460,11 +469,7 @@ STATIC size_t uart_tx_data(pyb_uart_obj_t *self, const void *src_in, size_t num_
         } else {
             data = *src++;
         }
-        #if defined(STM32F4)
-        uart->DR = data;
-        #else
-        uart->TDR = data;
-        #endif
+        self->regs->DR = data;
         ++num_tx;
     }
 
@@ -513,7 +518,7 @@ void uart_irq_handler(mp_uint_t uart_id) {
                 }
                 self->read_buf_head = next_head;
             } else { // No room: leave char in buf, disable interrupt
-                UARTIntDisable(self->uart, UART_INT_RX);
+                MAP_UARTIntDisable(self->uart, UART_INT_RX);
             }
         }
     }
@@ -567,7 +572,7 @@ STATIC void pyb_uart_print(const mp_print_t *print, mp_obj_t self_in, mp_print_k
 ///   - `stop` is the number of stop bits, 1 or 2.
 ///   - `timeout` is the timeout in milliseconds to wait for the first character.
 ///   - `timeout_char` is the timeout in milliseconds to wait between characters.
-///   - `flow` is RTS | CTS where RTS == 256, CTS == 512 == UART_FLOWCONTROL_RX >> 6 && UART_FLOWCONTROL_TX >> 6
+///   - `flow` is RTS | CTS where RTS == UART_FLOWCONTROL_RX & CTS == UART_FLOWCONTROL_TX
 ///   - `read_buf_len` is the character length of the read buffer (0 to disable).
 STATIC mp_obj_t pyb_uart_init_helper(pyb_uart_obj_t *self, size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
     static const mp_arg_t allowed_args[] = {
@@ -593,9 +598,10 @@ STATIC mp_obj_t pyb_uart_init_helper(pyb_uart_obj_t *self, size_t n_args, const 
 
 
     uint32_t config = 0;
-
+    UART9BitDisable(self->uart);
     // parity
     mp_int_t bits = args.bits.u_int;
+    bool parity = false;
     if (args.parity.u_obj == mp_const_none) {
         config |= UART_CONFIG_PAR_NONE;
     } else {
@@ -606,15 +612,25 @@ STATIC mp_obj_t pyb_uart_init_helper(pyb_uart_obj_t *self, size_t n_args, const 
     // number of bits
     if (bits == 5) {
         config |= UART_CONFIG_WLEN_5;
+        self->char_width = CHAR_WIDTH_5BIT;
     } else if ( bits == 6) {
         config |= UART_CONFIG_WLEN_6;
+        self->char_width = CHAR_WIDTH_6BIT;
     } else if ( bits == 7) {
         config |= UART_CONFIG_WLEN_7;
+        self->char_width = CHAR_WIDTH_7BIT;
     } else if ( bits == 8) {
         config |= UART_CONFIG_WLEN_8;
+        self->char_width = CHAR_WIDTH_8BIT;
+        // 9Bit not supportet atm
+//    } else if ( bits == 9) {
+//        config |= UART_CONFIG_WLEN_8;
+//        UART9BitEnable(self->uart);
     } else {
         mp_raise_ValueError("unsupported combination of bits and parity");
     }
+
+    self->char_mask = 0xFF >> self->char_width;
 
     // stop bits
     switch (args.stop.u_int) {
@@ -622,15 +638,17 @@ STATIC mp_obj_t pyb_uart_init_helper(pyb_uart_obj_t *self, size_t n_args, const 
         default: config |= UART_CONFIG_STOP_TWO; break;
     }
 
-    MAP_UARTConfigSetExpClk(self->uart, SysCtlClockGet(), args.baudrate.u_int, config);
+    //baud rate
+    mp_uint_t req_baudrate = args.baudrate.u_int;
+
+    MAP_UARTConfigSetExpClk(self->uart, SysCtlClockGet(), req_baudrate, config);
 
     // flow control
-    uint32_t hw_flow_ctl = args.flow.u_int;
-
+    MAP_UARTFlowControlSet(self->uart, args.flow.u_int);
     // extra config (not yet configurable)
 //    init->Mode = UART_MODE_TX_RX;
 //    init->OverSampling = UART_OVERSAMPLING_16;
-    MAP_UARTFlowControlSet(self->uart, hw_flow_ctl << 6);
+
 
     // init UART (if it fails, it's because the port doesn't exist)
     if (!uart_init2(self)) {
@@ -651,83 +669,45 @@ STATIC mp_obj_t pyb_uart_init_helper(pyb_uart_obj_t *self, size_t n_args, const 
 
     // setup the read buffer
     m_del(byte, self->read_buf, self->read_buf_len << self->char_width);
-    if (init->WordLength == UART_WORDLENGTH_9B && init->Parity == UART_PARITY_NONE) {
-        self->char_mask = 0x1ff;
-        self->char_width = CHAR_WIDTH_9BIT;
-    } else {
-        if (init->WordLength == UART_WORDLENGTH_9B || init->Parity == UART_PARITY_NONE) {
-            self->char_mask = 0xff;
-        } else {
-            self->char_mask = 0x7f;
-        }
-        self->char_width = CHAR_WIDTH_8BIT;
-    }
+
     self->read_buf_head = 0;
     self->read_buf_tail = 0;
     if (args.read_buf_len.u_int <= 0) {
         // no read buffer
         self->read_buf_len = 0;
         self->read_buf = NULL;
-        HAL_NVIC_DisableIRQ(self->irqn);
-        __HAL_UART_DISABLE_IT(&self->uart, UART_IT_RXNE);
+        MAP_SysCtlIntDisable(self->irqn);
+        MAP_UARTIntDisable(self->uart, UART_INT_RX);
     } else {
         // read buffer using interrupts
         self->read_buf_len = args.read_buf_len.u_int + 1; // +1 to adjust for usable length of buffer
         self->read_buf = m_new(byte, self->read_buf_len << self->char_width);
-        __HAL_UART_ENABLE_IT(&self->uart, UART_IT_RXNE);
-        NVIC_SetPriority(IRQn_NONNEG(self->irqn), IRQ_PRI_UART);
-        HAL_NVIC_EnableIRQ(self->irqn);
+
+        MAP_UARTIntEnable(self->uart, UART_INT_RX);
+        MAP_IntPrioritySet(self->irqn, 0xE0); //lowest
+        MAP_SysCtlIntEnable(self->irqn);
     }
 
     // compute actual baudrate that was configured
     // (this formula assumes UART_OVERSAMPLING_16)
     uint32_t actual_baudrate = 0;
-    #if defined(STM32F7) || defined(STM32H7)
-    UART_ClockSourceTypeDef clocksource = UART_CLOCKSOURCE_UNDEFINED;
-    UART_GETCLOCKSOURCE(&self->uart, clocksource);
-    switch (clocksource) {
-        #if defined(STM32H7)
-        case UART_CLOCKSOURCE_D2PCLK1: actual_baudrate = HAL_RCC_GetPCLK1Freq(); break;
-        case UART_CLOCKSOURCE_D3PCLK1: actual_baudrate = HAL_RCC_GetPCLK1Freq(); break;
-        case UART_CLOCKSOURCE_D2PCLK2: actual_baudrate = HAL_RCC_GetPCLK2Freq(); break;
-        #else
-        case UART_CLOCKSOURCE_PCLK1:  actual_baudrate = HAL_RCC_GetPCLK1Freq(); break;
-        case UART_CLOCKSOURCE_PCLK2:  actual_baudrate = HAL_RCC_GetPCLK2Freq(); break;
-        case UART_CLOCKSOURCE_SYSCLK: actual_baudrate = HAL_RCC_GetSysClockFreq(); break;
-        #endif
-        #if defined(STM32H7)
-        case UART_CLOCKSOURCE_CSI:    actual_baudrate = CSI_VALUE; break;
-        #endif
-        case UART_CLOCKSOURCE_HSI:    actual_baudrate = HSI_VALUE; break;
-        case UART_CLOCKSOURCE_LSE:    actual_baudrate = LSE_VALUE; break;
-        #if defined(STM32H7)
-        case UART_CLOCKSOURCE_PLL2:
-        case UART_CLOCKSOURCE_PLL3:
-        #endif
-        case UART_CLOCKSOURCE_UNDEFINED: break;
-    }
-    #else
-    if (self->uart.Instance == USART1
-        #if defined(USART6)
-        || self->uart.Instance == USART6
-        #endif
-        ) {
-        actual_baudrate = HAL_RCC_GetPCLK2Freq();
+    uint32_t co, clk;
+    clk = MAP_UARTClockSourceGet(self->uart);
+    if(clk == UART_CLOCK_SYSTEM) {
+        MAP_UARTConfigGetExpClk(self->uart, SysCtlClockGet(), &actual_baudrate, &co);
     } else {
-        actual_baudrate = HAL_RCC_GetPCLK1Freq();
+        //PIOSC frequency is always 16MHz +-3%
+        MAP_UARTConfigGetExpClk(self->uart, 16000000U, &actual_baudrate, &co);
     }
-    #endif
-    actual_baudrate /= self->uart.Instance->BRR;
 
     // check we could set the baudrate within 5%
     uint32_t baudrate_diff;
-    if (actual_baudrate > init->BaudRate) {
-        baudrate_diff = actual_baudrate - init->BaudRate;
+    if (actual_baudrate > req_baudrate) {
+        baudrate_diff = actual_baudrate - req_baudrate;
     } else {
-        baudrate_diff = init->BaudRate - actual_baudrate;
+        baudrate_diff = req_baudrate - actual_baudrate;
     }
-    init->BaudRate = actual_baudrate; // remember actual baudrate for printing
-    if (20 * baudrate_diff > init->BaudRate) {
+    if (20 * baudrate_diff > req_baudrate) {
         nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_ValueError, "set baudrate %d is not within 5%% of desired value", actual_baudrate));
     }
 
@@ -735,20 +715,6 @@ STATIC mp_obj_t pyb_uart_init_helper(pyb_uart_obj_t *self, size_t n_args, const 
 }
 
 /// \classmethod \constructor(bus, ...)
-///
-/// Construct a UART object on the given bus.  `bus` can be 1-6, or 'XA', 'XB', 'YA', or 'YB'.
-/// With no additional parameters, the UART object is created but not
-/// initialised (it has the settings from the last initialisation of
-/// the bus, if any).  If extra arguments are given, the bus is initialised.
-/// See `init` for parameters of initialisation.
-///
-/// The physical pins of the UART busses are:
-///
-///   - `UART(4)` is on `XA`: `(TX, RX) = (X1, X2) = (PA0, PA1)`
-///   - `UART(1)` is on `XB`: `(TX, RX) = (X9, X10) = (PB6, PB7)`
-///   - `UART(6)` is on `YA`: `(TX, RX) = (Y1, Y2) = (PC6, PC7)`
-///   - `UART(3)` is on `YB`: `(TX, RX) = (Y9, Y10) = (PB10, PB11)`
-///   - `UART(2)` is on: `(TX, RX) = (X3, X4) = (PA2, PA3)`
 STATIC mp_obj_t pyb_uart_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *args) {
     // check arguments
     mp_arg_check_num(n_args, n_kw, 1, MP_OBJ_FUN_ARGS_MAX, true);
@@ -824,61 +790,10 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_KW(pyb_uart_init_obj, 1, pyb_uart_init);
 STATIC mp_obj_t pyb_uart_deinit(mp_obj_t self_in) {
     pyb_uart_obj_t *self = self_in;
     self->is_enabled = false;
-    UART_HandleTypeDef *uart = &self->uart;
-    HAL_UART_DeInit(uart);
-    if (uart->Instance == USART1) {
-        HAL_NVIC_DisableIRQ(USART1_IRQn);
-        __HAL_RCC_USART1_FORCE_RESET();
-        __HAL_RCC_USART1_RELEASE_RESET();
-        __HAL_RCC_USART1_CLK_DISABLE();
-    } else if (uart->Instance == USART2) {
-        HAL_NVIC_DisableIRQ(USART2_IRQn);
-        __HAL_RCC_USART2_FORCE_RESET();
-        __HAL_RCC_USART2_RELEASE_RESET();
-        __HAL_RCC_USART2_CLK_DISABLE();
-    #if defined(USART3)
-    } else if (uart->Instance == USART3) {
-        HAL_NVIC_DisableIRQ(USART3_IRQn);
-        __HAL_RCC_USART3_FORCE_RESET();
-        __HAL_RCC_USART3_RELEASE_RESET();
-        __HAL_RCC_USART3_CLK_DISABLE();
-    #endif
-    #if defined(UART4)
-    } else if (uart->Instance == UART4) {
-        HAL_NVIC_DisableIRQ(UART4_IRQn);
-        __HAL_RCC_UART4_FORCE_RESET();
-        __HAL_RCC_UART4_RELEASE_RESET();
-        __HAL_RCC_UART4_CLK_DISABLE();
-    #endif
-    #if defined(UART5)
-    } else if (uart->Instance == UART5) {
-        HAL_NVIC_DisableIRQ(UART5_IRQn);
-        __HAL_RCC_UART5_FORCE_RESET();
-        __HAL_RCC_UART5_RELEASE_RESET();
-        __HAL_RCC_UART5_CLK_DISABLE();
-    #endif
-    #if defined(UART6)
-    } else if (uart->Instance == USART6) {
-        HAL_NVIC_DisableIRQ(USART6_IRQn);
-        __HAL_RCC_USART6_FORCE_RESET();
-        __HAL_RCC_USART6_RELEASE_RESET();
-        __HAL_RCC_USART6_CLK_DISABLE();
-    #endif
-    #if defined(UART7)
-    } else if (uart->Instance == UART7) {
-        HAL_NVIC_DisableIRQ(UART7_IRQn);
-        __HAL_RCC_UART7_FORCE_RESET();
-        __HAL_RCC_UART7_RELEASE_RESET();
-        __HAL_RCC_UART7_CLK_DISABLE();
-    #endif
-    #if defined(UART8)
-    } else if (uart->Instance == UART8) {
-        HAL_NVIC_DisableIRQ(UART8_IRQn);
-        __HAL_RCC_UART8_FORCE_RESET();
-        __HAL_RCC_UART8_RELEASE_RESET();
-        __HAL_RCC_UART8_CLK_DISABLE();
-    #endif
-    }
+    UARTIntUnregister(self->uart);
+    MAP_UARTDisable(self->uart);
+    MAP_SysCtlIntDisable(self->irqn);
+    MAP_SysCtlPeripheralDisable(self->periph);
     return mp_const_none;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(pyb_uart_deinit_obj, pyb_uart_deinit);
@@ -930,17 +845,21 @@ STATIC mp_obj_t pyb_uart_readchar(mp_obj_t self_in) {
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(pyb_uart_readchar_obj, pyb_uart_readchar);
 
-// uart.sendbreak()
-STATIC mp_obj_t pyb_uart_sendbreak(mp_obj_t self_in) {
+// start of the break condition
+STATIC mp_obj_t pyb_uart_startbreak(mp_obj_t self_in) {
     pyb_uart_obj_t *self = self_in;
-    #if defined(STM32F7) || defined(STM32L4) || defined(STM32H7)
-    self->uart.Instance->RQR = USART_RQR_SBKRQ; // write-only register
-    #else
-    self->uart.Instance->CR1 |= USART_CR1_SBK;
-    #endif
+    self->regs->LCRH |= UART_LCRH_BRK;
     return mp_const_none;
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_1(pyb_uart_sendbreak_obj, pyb_uart_sendbreak);
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(pyb_uart_startbreak_obj, pyb_uart_startbreak);
+
+// stop of the break condition, because a break generator is not available
+STATIC mp_obj_t pyb_uart_stopbreak(mp_obj_t self_in) {
+    pyb_uart_obj_t *self = self_in;
+    self->regs->LCRH &= ~UART_LCRH_BRK;
+    return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(pyb_uart_stopbreak_obj, pyb_uart_stopbreak);
 
 STATIC const mp_rom_map_elem_t pyb_uart_locals_dict_table[] = {
     // instance methods
@@ -960,11 +879,12 @@ STATIC const mp_rom_map_elem_t pyb_uart_locals_dict_table[] = {
 
     { MP_ROM_QSTR(MP_QSTR_writechar), MP_ROM_PTR(&pyb_uart_writechar_obj) },
     { MP_ROM_QSTR(MP_QSTR_readchar), MP_ROM_PTR(&pyb_uart_readchar_obj) },
-    { MP_ROM_QSTR(MP_QSTR_sendbreak), MP_ROM_PTR(&pyb_uart_sendbreak_obj) },
+    { MP_ROM_QSTR(MP_QSTR_startbreak), MP_ROM_PTR(&pyb_uart_startbreak_obj) },
+    { MP_ROM_QSTR(MP_QSTR_stopbreak), MP_ROM_PTR(&pyb_uart_stopbreak_obj) },
 
     // class constants
-    { MP_ROM_QSTR(MP_QSTR_RTS), MP_ROM_INT(UART_HWCONTROL_RTS) },
-    { MP_ROM_QSTR(MP_QSTR_CTS), MP_ROM_INT(UART_HWCONTROL_CTS) },
+    { MP_ROM_QSTR(MP_QSTR_RTS), MP_ROM_INT(UART_FLOWCONTROL_RX) },
+    { MP_ROM_QSTR(MP_QSTR_CTS), MP_ROM_INT(UART_FLOWCONTROL_TX) },
 };
 
 STATIC MP_DEFINE_CONST_DICT(pyb_uart_locals_dict, pyb_uart_locals_dict_table);
@@ -1047,7 +967,7 @@ STATIC mp_uint_t pyb_uart_ioctl(mp_obj_t self_in, mp_uint_t request, mp_uint_t a
         if ((flags & MP_STREAM_POLL_RD) && uart_rx_any(self)) {
             ret |= MP_STREAM_POLL_RD;
         }
-        if ((flags & MP_STREAM_POLL_WR) && __HAL_UART_GET_FLAG(&self->uart, UART_FLAG_TXE)) {
+        if ((flags & MP_STREAM_POLL_WR) && (self->regs->FR & UART_FR_TXFE)) {
             ret |= MP_STREAM_POLL_WR;
         }
     } else {
