@@ -1,28 +1,9 @@
-/******************************************************************************
- *
- * Default Linker script for the Texas Instruments TM4C123GH6PM
- *
- * This is derived from revision 15071 of the TivaWare Library.
- * Source: https://e2e.ti.com/support/microcontrollers/other/f/908/p/479812/2164975
- *
- *****************************************************************************/
-
+/* Linker script to configure memory regions. */
 MEMORY
 {
-    FLASH (RX) : ORIGIN = 0x00000000, LENGTH = 0x00040000
-    SRAM (WX)  : ORIGIN = 0x20000000, LENGTH = 0x00008000
+  FLASH (rx)  : ORIGIN = 0x00000000, LENGTH = 512K
+  RAM   (rwx) : ORIGIN = 0x20000000, LENGTH = 256K
 }
-
-HEAPSIZE = 0x2000;
-STACKSIZE = 0x0800;
-
-REGION_ALIAS("REGION_TEXT", FLASH);
-REGION_ALIAS("REGION_BSS", SRAM);
-REGION_ALIAS("REGION_DATA", SRAM);
-REGION_ALIAS("REGION_STACK", SRAM);
-REGION_ALIAS("REGION_HEAP", SRAM);
-REGION_ALIAS("REGION_ARM_EXIDX", FLASH);
-REGION_ALIAS("REGION_ARM_EXTAB", FLASH);
 
 /* Linker script to place sections and symbol values. Should be used together
  * with other linker script that defines memory regions FLASH and RAM.
@@ -205,8 +186,3 @@ SECTIONS
 	/* Check if data + heap + stack exceeds RAM limit */
 	ASSERT(__StackLimit >= __HeapLimit, "region RAM overflowed with stack")
 }
-
-
-/* RAM extents for the garbage collector */
-_ram_start = ORIGIN(SRAM);
-_ram_end = ORIGIN(SRAM) + LENGTH(SRAM);

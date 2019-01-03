@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
-#include "cmsis_gcc.h"
 
 #include "py/runtime.h"
 #include "py/stackctrl.h"

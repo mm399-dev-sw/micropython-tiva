@@ -47,11 +47,15 @@ LFLAGS = --gc-sections
 CPFLAGS = -O binary
 
 LINKER_FILE = tm4c123gh6pm.ld
+STARTUP_FILE = cmsis/device/GCC/startup_ARMCM4.c
+SYSTEM_FILE = system_TM4C123.c
 
 # Included directories
 INC += -I.
 INC += -I./mods
 INC += -I./misc
+INC += -I./cmsis/core
+INC += -I./cmsis/device/Include
 INC += -I$(TOP)
 INC += -I$(BUILD)
 INC += -I$(BUILD)/genhdr
@@ -66,7 +70,7 @@ PYDFU = $(TOP)/tools/pydfu.py
 CFLAGS_CORTEX_M4 = -mthumb -mtune=cortex-m4 -mabi=aapcs-linux -mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mfloat-abi=hard -fsingle-precision-constant -Wdouble-promotion
 CFLAGS = $(INC) -Wall -Werror -std=c99 -nostdlib $(CFLAGS_CORTEX_M4) $(COPT)
 #Preprocessor Flags
-CFLAGS += -DPART_$(PART) -c -D$(PART) -DTARGET_IS_TM4C123_RB1 -DMICROPY_PIN_DEFS_PORT_H=\"mods/pin_defs_tm4c123.h\" #-DMICROPY_MPHALPORT_H=\"mphalport.h\"
+CFLAGS += -DPART_$(PART) -c -D$(PART) -DARMCM4_FP -DTARGET_IS_TM4C123_RB1 -DMICROPY_PIN_DEFS_PORT_H=\"mods/pin_defs_tm4c123.h\" #-DMICROPY_MPHALPORT_H=\"mphalport.h\"
 
 LDFLAGS = -nostdlib -T $(LINKER_FILE) -Map=$@.map --cref --gc-sections
 
@@ -102,8 +106,9 @@ SRC_QSTR += $(MODS_SRC_C)
 
 # Core sources
 CORE_SRC_C = \
+	$(STARTUP_FILE) \
+	$(SYSTEM_FILE) \
 	main.c \
-	startup_gcc.c \
 	uart_core.c \
 	gccollect.c 
 	
