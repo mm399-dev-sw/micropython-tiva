@@ -23,8 +23,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#ifndef MICROPY_INCLUDED_STM32_IRQ_H
-#define MICROPY_INCLUDED_STM32_IRQ_H
+#ifndef MICROPY_INCLUDED_TM4C123_IRQ_H
+#define MICROPY_INCLUDED_TM4C123_IRQ_H
 
 // Use this macro together with NVIC_SetPriority to indicate that an IRQn is non-negative,
 // which helps the compiler optimise the resulting inline function.
@@ -56,7 +56,7 @@ static inline mp_uint_t query_irq(void) {
 #if __CORTEX_M >= 0x03
 
 // irqs with a priority value greater or equal to "pri" will be disabled
-// "pri" should be between 1 and 15 inclusive
+// "pri" should be between 1 and 7 inclusive
 static inline uint32_t raise_irq_pri(uint32_t pri) {
     uint32_t basepri = __get_BASEPRI();
     // If non-zero, the processor does not process any exception with a
@@ -135,4 +135,4 @@ MP_DECLARE_CONST_FUN_OBJ_0(pyb_irq_stats_obj);
 #define IRQ_PRI_PENDSV          NVIC_EncodePriority(NVIC_PRIORITYGROUP_4, 15, 0)
 #define IRQ_PRI_RTC_WKUP        NVIC_EncodePriority(NVIC_PRIORITYGROUP_4, 15, 0)
 
-#endif // MICROPY_INCLUDED_STM32_IRQ_H
+#endif // MICROPY_INCLUDED_TM4C123_IRQ_H
