@@ -1,4 +1,6 @@
 #include <stdint.h>
+#include "cmsis_gcc.h"
+#include "mpconfigboard.h"
 
 // options to control how MicroPython is built
 
@@ -75,7 +77,54 @@ typedef unsigned mp_uint_t; // must be pointer size
 
 typedef long mp_off_t;
 
+// We have inlined IRQ functions for efficiency (they are generally
+// 1 machine instruction).
+//
+// Note on IRQ state: you should not need to know the specific
+// value of the state variable, but rather just pass the return
+// value from disable_irq back to enable_irq.  If you really need
+// to know the machine-specific values, see irq.h.
+
+static inline void enable_irq(mp_uint_t state) {
+    __set_PRIMASK(state);
+}
+
+static inline mp_uint_t disable_irq(void) {
+    mp_uint_t state = __get_PRIMASK();
+    __disable_irq();
+    return state;
+}
+
+#define MICROPY_BEGIN_ATOMIC_SECTION()     disable_irq()
+#define MICROPY_END_ATOMIC_SECTION(state)  enable_irq(state)
+
 #define MP_PLAT_PRINT_STRN(str, len) mp_hal_stdout_tx_strn_cooked(str, len)
+
+#if MICROPY_PY_THREAD
+#define MICROPY_EVENT_POLL_HOOK \
+    do { \
+        extern void mp_handle_pending(void); \
+        mp_handle_pending(); \
+        if (pyb_thread_enabled) { \
+            MP_THREAD_GIL_EXIT(); \
+            pyb_thread_yield(); \
+            MP_THREAD_GIL_ENTER(); \
+        } else { \
+            __WFI(); \
+        } \
+    } while (0);
+
+#define MICROPY_THREAD_YIELD() pyb_thread_yield()
+#else
+#define MICROPY_EVENT_POLL_HOOK \
+    do { \
+        extern void mp_handle_pending(void); \
+        mp_handle_pending(); \
+        __WFI(); \
+    } while (0);
+
+#define MICROPY_THREAD_YIELD()
+#endif
 
 extern const struct _mp_obj_module_t machine_module;
 extern const struct _mp_obj_module_t mp_module_uos;
@@ -91,8 +140,8 @@ extern const struct _mp_obj_module_t mp_module_uos;
 // We need to provide a declaration/definition of alloca()
 #include <alloca.h>
 
-#define MICROPY_HW_BOARD_NAME "Tiva Launch Pad"
-#define MICROPY_HW_MCU_NAME "TM4C123G6HPM"
+//#define MICROPY_HW_BOARD_NAME "Tiva Launch Pad"
+//#define MICROPY_HW_MCU_NAME "TM4C123G6HPM"
 
 #ifdef __linux__
 #define MICROPY_MIN_USE_STDOUT (1)
@@ -126,4 +175,9 @@ extern const struct _mp_obj_module_t mp_module_uos;
     mp_obj_t pin_class_map_dict; \
     \
     mp_obj_t test_callback_obj; \
+    /* stdio is repeated on this UART object if it's not null */ \
+    struct _pyb_uart_obj_t *pyb_stdio_uart; \
+    \
+    /* pointers to all UART objects (if they have been created) */ \
+    struct _pyb_uart_obj_t *pyb_uart_obj_all[MICROPY_HW_MAX_UART]; \
 
