@@ -255,7 +255,7 @@ STATIC bool uart_init2(pyb_uart_obj_t *uart_obj) {
         #if defined(MICROPY_HW_UART4_TX) && defined(MICROPY_HW_UART4_RX)
         case PYB_UART_4:
             uart_unit = 4;
-            uart_base = UART4;
+            uart_base = UART4_BASE;
             irqn = INT_UART4_TM4C123;
             pins[0] = MICROPY_HW_UART4_TX;
             pins[1] = MICROPY_HW_UART4_RX;
@@ -266,7 +266,7 @@ STATIC bool uart_init2(pyb_uart_obj_t *uart_obj) {
         #if defined(MICROPY_HW_UART5_TX) && defined(MICROPY_HW_UART5_RX)
         case PYB_UART_5:
             uart_unit = 5;
-            uart_base = UART5;
+            uart_base = UART5_BASE;
             irqn = INT_UART5_TM4C123;
             pins[0] = MICROPY_HW_UART5_TX;
             pins[1] = MICROPY_HW_UART5_RX;
@@ -288,7 +288,7 @@ STATIC bool uart_init2(pyb_uart_obj_t *uart_obj) {
         #if defined(MICROPY_HW_UART7_TX) && defined(MICROPY_HW_UART7_RX)
         case PYB_UART_7:
             uart_unit = 7;
-            uart_base = UART7;
+            uart_base = UART7_BASE;
             irqn = INT_UART7_TM4C123;
             pins[0] = MICROPY_HW_UART7_TX;
             pins[1] = MICROPY_HW_UART7_RX;
@@ -316,11 +316,11 @@ STATIC bool uart_init2(pyb_uart_obj_t *uart_obj) {
     uart_obj->irqn = irqn;
     uart_obj->uart = uart_base;
     uart_obj->periph = peripheral;
-    uart_obj->regs = ((periph_uart_t*) uart_base)
+    uart_obj->regs = ((periph_uart_t*) uart_base);
 
     // init uart_base
 //    HAL_UART_Init(&uart_obj->uart);
-        MAP_SysCtlPeripheralEnable(uart_obj->periph);
+    MAP_SysCtlPeripheralEnable(uart_obj->periph);
     while(!MAP_SysCtlPeripheralReady(uart_obj->periph)) {};
 
 
@@ -598,10 +598,10 @@ STATIC mp_obj_t pyb_uart_init_helper(pyb_uart_obj_t *self, size_t n_args, const 
 
 
     uint32_t config = 0;
-    UART9BitDisable(self->uart);
+    MAP_UART9BitDisable(self->uart);
+
     // parity
     mp_int_t bits = args.bits.u_int;
-    bool parity = false;
     if (args.parity.u_obj == mp_const_none) {
         config |= UART_CONFIG_PAR_NONE;
     } else {

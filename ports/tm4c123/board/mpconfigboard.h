@@ -27,6 +27,8 @@
 #define MICROPY_HW_BOARD_NAME       "Tiva Launch Pad"
 #define MICROPY_HW_MCU_NAME         "TM4C123GH6PM"
 
+#define MICROPY_HW_MAX_UART (8)
+
 // UART config
 #define MICROPY_HW_UART0_NAME   "0"
 #define MICROPY_HW_UART0_RX     (pin_PA0)
