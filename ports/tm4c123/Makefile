@@ -47,15 +47,14 @@ LFLAGS = --gc-sections
 CPFLAGS = -O binary
 
 LINKER_FILE = tm4c123gh6pm.ld
-STARTUP_FILE = cmsis/device/GCC/startup_ARMCM4.c
+STARTUP_FILE = startup_ARMCM4.c
 SYSTEM_FILE = system_TM4C123.c
 
 # Included directories
 INC += -I.
 INC += -I./mods
 INC += -I./misc
-INC += -I./cmsis/core
-INC += -I./cmsis/device/Include
+INC += -I./cmsis
 INC += -I$(TOP)
 INC += -I$(BUILD)
 INC += -I$(BUILD)/genhdr
