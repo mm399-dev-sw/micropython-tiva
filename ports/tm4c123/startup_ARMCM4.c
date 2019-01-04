@@ -245,7 +245,7 @@ void Reset_Handler(void) {
   }
 #endif /* __STARTUP_CLEAR_BSS_MULTIPLE || __STARTUP_CLEAR_BSS */
 
-  SystemInit();                             /* CMSIS System Initialization */
+  //SystemInit();                             /* CMSIS System Initialization */
   _start();                                 /* Enter PreeMain (C library entry point) */
 }
 

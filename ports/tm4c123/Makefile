@@ -70,7 +70,7 @@ CFLAGS_CORTEX_M4 = -mthumb -mtune=cortex-m4 -mabi=aapcs-linux -mcpu=cortex-m4 -m
 CFLAGS = $(INC) -Wall -Werror -std=c99 -nostdlib $(CFLAGS_CORTEX_M4) $(COPT)
 #Preprocessor Flags
 CFLAGS += -DPART_$(PART) -c -D$(PART) -DARMCM4_FP -DTARGET_IS_TM4C123_RB1 -DMICROPY_PIN_DEFS_PORT_H=\"mods/pin_defs_tm4c123.h\" #-DMICROPY_MPHALPORT_H=\"mphalport.h\"
-
+CFLAGS += -DFFCONF_H=\"lib/oofatfs/ffconf.h\"
 LDFLAGS = -nostdlib -T $(LINKER_FILE) -Map=$@.map --cref --gc-sections
 
 # Tune for Debugging or Optimization
@@ -97,6 +97,7 @@ MODS_SRC_C = $(addprefix mods/,\
 	pin_named_pins.c \
 	uart.c \
 	modmachine.c \
+	moduos.c \
 	)
 	#	modmachine.c \
 
@@ -106,10 +107,10 @@ SRC_QSTR += $(MODS_SRC_C)
 # Core sources
 CORE_SRC_C = \
 	$(STARTUP_FILE) \
-	$(SYSTEM_FILE) \
 	main.c \
 	uart_core.c \
 	gccollect.c 
+	#$(SYSTEM_FILE) \
 	
 ASM_SRC_S = \
 	gchelper.s
