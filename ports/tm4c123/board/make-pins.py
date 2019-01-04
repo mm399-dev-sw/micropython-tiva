@@ -103,14 +103,14 @@ class Pin:
             for af in self.afs:
                 af.print()
             print('};')
-            print('const pin_obj_t pin_{:4s} = PIN({:6s}, {}, {:3d}, {:2d}, pin_{}_af, {}, {});\n'.format(
+            print('const pin_obj_t pin_{:3s}_obj = PIN({:6s}, {}, {:3d}, {:2d}, pin_{}_af, {}, {});\n'.format(
                 self.name, self.name, self.port, self.port_pin, self.pin_num, self.name, self.def_af, len(self.afs)))
         else:
-            print('pin_obj_t pin_{:4s} = PIN({:6s}, {}, {:3d}, {:2d}, NULL, 0, 0);\n'.format(
+            print('const pin_obj_t pin_{:3s}_obj = PIN({:6s}, {}, {:3d}, {:2d}, NULL, 0, 0);\n'.format(
                 self.name, self.name, self.port, self.port_pin, self.pin_num))
 
     def print_header(self, hdr_file):
-        hdr_file.write('extern pin_obj_t pin_{:s};\n'.format(self.name))
+        hdr_file.write('extern const pin_obj_t pin_{:3s}_obj;\n#define pin_{:3s} (&pin_{:3s}_obj)\n\n'.format(self.name,self.name,self.name))
 
 
 class Pins:
@@ -188,7 +188,7 @@ class Pins:
         print('STATIC const mp_rom_map_elem_t pin_{:s}_pins_locals_dict_table[] = {{'.format(label))
         for pin in pins:
             if pin.board_pin:
-                print('    {{ MP_ROM_QSTR(MP_QSTR_{:3s}), MP_ROM_PTR(&pin_{:3s}) }},'.format(pin.name, pin.name))
+                print('    {{ MP_ROM_QSTR(MP_QSTR_{:3s}), MP_ROM_PTR(pin_{:3s}) }},'.format(pin.name, pin.name))
         print('};')
         print('MP_DEFINE_CONST_DICT(pin_{:s}_pins_locals_dict, pin_{:s}_pins_locals_dict_table);'.format(label, label))
 
