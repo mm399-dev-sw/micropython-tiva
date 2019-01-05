@@ -49,7 +49,13 @@ REGION_ALIAS("REGION_ARM_EXTAB", FLASH);
  *   __bss_end__
  *   __end__
  *   end
+ *   __heap_start
+ *   __heap_start__
+ *   __heap_end
+ *   __heap_end__
  *   __HeapLimit
+ *   _stack
+ *   __stack
  *   __StackLimit
  *   __StackTop
  *   __stack
@@ -183,9 +189,13 @@ SECTIONS
 	.heap (COPY):
 	{
 		__end__ = .;
+		__heap_start__ = __end__;
+		__heap_start = __heap_start__;
 		PROVIDE(end = .);
 		*(.heap*)
 		__HeapLimit = .;
+		__heap_end__ = __HeapLimit;
+		__heap_end = __heap_end__;
 	} > RAM
 
 	/* .stack_dummy section doesn't contain any symbols. It is only
@@ -193,6 +203,8 @@ SECTIONS
 	 * values to stack symbols later */
 	.stack_dummy (COPY):
 	{
+		_stack = .;
+		__stack = .;
 		*(.stack*)
 	} > RAM
 
