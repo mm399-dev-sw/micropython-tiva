@@ -203,6 +203,8 @@ SECTIONS
 	 * values to stack symbols later */
 	.stack_dummy (COPY):
 	{
+		_stack = .;
+		__stack = .;
 		*(.stack*)
 	} > RAM
 
