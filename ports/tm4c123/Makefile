@@ -121,8 +121,8 @@ PY_SRC_C = \
 	lib/libc/string0.c \
 	lib/mp-readline/readline.c \
 	lib/oofatfs/ff.c \
-	lib/oofatfs/option/unicode.c \
-	_frozen_mpy.c 
+	lib/oofatfs/option/unicode.c 
+#	_frozen_mpy.c 
 		#lib/utils/printf.c 
 		
 SRC_C = $(CORE_SRC_C) $(MODS_SRC_C) $(GEN_PINS_SRC) $(PY_SRC_C) 

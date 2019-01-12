@@ -10,7 +10,7 @@
 #define MICROPY_ENABLE_COMPILER     (1)
 
 #define MICROPY_QSTR_BYTES_IN_HASH  (1)
-#define MICROPY_QSTR_EXTRA_POOL     mp_qstr_frozen_const_pool
+//#define MICROPY_QSTR_EXTRA_POOL     mp_qstr_frozen_const_pool
 #define MICROPY_ALLOC_PATH_MAX      (256)
 #define MICROPY_ALLOC_PARSE_CHUNK_INIT (16)
 #define MICROPY_EMIT_X64            (0)
@@ -25,7 +25,7 @@
 #define MICROPY_DEBUG_PRINTERS      (MICROPY_DEBUG_VERBOSE)
 #define MICROPY_ENABLE_GC           (1)
 #define MICROPY_GC_ALLOC_THRESHOLD  (1)
-#define MICROPY_ENABLE_FINALISER    (0)
+#define MICROPY_ENABLE_FINALISER    (1)
 #define MICROPY_REPL_EVENT_DRIVEN   (0)
 #define MICROPY_HELPER_REPL         (1)
 #define MICROPY_REPL_AUTO_INDENT    (1)
@@ -35,7 +35,7 @@
 #define MICROPY_ERROR_REPORTING     (MICROPY_ERROR_REPORTING_TERSE)
 #define MICROPY_BUILTIN_METHOD_CHECK_SELF_ARG (0)
 #define MICROPY_PY_ASYNC_AWAIT      (0)
-#define MICROPY_PY_BUILTINS_BYTEARRAY (0)
+#define MICROPY_PY_BUILTINS_BYTEARRAY (1)
 #define MICROPY_PY_BUILTINS_MEMORYVIEW (0)
 #define MICROPY_PY_BUILTINS_ENUMERATE (0)
 #define MICROPY_PY_BUILTINS_FILTER  (0)
@@ -47,21 +47,45 @@
 #define MICROPY_PY_BUILTINS_MIN_MAX (0)
 #define MICROPY_PY___FILE__         (0)
 #define MICROPY_PY_GC               (1) // 0
-#define MICROPY_PY_ARRAY            (0)
-#define MICROPY_PY_ATTRTUPLE        (0)
-#define MICROPY_PY_COLLECTIONS      (0)
-#define MICROPY_PY_MATH             (0)
-#define MICROPY_PY_CMATH            (0)
-#define MICROPY_PY_IO               (0)
-#define MICROPY_PY_STRUCT           (0)
-#define MICROPY_PY_SYS              (0)
+#define MICROPY_PY_ARRAY            (1)
+#define MICROPY_PY_ATTRTUPLE        (1)
+#define MICROPY_PY_COLLECTIONS      (1)
+#define MICROPY_PY_MATH             (1)
+#define MICROPY_PY_CMATH            (1)
+#define MICROPY_PY_IO               (1)
+#define MICROPY_PY_STRUCT           (1)
+#define MICROPY_PY_SYS              (1)
 #define MICROPY_VFS                 (1)
 #define MICROPY_VFS_FAT             (1)
+#define MICROPY_READER_VFS          (1)
 #define MICROPY_MODULE_FROZEN_MPY   (0) //was 1
 #define MICROPY_CPYTHON_COMPAT      (0)
 #define MICROPY_LONGINT_IMPL        (MICROPY_LONGINT_IMPL_NONE)
 #define MICROPY_FLOAT_IMPL          (MICROPY_FLOAT_IMPL_NONE)
 #define MICROPY_PY_THREAD           (0)
+#define MICROPY_PY_OS_DUPTERM       (1)
+#define MICROPY_PY_MACHINE          (1)
+
+// optimisations
+#define MICROPY_OPT_COMPUTED_GOTO   (1)
+#define MICROPY_OPT_CACHE_MAP_LOOKUP_IN_BYTECODE (0)
+#define MICROPY_OPT_MPZ_BITWISE     (1)
+
+// fatfs configuration used in ffconf.h
+#define MICROPY_FATFS_ENABLE_LFN       (1)
+#define MICROPY_FATFS_LFN_CODE_PAGE    (437) /* 1=SFN/ANSI 437=LFN/U.S.(OEM) */
+#define MICROPY_FATFS_USE_LABEL        (1)
+#define MICROPY_FATFS_RPATH            (2)
+#define MICROPY_FATFS_MULTI_PARTITION  (1)
+
+// TODO these should be generic, not bound to fatfs
+#define mp_type_fileio fatfs_type_fileio
+#define mp_type_textio fatfs_type_textio
+
+// use vfs's functions for import stat and builtin open
+#define mp_import_stat mp_vfs_import_stat
+#define mp_builtin_open mp_vfs_open
+#define mp_builtin_open_obj mp_vfs_open_obj
 
 
 // type definitions for the specific machine
