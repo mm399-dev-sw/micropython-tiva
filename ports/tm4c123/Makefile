@@ -25,8 +25,8 @@ PROJECT_NAME = uPY_TM4C123
 
 # Location of the TivaWare library
 # Can be pointed to a newer version if desired
-#TIVAWARE_LIB = /mnt/c/ti/TivaWare
-TIVAWARE_LIB = /home/raphael/ti/tivaware
+TIVAWARE_LIB = /mnt/c/ti/TivaWare
+#TIVAWARE_LIB = /home/raphael/ti/tivaware
 
 # qstr definitions (must come before including py.mk)
 QSTR_DEFS = qstrdefsport.h $(BUILD)/pins_qstr.h
@@ -96,7 +96,12 @@ MODS_SRC_C = $(addprefix mods/,\
 	pin.c \
 	pin_named_pins.c \
 	uart.c \
+	fatfs_port.c \
+	irq.c \
 	modmachine.c \
+	modutime.c \
+	systick.c \
+	rtc.c \
 	moduos.c \
 	)
 	#	modmachine.c \
