@@ -26,7 +26,7 @@
 
 #include "py/runtime.h"
 #include "lib/oofatfs/ff.h"
-//#include "rtc.h"
+#include "rtc.h"
 
 DWORD get_fattime(void) {
 //    rtc_init_finalise();
@@ -42,5 +42,4 @@ DWORD get_fattime(void) {
                 | (38U << 5)            // Min = 38
                 | (0U >> 1)                // Sec = 0
                 ;
-#error "make rtc module first"
 }
