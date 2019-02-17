@@ -105,6 +105,7 @@ MODS_SRC_C = $(addprefix mods/,\
 	moduos.c \
 	globals.c \
 	pybthread.c \
+	extint.c \
 	)
 	#	modmachine.c \
 

@@ -27,6 +27,8 @@
 #define MICROPY_HW_BOARD_NAME       "Tiva Launch Pad"
 #define MICROPY_HW_MCU_NAME         "TM4C123GH6PM"
 
+// assumption: every GPIO is interrupt capable
+#define PYB_EXTI_NUM_VECTORS (43)
 #define MICROPY_HW_MAX_UART (8)
 
 // UART config

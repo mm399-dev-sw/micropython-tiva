@@ -197,6 +197,9 @@ extern const struct _mp_obj_module_t mp_module_uos;
     \
     mp_obj_t pyb_switch_callback; \
     \
+    /* Requred by exint module required by moduos*/ \
+    mp_obj_t pyb_extint_callback[PYB_EXTI_NUM_VECTORS]; \
+    \
     mp_obj_t pin_class_mapper; \
     mp_obj_t pin_class_map_dict; \
     \
