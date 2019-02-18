@@ -400,8 +400,9 @@ void tm4c123_init(void) {
 
 
     //Setup of Systick to 1ms
-    SysTickIntDisable();
-    SysTickIntRegister(SysTick_Handler);
+    //Already registered in int vector
+//    SysTickIntDisable();
+//    SysTickIntRegister(SysTick_Handler);
     SysTickIntEnable();
     SysTickPeriodSet(SysCtlClockGet()/1000);
     SysTickEnable();

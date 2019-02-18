@@ -76,13 +76,13 @@ void Reset_Handler  (void) __attribute__ ((noreturn));
 //<h> Stack Configuration
 //  <o> Stack Size (in Bytes) <0x0-0xFFFFFFFF:8>
 //</h>
-#define  __STACK_SIZE  0x00000400
+#define  __STACK_SIZE  0x00000800
 static uint8_t stack[__STACK_SIZE] __attribute__ ((aligned(8), used, section(".stack")));
 
 //<h> Heap Configuration
 //  <o>  Heap Size (in Bytes) <0x0-0xFFFFFFFF:8>
 //</h>
-#define  __HEAP_SIZE   0x00000C00
+#define  __HEAP_SIZE   0x00002000
 #if __HEAP_SIZE > 0
 static uint8_t heap[__HEAP_SIZE]   __attribute__ ((aligned(8), used, section(".heap")));
 #endif
@@ -136,18 +136,146 @@ extern const pFunc __Vectors[240];
   PendSV_Handler,                           /*  -2 PendSV Handler */
   SysTick_Handler,                          /*  -1 SysTick Handler */
 
-  /* Interrupts */
-  Interrupt0_Handler,                       /*   0 Interrupt 0 */
-  Interrupt1_Handler,                       /*   1 Interrupt 1 */
-  Interrupt2_Handler,                       /*   2 Interrupt 2 */
-  Interrupt3_Handler,                       /*   3 Interrupt 3 */
-  Interrupt4_Handler,                       /*   4 Interrupt 4 */
-  Interrupt5_Handler,                       /*   5 Interrupt 5 */
-  Interrupt6_Handler,                       /*   6 Interrupt 6 */
-  Interrupt7_Handler,                       /*   7 Interrupt 7 */
-  Interrupt8_Handler,                       /*   8 Interrupt 8 */
-  Interrupt9_Handler                        /*   9 Interrupt 9 */
-                                            /* Interrupts 10 .. 224 are left out */
+  /* Interrupts */                      // * only on TM4C1294!!
+  Default_Handler,                      // GPIO Port A
+  Default_Handler,                      // GPIO Port B
+  Default_Handler,                      // GPIO Port C
+  Default_Handler,                      // GPIO Port D
+  Default_Handler,                      // GPIO Port E
+  Default_Handler,                      // UART0 Rx and Tx
+  Default_Handler,                      // UART1 Rx and Tx
+  Default_Handler,                      // SSI0 Rx and Tx
+  Default_Handler,                      // I2C0 Master and Slave
+  Default_Handler,                      // PWM Fault
+  Default_Handler,                      // PWM Generator 0
+  Default_Handler,                      // PWM Generator 1
+  Default_Handler,                      // PWM Generator 2
+  Default_Handler,                      // Quadrature Encoder 0
+  Default_Handler,                      // ADC Sequence 0
+  Default_Handler,                      // ADC Sequence 1
+  Default_Handler,                      // ADC Sequence 2
+  Default_Handler,                      // ADC Sequence 3
+  Default_Handler,                      // Watchdog timer
+  Default_Handler,                      // Timer 0 subtimer A
+  Default_Handler,                      // Timer 0 subtimer B
+  Default_Handler,                      // Timer 1 subtimer A
+  Default_Handler,                      // Timer 1 subtimer B
+  Default_Handler,                      // Timer 2 subtimer A
+  Default_Handler,                      // Timer 2 subtimer B
+  Default_Handler,                      // Analog Comparator 0
+  Default_Handler,                      // Analog Comparator 1
+  0,                      // Analog Comparator 2 *
+  Default_Handler,                      // System Control (PLL, OSC, BO)
+  Default_Handler,                      // FLASH Control
+  0,                      // GPIO Port F *
+  0,                      // GPIO Port G *
+  0,                      // GPIO Port H *
+  Default_Handler,                      // UART2 Rx and Tx
+  Default_Handler,                      // SSI1 Rx and Tx
+  Default_Handler,                      // Timer 3 subtimer A
+  Default_Handler,                      // Timer 3 subtimer B
+  Default_Handler,                      // I2C1 Master and Slave
+  Default_Handler,                      // Quadrature Encoder 1
+  Default_Handler,                      // CAN0
+  Default_Handler,                      // CAN1
+  0,                                      // Reserved
+  0,                                      // Reserved
+  Default_Handler,                      // Hibernate
+  Default_Handler,                      // USB0
+  Default_Handler,                      // PWM Generator 3
+  Default_Handler,                      // uDMA Software Transfer
+  Default_Handler,                      // uDMA Error
+  Default_Handler,                      // ADC1 Sequence 0
+  Default_Handler,                      // ADC1 Sequence 1
+  Default_Handler,                      // ADC1 Sequence 2
+  Default_Handler,                      // ADC1 Sequence 3
+  0,                                      // Reserved
+  0,                                      // Reserved
+  0,                      // GPIO Port J *
+  0,                      // GPIO Port K *
+  0,                      // GPIO Port L *
+  Default_Handler,                      // SSI2 Rx and Tx
+  Default_Handler,                      // SSI3 Rx and Tx
+  Default_Handler,                      // UART3 Rx and Tx
+  Default_Handler,                      // UART4 Rx and Tx
+  Default_Handler,                      // UART5 Rx and Tx
+  Default_Handler,                      // UART6 Rx and Tx
+  Default_Handler,                      // UART7 Rx and Tx
+  0,                                      // Reserved
+  0,                                      // Reserved
+  0,                                      // Reserved
+  0,                                      // Reserved
+  Default_Handler,                      // I2C2 Master and Slave
+  Default_Handler,                      // I2C3 Master and Slave
+  Default_Handler,                      // Timer 4 subtimer A
+  Default_Handler,                      // Timer 4 subtimer B
+  0,                                      // Reserved
+  0,                                      // Reserved
+  0,                                      // Reserved
+  0,                                      // Reserved
+  0,                                      // Reserved
+  0,                                      // Reserved
+  0,                                      // Reserved
+  0,                                      // Reserved
+  0,                                      // Reserved
+  0,                                      // Reserved
+  0,                                      // Reserved
+  0,                                      // Reserved
+  0,                                      // Reserved
+  0,                                      // Reserved
+  0,                                      // Reserved
+  0,                                      // Reserved
+  0,                                      // Reserved
+  0,                                      // Reserved
+  0,                                      // Reserved
+  0,                                      // Reserved
+  Default_Handler,                      // Timer 5 subtimer A
+  Default_Handler,                      // Timer 5 subtimer B
+  Default_Handler,                      // Wide Timer 0 subtimer A
+  Default_Handler,                      // Wide Timer 0 subtimer B
+  Default_Handler,                      // Wide Timer 1 subtimer A
+  Default_Handler,                      // Wide Timer 1 subtimer B
+  Default_Handler,                      // Wide Timer 2 subtimer A
+  Default_Handler,                      // Wide Timer 2 subtimer B
+  Default_Handler,                      // Wide Timer 3 subtimer A
+  Default_Handler,                      // Wide Timer 3 subtimer B
+  Default_Handler,                      // Wide Timer 4 subtimer A
+  Default_Handler,                      // Wide Timer 4 subtimer B
+  Default_Handler,                      // Wide Timer 5 subtimer A
+  Default_Handler,                      // Wide Timer 5 subtimer B
+  Default_Handler,                      // FPU
+  0,                                      // Reserved
+  0,                                      // Reserved
+  0,                      // I2C4 Master and Slave
+  0,                      // I2C5 Master and Slave
+  0,                      // GPIO Port M
+  0,                      // GPIO Port N
+  0,                      // Quadrature Encoder 2
+  0,                                      // Reserved
+  0,                                      // Reserved
+  0,                      // GPIO Port P (Summary or P0)
+  0,                      // GPIO Port P1
+  0,                      // GPIO Port P2
+  0,                      // GPIO Port P3
+  0,                      // GPIO Port P4
+  0,                      // GPIO Port P5
+  0,                      // GPIO Port P6
+  0,                      // GPIO Port P7
+  0,                      // GPIO Port Q (Summary or Q0)
+  0,                      // GPIO Port Q1
+  0,                      // GPIO Port Q2
+  0,                      // GPIO Port Q3
+  0,                      // GPIO Port Q4
+  0,                      // GPIO Port Q5
+  0,                      // GPIO Port Q6
+  0,                      // GPIO Port Q7
+  0,                      // GPIO Port R
+  0,                      // GPIO Port S
+  Default_Handler,                      // PWM 1 Generator 0
+  Default_Handler,                      // PWM 1 Generator 1
+  Default_Handler,                      // PWM 1 Generator 2
+  Default_Handler,                      // PWM 1 Generator 3
+  Default_Handler                       // PWM 1 Fault
 };
 
 
@@ -203,6 +331,8 @@ void Reset_Handler(void) {
   }
 #endif /*__STARTUP_COPY_MULTIPLE */
 
+
+
 /* This part of work usually is done in C library startup code.
  * Otherwise, define this macro to enable it in this startup.
  *
@@ -244,6 +374,20 @@ void Reset_Handler(void) {
     *pDest++ = 0UL;
   }
 #endif /* __STARTUP_CLEAR_BSS_MULTIPLE || __STARTUP_CLEAR_BSS */
+
+  // Enable the floating-point unit.  This must be done here to handle the
+  // case where main() uses floating-point and the function prologue saves
+  // floating-point registers (which will fault if floating-point is not
+  // enabled).  Any configuration of the floating-point unit using DriverLib
+  // APIs must be done here prior to the floating-point unit being enabled.
+  //
+  // Note that this does not use DriverLib since it might not be included in
+  // this project.
+  //
+#ifndef HWREG
+#define HWREG(x) (*((volatile uint32_t *)(x)))
+#endif
+  HWREG(0xE000ED88) = ((HWREG(0xE000ED88) & ~0x00F00000) | 0x00F00000);
 
   //SystemInit();                             /* CMSIS System Initialization */
   _start();                                 /* Enter PreeMain (C library entry point) */
