@@ -4,6 +4,7 @@
  *
  * This is derived from revision 15071 of the TivaWare Library.
  * Source: https://e2e.ti.com/support/microcontrollers/other/f/908/p/479812/2164975
+ * Modified with the CMSIS linker script
  *
  *****************************************************************************/
 
@@ -141,10 +142,14 @@ SECTIONS
 	   __etext is assumed by startup code to be the LMA of a section in RAM
 	   which must be 4byte aligned */
 	__etext = ALIGN (4);
+	_etext = __etext;
+	/* TODO */
 
 	.data : AT (__etext)
 	{
 		__data_start__ = .;
+		_sdata = __data_start__;
+		_sidata = _sdata;
 		*(vtable)
 		*(.data*)
 
@@ -173,6 +178,7 @@ SECTIONS
 		. = ALIGN(4);
 		/* All data end */
 		__data_end__ = .;
+		_edata = __data_end__;
 
 	} > RAM
 
@@ -180,10 +186,12 @@ SECTIONS
 	{
 		. = ALIGN(4);
 		__bss_start__ = .;
+		_sbss = __bss_start__;
 		*(.bss*)
 		*(COMMON)
 		. = ALIGN(4);
 		__bss_end__ = .;
+		_ebss = __bss_end__;
 	} > RAM
 
 	.heap (COPY):
@@ -209,6 +217,7 @@ SECTIONS
 	/* Set stack top to end of RAM, and stack limit move down by
 	 * size of stack_dummy section */
 	__StackTop = ORIGIN(RAM) + LENGTH(RAM);
+	_estack = __StackTop;
 	__StackLimit = __StackTop - SIZEOF(.stack_dummy);
 	PROVIDE(__stack = __StackTop);
 

@@ -39,7 +39,7 @@
 #include "lib/oofatfs/ff.h"
 #include "extmod/vfs.h"
 #include "extmod/vfs_fat.h"
-//#include "gccollect.h"
+#include "gccollect.h"
 #include "driverlib/sysctl.h"
 #include "irq.h"
 //#include "pybthread.h"
@@ -48,7 +48,7 @@
 #include "pin.h"
 //#include "timer.h"
 //#include "usb.h"
-//#include "rtc.h"
+#include "rtc.h"
 //#include "i2c.h"
 //#include "spi.h"
 #include "uart.h"
@@ -108,20 +108,20 @@ STATIC mp_obj_t machine_info(size_t n_args, const mp_obj_t *args) {
         printf("%u Hz", (unsigned int)SysCtlClockGet());
     }
 
-//    // to print info about memory
-//    {
-//        printf("_etext=%p\n", &_etext);
-//        printf("_sidata=%p\n", &_sidata);
-//        printf("_sdata=%p\n", &_sdata);
-//        printf("_edata=%p\n", &_edata);
-//        printf("_sbss=%p\n", &_sbss);
-//        printf("_ebss=%p\n", &_ebss);
-//        printf("_estack=%p\n", &_estack);
-//        printf("_ram_start=%p\n", &_ram_start);
-//        printf("_heap_start=%p\n", &_heap_start);
-//        printf("_heap_end=%p\n", &_heap_end);
-//        printf("_ram_end=%p\n", &_ram_end);
-//    }
+    // to print info about memory
+    {
+        printf("_etext=%p\n", &_etext);
+        printf("_sidata=%p\n", &_sidata);
+        printf("_sdata=%p\n", &_sdata);
+        printf("_edata=%p\n", &_edata);
+        printf("_sbss=%p\n", &_sbss);
+        printf("_ebss=%p\n", &_ebss);
+        printf("_estack=%p\n", &_estack);
+        printf("_ram_start=%p\n", &_ram_start);
+        printf("_heap_start=%p\n", &_heap_start);
+        printf("_heap_end=%p\n", &_heap_end);
+        printf("_ram_end=%p\n", &_ram_end);
+    }
 
     // qstr info
     {
