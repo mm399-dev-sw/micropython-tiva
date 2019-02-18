@@ -24,7 +24,7 @@
  * THE SOFTWARE.
  */
 
-// In this File we declare all the globals, that would normally be declared in the STMCube lib an cannot be worked around
-
-uint32_t uwTick;
+// In this File we declare all the globals, that would normally be declared in the STMCube lib and cannot be worked around
+#include <stdint.h>
+uint32_t uwTick = 0;
 
