@@ -36,13 +36,13 @@ mp_uint_t mp_hal_ticks_cpu(void) {
     return (*((volatile uint32_t *)0xE000E018));
 }
 
-mp_uint_t mp_hal_ticks_ms(void) {
-    return (*((volatile uint32_t *)0xE000E018)) / (MAP_SysCtlClockGet()*3000);
-}
-
-mp_uint_t mp_hal_ticks_us(void) {
-    return (*((volatile uint32_t *)0xE000E018)) / (MAP_SysCtlClockGet()*3000000);
-}
+//mp_uint_t mp_hal_ticks_ms(void) {
+//    return (*((volatile uint32_t *)0xE000E018)) / (MAP_SysCtlClockGet()*3000);
+//}
+//
+//mp_uint_t mp_hal_ticks_us(void) {
+//    return (*((volatile uint32_t *)0xE000E018)) / (MAP_SysCtlClockGet()*3000000);
+//}
 
 void mp_hal_gpio_clock_enable(const uint32_t periph) {
     if (MAP_SysCtlPeripheralReady(periph)) {
