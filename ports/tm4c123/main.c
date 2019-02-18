@@ -34,6 +34,7 @@
 #include "inc/hw_memmap.h"
 #include "inc/hw_hibernate.h"
 #include "driverlib/sysctl.h"
+#include "driverlib/systick.h"
 #include "driverlib/pin_map.h"
 #include "driverlib/gpio.h"
 #include "driverlib/rom.h"
@@ -331,7 +332,7 @@ void _start(void) {
 
 //#define SYSCTL ((periph_sysctl_t*)  0x400FE000)
 
-
+void SysTick_Handler(void);
 
 void tm4c123_init(void) {
     // basic MCU config
@@ -396,6 +397,14 @@ void tm4c123_init(void) {
     UART0->CTL = 0x00000300; // disable cts & rts, RXE, TXE, no loopback, 16x oversampling, TXRIS on IFLS match, no smart card, no low power, no SIR, UART enabled
     UART0->CTL |= 0x00000001;
     // to change settings in active mode: page 918 of reference
+
+
+    //Setup of Systick to 1ms
+    SysTickIntDisable();
+    SysTickIntRegister(SysTick_Handler);
+    SysTickIntEnable();
+    SysTickPeriodSet(SysCtlClockGet()/1000);
+    SysTickEnable();
 }
 
 void SysTick_Handler(void) {

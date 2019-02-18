@@ -32,8 +32,9 @@ typedef struct {
     uint32_t VAL;
 }systick_t;
 
-#define SysTick ((systick_t*) 0xE0000010)
-
+#ifndef SysTick
+#define SysTick ((systick_t*) 0xE000E010)
+#endif
 void sys_tick_wait_at_least(uint32_t stc, uint32_t delay_ms);
 bool sys_tick_has_passed(uint32_t stc, uint32_t delay_ms);
 

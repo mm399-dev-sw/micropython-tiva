@@ -24,11 +24,20 @@
  * THE SOFTWARE.
  */
 
+
 #include "py/runtime.h"
 #include "py/mphal.h"
 #include "irq.h"
+#if defined (ARMCM4)
+  #include "ARMCM4.h"
+#elif defined (ARMCM4_FP)
+  #include "ARMCM4_FP.h"
+#else
+  #error device not specified!
+#endif
 #include "systick.h"
 #include "pybthread.h"
+#include "driverlib/rom_map.h"
 
 extern __IO uint32_t uwTick;
 
@@ -66,11 +75,12 @@ void mp_hal_delay_ms(mp_uint_t Delay) {
     } else {
         // IRQs disabled, so need to use a busy loop for the delay.
         // To prevent possible overflow of the counter we use a double loop.
-        const uint32_t count_1ms = HAL_RCC_GetSysClockFreq() / 4000;
-        for (int i = 0; i < Delay; i++) {
-            for (uint32_t count = 0; ++count <= count_1ms;) {
-            }
-        }
+        //const uint32_t count_1ms = MAP_SysCtlClockGet() / 3000;
+        MAP_SysCtlDelay((MAP_SysCtlClockGet() / 3000) * Delay);
+//        for (int i = 0; i < Delay; i++) {
+//            for (uint32_t count = 0; ++count <= count_1ms;) {
+//            }
+//        }
     }
 }
 
@@ -84,14 +94,15 @@ void mp_hal_delay_us(mp_uint_t usec) {
     } else {
         // IRQs disabled, so need to use a busy loop for the delay
         // sys freq is always a multiple of 2MHz, so division here won't lose precision
-        const uint32_t ucount = HAL_RCC_GetSysClockFreq() / 2000000 * usec / 2;
-        for (uint32_t count = 0; ++count <= ucount;) {
-        }
+//        const uint32_t ucount = HAL_RCC_GetSysClockFreq() / 2000000 * usec / 2;
+//        for (uint32_t count = 0; ++count <= ucount;) {
+//        }
+        MAP_SysCtlDelay((MAP_SysCtlClockGet() / 3000000) * usec);
     }
 }
 
 bool sys_tick_has_passed(uint32_t start_tick, uint32_t delay_ms) {
-    return HAL_GetTick() - start_tick >= delay_ms;
+    return uwTick - start_tick >= delay_ms;
 }
 
 // waits until at least delay_ms milliseconds have passed from the sampling of
@@ -114,7 +125,7 @@ mp_uint_t mp_hal_ticks_ms(void) {
 mp_uint_t mp_hal_ticks_us(void) {
     mp_uint_t irq_state = disable_irq();
     uint32_t counter = SysTick->VAL;
-    uint32_t milliseconds = HAL_GetTick();
+    uint32_t milliseconds = uwTick;
     uint32_t status  = SysTick->CTRL;
     enable_irq(irq_state);
 

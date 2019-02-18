@@ -231,8 +231,8 @@ enum {
 //#define mp_hal_pin_get_drive(p)
 
 
-#define mp_hal_delay_ms(ms)     (MAP_SysCtlDelay( MAP_SysCtlClockGet()/3000 * ms))
-#define mp_hal_delay_us(us)     (MAP_SysCtlDelay( MAP_SysCtlClockGet()/3000000 * us))
+//#define mp_hal_delay_ms(ms)     (MAP_SysCtlDelay( MAP_SysCtlClockGet()/3000 * ms))
+//#define mp_hal_delay_us(us)     (MAP_SysCtlDelay( MAP_SysCtlClockGet()/3000000 * us))
 //#define mp_hal_ticks_ms         (mp_hal_ticks_cpu / (MAP_SysCtlClockGet()*3000))
 //#define mp_hal_ticks_us         (mp_hal_ticks_cpu / (MAP_SysCtlClockGet()*3000000))
 
