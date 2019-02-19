@@ -65,6 +65,7 @@
 #define MICROPY_PY_THREAD           (0)
 #define MICROPY_PY_OS_DUPTERM       (1)
 #define MICROPY_PY_MACHINE          (1)
+#define MICROPY_KBD_EXCEPTION       (1)
 
 // optimisations
 #define MICROPY_OPT_COMPUTED_GOTO   (1)

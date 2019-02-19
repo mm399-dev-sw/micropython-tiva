@@ -28,6 +28,14 @@
 
 #include "py/runtime.h"
 #include "lib/utils/interrupt_char.h"
+#if defined (ARMCM4)
+  #include "ARMCM4.h"
+#elif defined (ARMCM4_FP)
+  #include "ARMCM4_FP.h"
+#else
+  #error device not specified!
+#endif
+#include "driverlib/interrupt.h"
 #include "pendsv.h"
 #include "irq.h"
 
@@ -61,7 +69,7 @@ void pendsv_kbd_intr(void) {
     }
 }
 
-void pendsv_isr_handler(void) {
+void PendSV_Handler(void) {
     // re-jig the stack so that when we return from this interrupt handler
     // it returns instead to nlr_jump with argument pendsv_object
     // note that stack has a different layout if DEBUG is enabled
