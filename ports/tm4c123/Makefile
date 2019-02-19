@@ -105,9 +105,9 @@ MODS_SRC_C = $(addprefix mods/,\
 	moduos.c \
 	globals.c \
 	pybthread.c \
-	extint.c \
+	pendsv.c \
 	)
-	#	modmachine.c \
+	#	extint.c see forum
 
 # QSTR sources
 SRC_QSTR += $(MODS_SRC_C)
@@ -126,6 +126,8 @@ ASM_SRC_S = \
 PY_SRC_C = \
 	lib/utils/stdout_helpers.c \
 	lib/utils/pyexec.c \
+	lib/utils/interrupt_char.c \
+	lib/timeutils/timeutils.c \
 	lib/libc/string0.c \
 	lib/mp-readline/readline.c \
 	lib/oofatfs/ff.c \

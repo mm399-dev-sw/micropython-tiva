@@ -67,10 +67,6 @@ void mp_hal_pin_set_af(mp_hal_pin_obj_t pin_obj, uint8_t af_id) {
     MAP_GPIOPinConfigure((pin_obj->af_list)[af_id].conf);
 }
 
-void mp_hal_set_interrupt_char(int c) {
-
-}
-
 bool mp_hal_pin_config_alt(mp_hal_pin_obj_t pin, uint32_t mode, uint32_t pull, uint8_t fn, uint8_t unit) {
     const pin_af_obj_t *af = pin_find_af(pin, fn, unit);
     if (af == NULL) {

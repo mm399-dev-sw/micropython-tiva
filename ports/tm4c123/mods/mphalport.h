@@ -31,7 +31,7 @@
 
 //extern const unsigned char mp_hal_status_to_errno_table[4];
 
-void mp_hal_set_interrupt_char(int c); // -1 to disable
+extern void mp_hal_set_interrupt_char(int c); // -1 to disable
 
 void mp_hal_ticks_cpu_enable(void);
 
