@@ -28,7 +28,7 @@
 #define MICROPY_HW_MCU_NAME         "TM4C123GH6PM"
 
 // assumption: every GPIO is interrupt capable
-#define PYB_EXTI_NUM_VECTORS (43)
+#define PYB_EXTI_NUM_VECTORS (78)
 #define MICROPY_HW_MAX_UART (8)
 
 // UART config
@@ -65,4 +65,26 @@
 #define MICROPY_HW_UART7_NAME   "7"
 #define MICROPY_HW_UART7_RX     (pin_PE0)
 #define MICROPY_HW_UART7_TX     (pin_PE1)
+
+
+#define MICROPY_HW_ENABLE_INTERNAL_FLASH_STORAGE (1)
+#define MICROPY_HW_HAS_SWITCH       (0)
+#define MICROPY_HW_HAS_FLASH        (1)
+#define MICROPY_HW_ENABLE_RNG       (0)
+#define MICROPY_HW_ENABLE_RTC       (1)
+#define MICROPY_HW_ENABLE_USB       (0)
+
+// use external SPI flash for storage
+#define MICROPY_HW_SPIFLASH_SIZE_BITS (128 * 1024 * 1024)
+#define MICROPY_HW_SPIFLASH_CS      (pin_E11)
+#define MICROPY_HW_SPIFLASH_SCK     (pin_E10)
+#define MICROPY_HW_SPIFLASH_MOSI    (pin_E12)
+#define MICROPY_HW_SPIFLASH_MISO    (pin_E13)
+
+#if MICROPY_HW_ENABLE_INTERNAL_FLASH_STORAGE
+// Provide block device macros if internal flash storage is enabled
+#define MICROPY_HW_BDEV_IOCTL flash_bdev_ioctl
+#define MICROPY_HW_BDEV_READBLOCK flash_bdev_readblock
+#define MICROPY_HW_BDEV_WRITEBLOCK flash_bdev_writeblock
+#endif
 

@@ -106,6 +106,8 @@ MODS_SRC_C = $(addprefix mods/,\
 	globals.c \
 	pybthread.c \
 	pendsv.c \
+	flashbdev.c \
+	storage.c \
 	)
 	#	extint.c see forum
 
