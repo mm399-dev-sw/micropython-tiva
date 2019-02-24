@@ -101,6 +101,7 @@ void SVC_Handler            (void) __attribute__ ((weak, alias("Default_Handler"
 void DebugMon_Handler       (void) __attribute__ ((weak, alias("Default_Handler")));
 void PendSV_Handler         (void) __attribute__ ((weak, alias("Default_Handler")));
 void SysTick_Handler        (void) __attribute__ ((weak, alias("Default_Handler")));
+extern void FLASH_IRQHandler       (void);
 
 void Interrupt0_Handler     (void) __attribute__ ((weak, alias("Default_Handler")));
 void Interrupt1_Handler     (void) __attribute__ ((weak, alias("Default_Handler")));
@@ -166,7 +167,7 @@ extern const pFunc __Vectors[240];
   Default_Handler,                      // Analog Comparator 1
   0,                      // Analog Comparator 2 *
   Default_Handler,                      // System Control (PLL, OSC, BO)
-  Default_Handler,                      // FLASH Control
+  FLASH_IRQHandler,                      // FLASH Control
   0,                      // GPIO Port F *
   0,                      // GPIO Port G *
   0,                      // GPIO Port H *
