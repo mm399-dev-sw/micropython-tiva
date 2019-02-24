@@ -10,23 +10,25 @@
 
 MEMORY
 {
-    FLASH (RX) : ORIGIN = 0x00000000, LENGTH = 0x00040000
-    RAM (WX)  : ORIGIN = 0x20000000, LENGTH = 0x00008000
+    /* FLASH (RX) : ORIGIN = 0x00000000, LENGTH = 256K */
+	FLASH (RX) : ORIGIN = 0x00000000, LENGTH = 232K
+	FATFS (WX) : ORIGIN = 0x0003A000, LENGTH = 24K
+    SRAM  (WX) : ORIGIN = 0x20000000, LENGTH = 32K
 }
 
 HEAPSIZE = 0x2000;
 STACKSIZE = 0x0800;
 
 REGION_ALIAS("REGION_TEXT", FLASH);
-REGION_ALIAS("REGION_BSS", RAM);
-REGION_ALIAS("REGION_DATA", RAM);
-REGION_ALIAS("REGION_STACK", RAM);
-REGION_ALIAS("REGION_HEAP", RAM);
+REGION_ALIAS("REGION_BSS", SRAM);
+REGION_ALIAS("REGION_DATA", SRAM);
+REGION_ALIAS("REGION_STACK", SRAM);S
+REGION_ALIAS("REGION_HEAP", SRAM);
 REGION_ALIAS("REGION_ARM_EXIDX", FLASH);
 REGION_ALIAS("REGION_ARM_EXTAB", FLASH);
 
 /* Linker script to place sections and symbol values. Should be used together
- * with other linker script that defines memory regions FLASH and RAM.
+ * with other linker script that defines memory regions FLASH and SRAM.
  * It references following symbols, which must be defined in code:
  *   Reset_Handler : Entry of reset handler
  *
@@ -104,7 +106,7 @@ SECTIONS
 	} > FLASH
 	__exidx_end = .;
 
-	/* To copy multiple ROM to RAM sections,
+	/* To copy multiple ROM to SRAM sections,
 	 * uncomment .copy.table section and,
 	 * define __STARTUP_COPY_MULTIPLE in startup_ARMCMx.S */
 	/*
@@ -139,11 +141,14 @@ SECTIONS
 	*/
 
 	/* Location counter can end up 2byte aligned with narrow Thumb code but
-	   __etext is assumed by startup code to be the LMA of a section in RAM
+	   __etext is assumed by startup code to be the LMA of a section in SRAM
 	   which must be 4byte aligned */
 	__etext = ALIGN (4);
 	_etext = __etext;
 	/* TODO */
+
+	/* File System Region */
+	fatfs : 
 
 	.data : AT (__etext)
 	{
@@ -180,7 +185,7 @@ SECTIONS
 		__data_end__ = .;
 		_edata = __data_end__;
 
-	} > RAM
+	} > SRAM
 
 	.bss :
 	{
@@ -192,7 +197,7 @@ SECTIONS
 		. = ALIGN(4);
 		__bss_end__ = .;
 		_ebss = __bss_end__;
-	} > RAM
+	} > SRAM
 
 	.heap (COPY):
 	{
@@ -204,7 +209,7 @@ SECTIONS
 		__HeapLimit = .;
 		__heap_end__ = __HeapLimit;
 		_heap_end = __heap_end__;
-	} > RAM
+	} > SRAM
 
 	/* .stack_dummy section doesn't contain any symbols. It is only
 	 * used for linker to calculate size of stack sections, and assign
@@ -212,20 +217,20 @@ SECTIONS
 	.stack_dummy (COPY):
 	{
 		*(.stack*)
-	} > RAM
+	} > SRAM
 
-	/* Set stack top to end of RAM, and stack limit move down by
+	/* Set stack top to end of SRAM, and stack limit move down by
 	 * size of stack_dummy section */
-	__StackTop = ORIGIN(RAM) + LENGTH(RAM);
+	__StackTop = ORIGIN(SRAM) + LENGTH(SRAM);
 	_estack = __StackTop;
 	__StackLimit = __StackTop - SIZEOF(.stack_dummy);
 	PROVIDE(__stack = __StackTop);
 
-	/* Check if data + heap + stack exceeds RAM limit */
-	ASSERT(__StackLimit >= __HeapLimit, "region RAM overflowed with stack")
+	/* Check if data + heap + stack exceeds SRAM limit */
+	ASSERT(__StackLimit >= __HeapLimit, "region SRAM overflowed with stack")
 }
 
 
-/* RAM extents for the garbage collector */
-_ram_start = ORIGIN(RAM);
-_ram_end = ORIGIN(RAM) + LENGTH(RAM);
+/* SRAM extents for the garbage collector */
+_ram_start = ORIGIN(SRAM);
+_ram_end = ORIGIN(SRAM) + LENGTH(SRAM);
