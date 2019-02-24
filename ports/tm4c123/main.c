@@ -362,46 +362,4 @@ void tm4c123_init(void) {
     SysTickEnable();
 }
 
-void SysTick_Handler(void) {
-    // Instead of calling HAL_IncTick we do the increment here of the counter.
-    // This is purely for efficiency, since SysTick is called 1000 times per
-    // second at the highest interrupt priority.
-    // Note: we don't need uwTick to be declared volatile here because this is
-    // the only place where it can be modified, and the code is more efficient
-    // without the volatile specifier.
-    extern uint32_t uwTick;
-    uwTick += 1;
-
-    // Read the systick control regster. This has the side effect of clearing
-    // the COUNTFLAG bit, which makes the logic in mp_hal_ticks_us
-    // work properly.
-    volatile uint32_t dummy = SysTick->CTRL;
-    (void) dummy;
-
-    // Right now we have the storage and DMA controllers to process during
-    // this interrupt and we use custom dispatch handlers.  If this needs to
-    // be generalised in the future then a dispatch table can be used as
-    // follows: ((void(*)(void))(systick_dispatch[uwTick & 0xf]))();
-
-//    if (STORAGE_IDLE_TICK(uwTick)) {
-//        NVIC->STIR = FLASH_IRQn;
-//    }
-//
-//    if (DMA_IDLE_ENABLED() && DMA_IDLE_TICK(uwTick)) {
-//        dma_idle_handler(uwTick);
-//    }
-
-    #if MICROPY_PY_THREAD
-    if (pyb_thread_enabled) {
-        if (pyb_thread_cur->timeslice == 0) {
-            if (pyb_thread_cur->run_next != pyb_thread_cur) {
-                SCB->ICSR = SCB_ICSR_PENDSVSET_Msk;
-            }
-        } else {
-            --pyb_thread_cur->timeslice;
-        }
-    }
-    #endif
-}
-
 #endif

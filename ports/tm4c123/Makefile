@@ -108,6 +108,7 @@ MODS_SRC_C = $(addprefix mods/,\
 	pendsv.c \
 	flashbdev.c \
 	storage.c \
+	handlers.c \
 	)
 	#	extint.c see forum
 
