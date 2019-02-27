@@ -320,10 +320,10 @@ void SysTick_Handler(void) {
     if (STORAGE_IDLE_TICK(uwTick)) {
         NVIC->STIR = FLASH_IRQn;
     }
-
-    if (DMA_IDLE_ENABLED() && DMA_IDLE_TICK(uwTick)) {
+    // TODO
+   /*  if (DMA_IDLE_ENABLED() && DMA_IDLE_TICK(uwTick)) {
         dma_idle_handler(uwTick);
-    }
+    } */
 
     #if MICROPY_PY_THREAD
     if (pyb_thread_enabled) {
@@ -470,12 +470,13 @@ void FLASH_IRQHandler(void) {
     storage_irq_handler();
     IRQ_EXIT(FLASH_IRQn);
 }
-
+#ifdef MOREINTS
 /**
   * @brief  These functions handle the EXTI interrupt requests.
   * @param  None
   * @retval None
   */
+
 void EXTI0_IRQHandler(void) {
     IRQ_ENTER(EXTI0_IRQn);
     Handle_EXTI_Irq(0);
@@ -598,11 +599,11 @@ void TIM1_UP_TIM16_IRQHandler(void) {
 }
 #endif
 
-void TIM1_TRG_COM_TIM11_IRQHandler(void) {
+/* void TIM1_TRG_COM_TIM11_IRQHandler(void) {
     IRQ_ENTER(TIM1_TRG_COM_TIM11_IRQn);
     timer_irq_handler(11);
     IRQ_EXIT(TIM1_TRG_COM_TIM11_IRQn);
-}
+} */
 
 #if defined(STM32L4)
 void TIM1_TRG_COM_TIM17_IRQHandler(void) {
@@ -839,5 +840,6 @@ void I2C4_ER_IRQHandler(void) {
     IRQ_ENTER(I2C4_ER_IRQn);
     i2c_er_irq_handler(4);
     IRQ_EXIT(I2C4_ER_IRQn);
-}
+} 
+#endif
 #endif // defined(MICROPY_HW_I2C4_SCL)
