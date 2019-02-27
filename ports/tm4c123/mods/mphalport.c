@@ -76,6 +76,11 @@ bool mp_hal_pin_config_alt(mp_hal_pin_obj_t pin, uint32_t mode, uint32_t pull, u
     return true;
 }
 
+uint32_t HAL_GetTick() {
+    extern uint32_t uwTick;
+    return uwTick;
+}
+
 //MP_WEAK int mp_hal_stdin_rx_chr(void) {
 //    for (;;) {
 //#if 0
