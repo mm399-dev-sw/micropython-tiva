@@ -28,7 +28,7 @@
 
 #include "drivers/memory/spiflash.h"
 
-#define FLASH_BLOCK_SIZE (512)
+#define FLASH_BLOCK_SIZE (1024)
 
 #define STORAGE_SYSTICK_MASK    (0x1ff) // 512ms
 #define STORAGE_IDLE_TICK(tick) (((tick) & STORAGE_SYSTICK_MASK) == 2)

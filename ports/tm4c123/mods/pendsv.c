@@ -69,7 +69,7 @@ void pendsv_kbd_intr(void) {
     }
 }
 
-void PendSV_Handler(void) {
+void pendsv_isr_handler(void) {
     // re-jig the stack so that when we return from this interrupt handler
     // it returns instead to nlr_jump with argument pendsv_object
     // note that stack has a different layout if DEBUG is enabled

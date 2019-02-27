@@ -31,6 +31,6 @@ void pendsv_kbd_intr(void);
 
 // since we play tricks with the stack, the compiler must not generate a
 // prelude for this function
-void PendSV_Handler(void) __attribute__((naked));
+void pendsv_isr_handler(void) __attribute__((naked));
 
 #endif // MICROPY_INCLUDED_STM32_PENDSV_H
