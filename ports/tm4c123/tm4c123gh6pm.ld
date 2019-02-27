@@ -12,17 +12,22 @@ MEMORY
 {
     /* FLASH (RX) : ORIGIN = 0x00000000, LENGTH = 256K */
 	FLASH (RX) : ORIGIN = 0x00000000, LENGTH = 232K
-	FATFS (WX) : ORIGIN = 0x0003A000, LENGTH = 24K
-    SRAM  (WX) : ORIGIN = 0x20000000, LENGTH = 32K
+	FLASH_FS (WX) : ORIGIN = 0x0003A000, LENGTH = 24K
+	/* SRAM  (WX) : ORIGIN = 0x20000000, LENGTH = 32K */
+    SRAM  (WX) : ORIGIN = 0x20000000, LENGTH = 24K
+	CACHE (WX) : ORIGIN = 0x20006000, LENGTH = 8K
 }
 
 HEAPSIZE = 0x2000;
 STACKSIZE = 0x0800;
 
+_Min_Heap_Size = 0x2000;
+_Min_Stack_Size = 0x0800;
+
 REGION_ALIAS("REGION_TEXT", FLASH);
 REGION_ALIAS("REGION_BSS", SRAM);
 REGION_ALIAS("REGION_DATA", SRAM);
-REGION_ALIAS("REGION_STACK", SRAM);S
+REGION_ALIAS("REGION_STACK", SRAM);
 REGION_ALIAS("REGION_HEAP", SRAM);
 REGION_ALIAS("REGION_ARM_EXIDX", FLASH);
 REGION_ALIAS("REGION_ARM_EXTAB", FLASH);
@@ -145,16 +150,13 @@ SECTIONS
 	   which must be 4byte aligned */
 	__etext = ALIGN (4);
 	_etext = __etext;
+	_sidata = _etext;
 	/* TODO */
-
-	/* File System Region */
-	fatfs : 
 
 	.data : AT (__etext)
 	{
 		__data_start__ = .;
 		_sdata = __data_start__;
-		_sidata = _sdata;
 		*(vtable)
 		*(.data*)
 
@@ -234,3 +236,9 @@ SECTIONS
 /* SRAM extents for the garbage collector */
 _ram_start = ORIGIN(SRAM);
 _ram_end = ORIGIN(SRAM) + LENGTH(SRAM);
+
+_flash_fs_start = ORIGIN(FLASH_FS);
+_flash_fs_end = ORIGIN(FLASH_FS) + LENGTH(FLASH_FS);
+
+_cache_start = ORIGIN(CACHE);
+_cache_end = ORIGIN(CACHE) + LENGTH(CACHE);

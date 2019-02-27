@@ -75,14 +75,14 @@ void flash_erase(uint32_t flash_dest, uint32_t num_word32) {
     }
 
     if(!(flash_dest % 4)) {
-        DEBUG_printf("mods/flash.c/flash_erase(): Flash address must be 4 byte aligned!");
+        // DEBUG_printf("mods/flash.c/flash_erase(): Flash address must be 4 byte aligned!");
         return;
     }
 
     // check for write permissions
     if (FlashProtectGet(flash_dest) != FlashReadWrite)
     {
-        DEBUG_printf("Flash Block 0x%.8X write protected! Not erasing!", flash_dest);
+        // DEBUG_printf("Flash Block 0x%.8X write protected! Not erasing!", flash_dest);
         return; 
     }
 
@@ -102,7 +102,7 @@ void flash_erase(uint32_t flash_dest, uint32_t num_word32) {
             
     }  
 
-    for(num_sec ; num_sec > 0 ; num_sec--) {
+    for(; num_sec > 0 ; num_sec--) {
         if (MAP_FlashErase(flash_dest) != 0) {
             // error occurred during sector erase
             return;
@@ -143,18 +143,18 @@ void flash_write(uint32_t flash_dest, const uint32_t *src, uint32_t num_word32) 
     
     // program the flash word by word
     if(flash_dest % 4 != 0) {
-        DEBUG_printf("mods/flash.c/flash_erase(): Flash address must be 4 byte aligned!");
+        // DEBUG_printf("mods/flash.c/flash_erase(): Flash address must be 4 byte aligned!");
         return;
     }
 
     // check for write permissions
     if (FlashProtectGet(flash_dest) != FlashReadWrite)
     {
-        DEBUG_printf("Flash Block 0x%.8X write protected! Not programming!", flash_dest);
+        // DEBUG_printf("Flash Block 0x%.8X write protected! Not programming!", flash_dest);
         return; 
     }
 
-    if (MAP_FlashProgram(src, flash_dest, 4 * num_word32) != 0) {
+    if (MAP_FlashProgram((uint32_t*) src, flash_dest, 4 * num_word32) != 0) {
         // error occurred during flash write
         return;
     }

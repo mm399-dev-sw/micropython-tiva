@@ -117,11 +117,16 @@
 #else
   #error device not specified!
 #endif
-#define  __IO volatile;
+#include "mphalport.h"
+extern uint32_t _flash_fs_start;
+extern uint32_t _flash_fs_end;
+extern uint32_t _cache_start;
+extern uint32_t _cache_end;
 #define FLASH_SECTOR_SIZE_MAX (0x0400) // 1k
-#define FLASH_MEM_SEG1_NUM_BLOCKS (24) // with this we define the actual size of the flash to be use by the fs
-#define FLASH_MEM_SEG1_END_ADDR (0x00040000)
-#define FLASH_MEM_SEG1_START_ADDR (FLASH_MEM_SEG1_END_ADDR - FLASH_MEM_SEG1_NUM_BLOCKS*FLASH_SECTOR_SIZE_MAX) // 24 kiB from end of flash
+#define FLASH_MEM_SEG1_NUM_BLOCKS ((&_flash_fs_end - &_flash_fs_start) / FLASH_SECTOR_SIZE_MAX) // with this we define the actual size of the flash to be use by the fs
+#define FLASH_MEM_SEG1_END_ADDR ((uint32_t)&_flash_fs_end)
+#define FLASH_MEM_SEG1_START_ADDR ((uint32_t)&_flash_fs_start) // 24 kiB from end of flash
+#define CACHE_MEM_START_ADDR ((uint32_t)&_cache_start)
 
 
 #else
@@ -182,7 +187,7 @@ static uint8_t *flash_cache_get_addr_for_write(uint32_t flash_addr) {
         flash_cache_sector_size = flash_sector_size;
     }
     flash_flags |= FLASH_FLAG_DIRTY;
-    led_state(PYB_LED_RED, 1); // indicate a dirty cache with LED on
+    // TODO led_state(PYB_LED_RED, 1); // indicate a dirty cache with LED on
     flash_tick_counter_last_write = HAL_GetTick();
     return (uint8_t*)CACHE_MEM_START_ADDR + flash_addr - flash_sector_start;
 }
@@ -251,7 +256,7 @@ static void flash_bdev_irq_handler(void) {
         // clear the flash flags now that we have a clean cache
         flash_flags = 0;
         // indicate a clean cache with LED off
-        led_state(PYB_LED_RED, 0);
+        // TODO led_state(PYB_LED_RED, 0);
     }
 }
 

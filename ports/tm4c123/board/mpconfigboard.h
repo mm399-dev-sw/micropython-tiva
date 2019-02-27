@@ -88,3 +88,8 @@
 #define MICROPY_HW_BDEV_WRITEBLOCK flash_bdev_writeblock
 #endif
 
+// The volume label used when creating the flash filesystem
+#ifndef MICROPY_HW_FLASH_FS_LABEL
+#define MICROPY_HW_FLASH_FS_LABEL "pybflash"
+#endif
+
