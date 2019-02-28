@@ -6,7 +6,15 @@
 #include "py/mphal.h"
 #include "extmod/misc.h"
 //#include "usb.h"
-//#include "uart.h"
+#include "uart.h"
+
+#if defined (ARMCM4)
+  #include "ARMCM4.h"
+#elif defined (ARMCM4_FP)
+  #include "ARMCM4_FP.h"
+#else
+  #error device not specified!
+#endif
 
 // this table converts from HAL_StatusTypeDef to POSIX errno
 //const byte mp_hal_status_to_errno_table[4] = {
@@ -21,15 +29,15 @@
 //}
 
 void mp_hal_ticks_cpu_enable(void) {
-//    if (!(DWT->CTRL & DWT_CTRL_CYCCNTENA_Msk)) {
-//        CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
-//        #if defined(__CORTEX_M) && __CORTEX_M == 7
-//        // on Cortex-M7 we must unlock the DWT before writing to its registers
-//        DWT->LAR = 0xc5acce55;
-//        #endif
-//        DWT->CYCCNT = 0;
-//        DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
-//    }
+   if (!(DWT->CTRL & DWT_CTRL_CYCCNTENA_Msk)) {
+       CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
+       #if defined(__CORTEX_M) && __CORTEX_M == 7
+       // on Cortex-M7 we must unlock the DWT before writing to its registers
+       DWT->LAR = 0xc5acce55;
+       #endif
+       DWT->CYCCNT = 0;
+       DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
+   }
 }
 
 mp_uint_t mp_hal_ticks_cpu(void) {
@@ -81,73 +89,73 @@ uint32_t HAL_GetTick() {
     return uwTick;
 }
 
-//MP_WEAK int mp_hal_stdin_rx_chr(void) {
-//    for (;;) {
-//#if 0
-//#ifdef USE_HOST_MODE
-//        pyb_usb_host_process();
-//        int c = pyb_usb_host_get_keyboard();
-//        if (c != 0) {
-//            return c;
-//        }
-//#endif
-//#endif
-//
-//        #if MICROPY_HW_ENABLE_USB
-//        byte c;
-//        if (usb_vcp_recv_byte(&c) != 0) {
-//            return c;
-//        }
-//        #endif
-//        if (MP_STATE_PORT(pyb_stdio_uart) != NULL && uart_rx_any(MP_STATE_PORT(pyb_stdio_uart))) {
-//            return uart_rx_char(MP_STATE_PORT(pyb_stdio_uart));
-//        }
-//        int dupterm_c = mp_uos_dupterm_rx_chr();
-//        if (dupterm_c >= 0) {
-//            return dupterm_c;
-//        }
-//        MICROPY_EVENT_POLL_HOOK
-//    }
-//}
-//
-//void mp_hal_stdout_tx_str(const char *str) {
-//    mp_hal_stdout_tx_strn(str, strlen(str));
-//}
-//
-//MP_WEAK void mp_hal_stdout_tx_strn(const char *str, size_t len) {
-//    if (MP_STATE_PORT(pyb_stdio_uart) != NULL) {
-//        uart_tx_strn(MP_STATE_PORT(pyb_stdio_uart), str, len);
-//    }
-//#if 0 && defined(USE_HOST_MODE) && MICROPY_HW_HAS_LCD
-//    lcd_print_strn(str, len);
-//#endif
-//    #if MICROPY_HW_ENABLE_USB
-//    if (usb_vcp_is_enabled()) {
-//        usb_vcp_send_strn(str, len);
-//    }
-//    #endif
-//    mp_uos_dupterm_tx_strn(str, len);
-//}
-//
-//// Efficiently convert "\n" to "\r\n"
-//void mp_hal_stdout_tx_strn_cooked(const char *str, size_t len) {
-//    const char *last = str;
-//    while (len--) {
-//        if (*str == '\n') {
-//            if (str > last) {
-//                mp_hal_stdout_tx_strn(last, str - last);
-//            }
-//            mp_hal_stdout_tx_strn("\r\n", 2);
-//            ++str;
-//            last = str;
-//        } else {
-//            ++str;
-//        }
-//    }
-//    if (str > last) {
-//        mp_hal_stdout_tx_strn(last, str - last);
-//    }
-//}
+MP_WEAK int mp_hal_stdin_rx_chr(void) {
+   for (;;) {
+#if 0
+#ifdef USE_HOST_MODE
+       pyb_usb_host_process();
+       int c = pyb_usb_host_get_keyboard();
+       if (c != 0) {
+           return c;
+       }
+#endif
+#endif
+
+       #if MICROPY_HW_ENABLE_USB
+       byte c;
+       if (usb_vcp_recv_byte(&c) != 0) {
+           return c;
+       }
+       #endif
+       if (MP_STATE_PORT(pyb_stdio_uart) != NULL && uart_rx_any(MP_STATE_PORT(pyb_stdio_uart))) {
+           return uart_rx_char(MP_STATE_PORT(pyb_stdio_uart));
+       }
+       int dupterm_c = mp_uos_dupterm_rx_chr();
+       if (dupterm_c >= 0) {
+           return dupterm_c;
+       }
+       MICROPY_EVENT_POLL_HOOK
+   }
+}
+
+void mp_hal_stdout_tx_str(const char *str) {
+   mp_hal_stdout_tx_strn(str, strlen(str));
+}
+
+MP_WEAK void mp_hal_stdout_tx_strn(const char *str, size_t len) {
+   if (MP_STATE_PORT(pyb_stdio_uart) != NULL) {
+       uart_tx_strn(MP_STATE_PORT(pyb_stdio_uart), str, len);
+   }
+#if 0 && defined(USE_HOST_MODE) && MICROPY_HW_HAS_LCD
+   lcd_print_strn(str, len);
+#endif
+   #if MICROPY_HW_ENABLE_USB
+   if (usb_vcp_is_enabled()) {
+       usb_vcp_send_strn(str, len);
+   }
+   #endif
+   mp_uos_dupterm_tx_strn(str, len);
+}
+
+// Efficiently convert "\n" to "\r\n"
+void mp_hal_stdout_tx_strn_cooked(const char *str, size_t len) {
+   const char *last = str;
+   while (len--) {
+       if (*str == '\n') {
+           if (str > last) {
+               mp_hal_stdout_tx_strn(last, str - last);
+           }
+           mp_hal_stdout_tx_strn("\r\n", 2);
+           ++str;
+           last = str;
+       } else {
+           ++str;
+       }
+   }
+   if (str > last) {
+       mp_hal_stdout_tx_strn(last, str - last);
+   }
+}
 //
 //#if __CORTEX_M >= 0x03
 //void mp_hal_ticks_cpu_enable(void) {
