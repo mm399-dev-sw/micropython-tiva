@@ -3,6 +3,14 @@
 #include <stdbool.h>
 #include <string.h>
 
+#if defined (ARMCM4)
+  #include "ARMCM4.h"
+#elif defined (ARMCM4_FP)
+  #include "ARMCM4_FP.h"
+#else
+  #error device not specified!
+#endif
+
 #include "py/runtime.h"
 #include "py/stackctrl.h"
 #include "py/gc.h"
@@ -40,6 +48,19 @@
 //#include "can.h"
 //#include "modnetwork.h"
 
+// prevent clash between driverlib and CMSIS
+#ifdef NVIC_BASE
+#undef NVIC_BASE
+#endif
+
+#ifdef DWT_BASE
+#undef DWT_BASE
+#endif
+
+#ifdef ITM_BASE
+#undef ITM_BASE
+#endif
+
 #include "inc/hw_types.h"
 #include "inc/hw_gpio.h"
 #include "inc/hw_ints.h"
@@ -55,18 +76,18 @@
 
 pyb_thread_t pyb_thread_main;
 fs_user_mount_t fs_user_mount_flash;
-#define led_stat(x,y) 
+#define led_state(x,y) 
 #define PYB_LED_RED     (0)
 #define PYB_LED_GREEN   (0)
 #define PYB_LED_BLUE    (0)
 void flash_error(int n) {
     for (int i = 0; i < n; i++) {
-
-        led_state(PYB_LED_RED, 1);
-        led_state(PYB_LED_GREEN, 0);
+        // TODO
+        /* led_state(PYB_LED_RED, 1);
+        led_state(PYB_LED_GREEN, 0); */
         mp_hal_delay_ms(250);
-        led_state(PYB_LED_RED, 0);
-        led_state(PYB_LED_GREEN, 1);
+        /* led_state(PYB_LED_RED, 0);
+        led_state(PYB_LED_GREEN, 1); */
         mp_hal_delay_ms(250);
     }
     led_state(PYB_LED_GREEN, 0);
@@ -75,14 +96,15 @@ void flash_error(int n) {
 void NORETURN __fatal_error(const char *msg) {
     for (volatile uint delay = 0; delay < 10000000; delay++) {
     }
-    led_state(1, 1);
+    //TODO
+    /* led_state(1, 1);
     led_state(2, 1);
     led_state(3, 1);
-    led_state(4, 1);
+    led_state(4, 1); */
     mp_hal_stdout_tx_strn("\nFATAL ERROR:\n", 14);
     mp_hal_stdout_tx_strn(msg, strlen(msg));
     for (uint i = 0;;) {
-        led_toggle(((i++) & 3) + 1);
+        //led_toggle(((i++) & 3) + 1);
         for (volatile uint delay = 0; delay < 10000000; delay++) {
         }
         if (i >= 16) {
@@ -621,8 +643,8 @@ void _start(void) {
     tm4c123_init();
     #endif
 
-    // now that we have a basic system up and running we can call main
-    main(0, NULL);
+    // now that we have a basic system up and running we can call tm4c_main
+    tm4c_main(1);
 
     // we must not return
     for (;;) {
