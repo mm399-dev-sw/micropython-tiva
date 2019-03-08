@@ -163,9 +163,9 @@ void do_str(const char *src, mp_parse_input_kind_t input_kind) {
 #endif
 
 //extern uint32_t pui32Stack[128];
-extern uint32_t __StackTop;
-extern uint32_t _heap_start;
-extern uint32_t _heap_end;
+extern uint32_t* __StackTop;
+extern uint32_t* _heap_start;
+extern uint32_t* _heap_end;
 //static char *stack_top;
 #if MICROPY_ENABLE_GC
 //static char heap[2048];
@@ -383,7 +383,7 @@ STATIC bool init_sdcard_fs(void) {
 }
 #endif
 
-int main(int argc, char **argv) {
+int tm4c_main(int reset_mode) {
 
     // Set the priority grouping
     // TODO NVIC_SetPriorityGrouping(NVIC_APINT_PRIGROUP_4_4);
@@ -423,11 +423,11 @@ soft_reset:
 //    int stack_dummy;
     mp_stack_ctrl_init();
 
-    mp_stack_set_top(__StackTop);
-    //mp_stack_set_limit((char*)&_estack - (char*)&_heap_end - 1024);
+    mp_stack_set_top(&__StackTop);
+    mp_stack_set_limit((char*)&_estack - (char*)&_heap_end - 1024);
 
     #if MICROPY_ENABLE_GC
-    gc_init(_heap_start, _heap_end);
+    gc_init(&_heap_start, &_heap_end);
     #endif
 
     #if MICROPY_ENABLE_PYSTACK
@@ -569,7 +569,7 @@ soft_reset_exit:
     storage_flush();
 
     printf("PYB: soft reboot\n");
-    timer_deinit();
+    // TODO timer_deinit();
     uart_deinit();
 #if MICROPY_HW_ENABLE_CAN
     can_deinit();
