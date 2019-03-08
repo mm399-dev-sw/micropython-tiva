@@ -76,16 +76,16 @@ void Reset_Handler  (void) __attribute__ ((noreturn));
 //<h> Stack Configuration
 //  <o> Stack Size (in Bytes) <0x0-0xFFFFFFFF:8>
 //</h>
-#define  __STACK_SIZE  0x00000800
-static uint8_t stack[__STACK_SIZE] __attribute__ ((aligned(8), used, section(".stack")));
+// #define  __STACK_SIZE  0x00000800
+// static uint8_t stack[__STACK_SIZE] __attribute__ ((aligned(8), used, section(".stack")));
 
-//<h> Heap Configuration
-//  <o>  Heap Size (in Bytes) <0x0-0xFFFFFFFF:8>
-//</h>
-#define  __HEAP_SIZE   0x00002000
-#if __HEAP_SIZE > 0
-static uint8_t heap[__HEAP_SIZE]   __attribute__ ((aligned(8), used, section(".heap")));
-#endif
+// //<h> Heap Configuration
+// //  <o>  Heap Size (in Bytes) <0x0-0xFFFFFFFF:8>
+// //</h>
+// #define  __HEAP_SIZE   0x00002000
+// #if __HEAP_SIZE > 0
+// static uint8_t heap[__HEAP_SIZE]   __attribute__ ((aligned(8), used, section(".heap")));
+// #endif
 
 
 /*----------------------------------------------------------------------------
@@ -118,8 +118,8 @@ void Interrupt9_Handler     (void) __attribute__ ((weak, alias("Default_Handler"
 /*----------------------------------------------------------------------------
   Exception / Interrupt Vector table
  *----------------------------------------------------------------------------*/
-extern const pFunc __Vectors[240];
-       const pFunc __Vectors[240] __attribute__ ((section(".vectors"))) = {
+extern const pFunc g_pfnVectors[240];
+       const pFunc g_pfnVectors[240] __attribute__ ((section(".vectors"))) = {
   (pFunc)(&__StackTop),                     /*     Initial Stack Pointer */
   Reset_Handler,                            /*     Reset Handler */
   NMI_Handler,                              /* -14 NMI Handler */

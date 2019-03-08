@@ -163,9 +163,9 @@ void do_str(const char *src, mp_parse_input_kind_t input_kind) {
 #endif
 
 //extern uint32_t pui32Stack[128];
-extern uint32_t* __StackTop;
-extern uint32_t* _heap_start;
-extern uint32_t* _heap_end;
+extern uint32_t __StackTop;
+extern uint32_t _heap_start;
+extern uint32_t _heap_end;
 //static char *stack_top;
 #if MICROPY_ENABLE_GC
 //static char heap[2048];

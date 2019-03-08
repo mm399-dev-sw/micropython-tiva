@@ -18,19 +18,19 @@ MEMORY
 	CACHE (WX) : ORIGIN = 0x20006000, LENGTH = 8K
 }
 
-HEAPSIZE = 0x2000;
-STACKSIZE = 0x0800;
+/* SRAM extents for the garbage collector */
+_ram_start = ORIGIN(SRAM);
+_ram_end = ORIGIN(SRAM) + LENGTH(SRAM);
 
-_Min_Heap_Size = 0x2000;
+_flash_fs_start = ORIGIN(FLASH_FS);
+_flash_fs_end = ORIGIN(FLASH_FS) + LENGTH(FLASH_FS);
+
+_cache_start = ORIGIN(CACHE);
+_cache_end = ORIGIN(CACHE) + LENGTH(CACHE);
+
+_Min_Heap_Size = 0x4000;
 _Min_Stack_Size = 0x0800;
 
-REGION_ALIAS("REGION_TEXT", FLASH);
-REGION_ALIAS("REGION_BSS", SRAM);
-REGION_ALIAS("REGION_DATA", SRAM);
-REGION_ALIAS("REGION_STACK", SRAM);
-REGION_ALIAS("REGION_HEAP", SRAM);
-REGION_ALIAS("REGION_ARM_EXIDX", FLASH);
-REGION_ALIAS("REGION_ARM_EXTAB", FLASH);
 
 ENTRY(Reset_Handler)
 
@@ -40,13 +40,13 @@ SECTIONS {
 
     .intvecs (_intvecs_base_address) : AT (_intvecs_base_address) {
         KEEP (*(.vectors))
-    } > REGION_TEXT
+    } > FLASH
 
     PROVIDE (_vtable_base_address = 0x20000000);
 
     .vtable (_vtable_base_address) : AT (_vtable_base_address) {
         KEEP (*(.vtable))
-    } > REGION_DATA
+    } > SRAM
 
     .text : {
         CREATE_OBJECT_SYMBOLS
@@ -62,7 +62,7 @@ SECTIONS {
         __init_array_end = .;
         *(.init)
         *(.fini*)
-    } > REGION_TEXT
+    } > FLASH
 
     PROVIDE (__etext = .);
     PROVIDE (_etext = .);
@@ -72,28 +72,28 @@ SECTIONS {
     .rodata : {
         *(.rodata)
         *(.rodata*)
-    } > REGION_TEXT
+    } > FLASH
 
-    .data : ALIGN (4) {
+    .data : ALIGN (0x4) {
         __data_load__ = LOADADDR (.data);
         __data_start__ = .;
 		_sdata = __data_start__;
         *(.data)
         *(.data*)
-        . = ALIGN (4);
+        . = ALIGN (0x4);
         __data_end__ = .;
 		_edata = __data_end__;
-    } > REGION_DATA AT> REGION_TEXT
+    } > SRAM AT> FLASH
 
     .ARM.exidx : {
         __exidx_start = .;
         *(.ARM.exidx* .gnu.linkonce.armexidx.*)
         __exidx_end = .;
-    } > REGION_ARM_EXIDX
+    } > FLASH
 
     .ARM.extab : {
         *(.ARM.extab* .gnu.linkonce.armextab.*)
-    } > REGION_ARM_EXTAB
+    } > FLASH
 
     .bss : {
         __bss_start__ = .;
@@ -105,41 +105,33 @@ SECTIONS {
         . = ALIGN (4);
         __bss_end__ = .;
 		_ebss = __bss_end__;
-    } > REGION_BSS
+    } > SRAM
 
     .heap : {
-        __heap_start__ = .;
-        end = __heap_start__;
+        PROVIDE (__heap_start__ = .);
         _heap_start = __heap_start__;
-        _end = end;
-        __end = end;
-        . = . + HEAPSIZE;
+        . = . + _Min_Heap_Size;
         KEEP(*(.heap))
-        __heap_end__ = .;
+        PROVIDE (__heap_end__ = .);
         __HeapLimit = __heap_end__;
         _heap_end = __heap_end__;
-    } > REGION_HEAP
+    } > SRAM
+
+    _Heapsize = __heap_end__ - __heap_start__;
+    _Stacksize = _ram_end - __heap_end__ - 4;
 
     .stack : ALIGN(0x8) {
-        _stack = .;
+        PROVIDE (_stack = .);
         __stack = .;
-        . = . + STACKSIZE;
-        __StackTop = . ;
-        _estack = __StackTop;
+        . = . + _Stacksize;
         KEEP(*(.stack))
-    } > REGION_STACK
+        __StackTop = . ;
+        PROVIDE (_estack = .);
+    } > SRAM
 
-	ASSERT(_Min_Heap_Size <= (_heap_end - _heap_start), "Could not allocate enough space for heap")
-	ASSERT(_Min_Stack_Size <= (_estack - _stack), "Could not allocate enough space for stack")
+	ASSERT(_Min_Heap_Size <= _Heapsize, "Could not allocate enough space for heap")
+	ASSERT(_Min_Stack_Size <= _Stacksize, "Could not allocate enough space for stack")
 }
 
 
-/* SRAM extents for the garbage collector */
-_ram_start = ORIGIN(SRAM);
-_ram_end = ORIGIN(SRAM) + LENGTH(SRAM);
 
-_flash_fs_start = ORIGIN(FLASH_FS);
-_flash_fs_end = ORIGIN(FLASH_FS) + LENGTH(FLASH_FS);
-
-_cache_start = ORIGIN(CACHE);
-_cache_end = ORIGIN(CACHE) + LENGTH(CACHE);
