@@ -32,204 +32,105 @@ REGION_ALIAS("REGION_HEAP", SRAM);
 REGION_ALIAS("REGION_ARM_EXIDX", FLASH);
 REGION_ALIAS("REGION_ARM_EXTAB", FLASH);
 
-/* Linker script to place sections and symbol values. Should be used together
- * with other linker script that defines memory regions FLASH and SRAM.
- * It references following symbols, which must be defined in code:
- *   Reset_Handler : Entry of reset handler
- *
- * It defines following symbols, which code can use without definition:
- *   __exidx_start
- *   __exidx_end
- *   __copy_table_start__
- *   __copy_table_end__
- *   __zero_table_start__
- *   __zero_table_end__
- *   __etext
- *   __data_start__
- *   __preinit_array_start
- *   __preinit_array_end
- *   __init_array_start
- *   __init_array_end
- *   __fini_array_start
- *   __fini_array_end
- *   __data_end__
- *   __bss_start__
- *   __bss_end__
- *   __end__
- *   end
- *   _heap_start
- *   __heap_start__
- *   _heap_end
- *   __heap_end__
- *   __HeapLimit
- *   _stack
- *   __stack
- *   __StackLimit
- *   __StackTop
- *   __stack
- */
 ENTRY(Reset_Handler)
 
-SECTIONS
-{
-	.text :
-	{
-		KEEP(*(.vectors))
-		*(.text*)
+SECTIONS {
 
-		KEEP(*(.init))
-		KEEP(*(.fini))
+    PROVIDE (_intvecs_base_address = 0x0);
 
-		/* .ctors */
-		*crtbegin.o(.ctors)
-		*crtbegin?.o(.ctors)
-		*(EXCLUDE_FILE(*crtend?.o *crtend.o) .ctors)
-		*(SORT(.ctors.*))
-		*(.ctors)
+    .intvecs (_intvecs_base_address) : AT (_intvecs_base_address) {
+        KEEP (*(.vectors))
+    } > REGION_TEXT
 
-		/* .dtors */
- 		*crtbegin.o(.dtors)
- 		*crtbegin?.o(.dtors)
- 		*(EXCLUDE_FILE(*crtend?.o *crtend.o) .dtors)
- 		*(SORT(.dtors.*))
- 		*(.dtors)
+    PROVIDE (_vtable_base_address = 0x20000000);
 
-		*(.rodata*)
+    .vtable (_vtable_base_address) : AT (_vtable_base_address) {
+        KEEP (*(.vtable))
+    } > REGION_DATA
 
-		KEEP(*(.eh_frame*))
-	} > FLASH
+    .text : {
+        CREATE_OBJECT_SYMBOLS
+        *(.text)
+        *(.text.*)
+        . = ALIGN(0x4);
+        KEEP (*(.ctors))
+        . = ALIGN(0x4);
+        KEEP (*(.dtors))
+        . = ALIGN(0x4);
+        __init_array_start = .;
+        KEEP (*(.init_array*))
+        __init_array_end = .;
+        *(.init)
+        *(.fini*)
+    } > REGION_TEXT
 
-	.ARM.extab :
-	{
-		*(.ARM.extab* .gnu.linkonce.armextab.*)
-	} > FLASH
+    PROVIDE (__etext = .);
+    PROVIDE (_etext = .);
+    PROVIDE (etext = .);
+	PROVIDE (_sidata = .);
 
-	__exidx_start = .;
-	.ARM.exidx :
-	{
-		*(.ARM.exidx* .gnu.linkonce.armexidx.*)
-	} > FLASH
-	__exidx_end = .;
+    .rodata : {
+        *(.rodata)
+        *(.rodata*)
+    } > REGION_TEXT
 
-	/* To copy multiple ROM to SRAM sections,
-	 * uncomment .copy.table section and,
-	 * define __STARTUP_COPY_MULTIPLE in startup_ARMCMx.S */
-	/*
-	.copy.table :
-	{
-		. = ALIGN(4);
-		__copy_table_start__ = .;
-		LONG (__etext)
-		LONG (__data_start__)
-		LONG (__data_end__ - __data_start__)
-		LONG (__etext2)
-		LONG (__data2_start__)
-		LONG (__data2_end__ - __data2_start__)
-		__copy_table_end__ = .;
-	} > FLASH
-	*/
-
-	/* To clear multiple BSS sections,
-	 * uncomment .zero.table section and,
-	 * define __STARTUP_CLEAR_BSS_MULTIPLE in startup_ARMCMx.S */
-	/*
-	.zero.table :
-	{
-		. = ALIGN(4);
-		__zero_table_start__ = .;
-		LONG (__bss_start__)
-		LONG (__bss_end__ - __bss_start__)
-		LONG (__bss2_start__)
-		LONG (__bss2_end__ - __bss2_start__)
-		__zero_table_end__ = .;
-	} > FLASH
-	*/
-
-	/* Location counter can end up 2byte aligned with narrow Thumb code but
-	   __etext is assumed by startup code to be the LMA of a section in SRAM
-	   which must be 4byte aligned */
-	__etext = ALIGN (4);
-	_etext = __etext;
-	_sidata = _etext;
-	/* TODO */
-
-	.data : AT (__etext)
-	{
-		__data_start__ = .;
+    .data : ALIGN (4) {
+        __data_load__ = LOADADDR (.data);
+        __data_start__ = .;
 		_sdata = __data_start__;
-		*(vtable)
-		*(.data*)
-
-		. = ALIGN(4);
-		/* preinit data */
-		PROVIDE_HIDDEN (__preinit_array_start = .);
-		KEEP(*(.preinit_array))
-		PROVIDE_HIDDEN (__preinit_array_end = .);
-
-		. = ALIGN(4);
-		/* init data */
-		PROVIDE_HIDDEN (__init_array_start = .);
-		KEEP(*(SORT(.init_array.*)))
-		KEEP(*(.init_array))
-		PROVIDE_HIDDEN (__init_array_end = .);
-
-
-		. = ALIGN(4);
-		/* finit data */
-		PROVIDE_HIDDEN (__fini_array_start = .);
-		KEEP(*(SORT(.fini_array.*)))
-		KEEP(*(.fini_array))
-		PROVIDE_HIDDEN (__fini_array_end = .);
-
-		KEEP(*(.jcr*))
-		. = ALIGN(4);
-		/* All data end */
-		__data_end__ = .;
+        *(.data)
+        *(.data*)
+        . = ALIGN (4);
+        __data_end__ = .;
 		_edata = __data_end__;
+    } > REGION_DATA AT> REGION_TEXT
 
-	} > SRAM
+    .ARM.exidx : {
+        __exidx_start = .;
+        *(.ARM.exidx* .gnu.linkonce.armexidx.*)
+        __exidx_end = .;
+    } > REGION_ARM_EXIDX
 
-	.bss :
-	{
-		. = ALIGN(4);
-		__bss_start__ = .;
+    .ARM.extab : {
+        *(.ARM.extab* .gnu.linkonce.armextab.*)
+    } > REGION_ARM_EXTAB
+
+    .bss : {
+        __bss_start__ = .;
 		_sbss = __bss_start__;
-		*(.bss*)
-		*(COMMON)
-		. = ALIGN(4);
-		__bss_end__ = .;
+        *(.shbss)
+        *(.bss)
+        *(.bss.*)
+        *(COMMON)
+        . = ALIGN (4);
+        __bss_end__ = .;
 		_ebss = __bss_end__;
-	} > SRAM
+    } > REGION_BSS
 
-	.heap (COPY):
-	{
-		__end__ = .;
-		__heap_start__ = __end__;
-		_heap_start = __heap_start__;
-		PROVIDE(end = .);
-		*(.heap*)
-		__HeapLimit = .;
-		__heap_end__ = __HeapLimit;
-		_heap_end = __heap_end__;
-	} > SRAM
+    .heap : {
+        __heap_start__ = .;
+        end = __heap_start__;
+        _heap_start = __heap_start__;
+        _end = end;
+        __end = end;
+        . = . + HEAPSIZE;
+        KEEP(*(.heap))
+        __heap_end__ = .;
+        __HeapLimit = __heap_end__;
+        _heap_end = __heap_end__;
+    } > REGION_HEAP
 
-	/* .stack_dummy section doesn't contain any symbols. It is only
-	 * used for linker to calculate size of stack sections, and assign
-	 * values to stack symbols later */
-	.stack_dummy (COPY):
-	{
-		*(.stack*)
-	} > SRAM
+    .stack : ALIGN(0x8) {
+        _stack = .;
+        __stack = .;
+        . = . + STACKSIZE;
+        __StackTop = . ;
+        _estack = __StackTop;
+        KEEP(*(.stack))
+    } > REGION_STACK
 
-	/* Set stack top to end of SRAM, and stack limit move down by
-	 * size of stack_dummy section */
-	__StackTop = ORIGIN(SRAM) + LENGTH(SRAM);
-	_estack = __StackTop;
-	__StackLimit = __StackTop - SIZEOF(.stack_dummy);
-	PROVIDE(__stack = __StackTop);
-
-	/* Check if data + heap + stack exceeds SRAM limit */
-	ASSERT(__StackLimit >= __HeapLimit, "region SRAM overflowed with stack")
+	ASSERT(_Min_Heap_Size <= (_heap_end - _heap_start), "Could not allocate enough space for heap")
+	ASSERT(_Min_Stack_Size <= (_estack - _stack), "Could not allocate enough space for stack")
 }
 
 
