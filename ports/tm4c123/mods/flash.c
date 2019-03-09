@@ -32,6 +32,8 @@
 #include "driverlib/flash.h"
 #include "driverlib/rom_map.h"
 
+extern uint32_t _flash_fs_start;
+
 typedef struct {
     uint32_t base_address;
     uint32_t sector_size;
@@ -39,7 +41,7 @@ typedef struct {
 } flash_layout_t;
 
 static const flash_layout_t flash_layout[] = {
-    { 0x0000000, 0x00400, 256 }
+    { (uint32_t)&_flash_fs_start, 0x00400, 256 }
 };
 
 uint32_t flash_get_sector_info(uint32_t addr, uint32_t *start_addr, uint32_t *size) {

@@ -118,12 +118,12 @@
   #error device not specified!
 #endif
 #include "mphalport.h"
-extern uint32_t* _flash_fs_start;
-extern uint32_t* _flash_fs_end;
-extern uint32_t* _cache_start;
-extern uint32_t* _cache_end;
+extern uint32_t _flash_fs_start;
+extern uint32_t _flash_fs_end;
+extern uint32_t _cache_start;
+extern uint32_t _cache_end;
 #define FLASH_SECTOR_SIZE_MAX (0x0400) // 1k
-#define FLASH_MEM_SEG1_NUM_BLOCKS ((&_flash_fs_end - &_flash_fs_start) / FLASH_SECTOR_SIZE_MAX) // with this we define the actual size of the flash to be use by the fs
+#define FLASH_MEM_SEG1_NUM_BLOCKS (((uint32_t)&_flash_fs_end - (uint32_t)&_flash_fs_start) / FLASH_SECTOR_SIZE_MAX) // with this we define the actual size of the flash to be use by the fs
 #define FLASH_MEM_SEG1_END_ADDR ((uint32_t)&_flash_fs_end)
 #define FLASH_MEM_SEG1_START_ADDR ((uint32_t)&_flash_fs_start) // 24 kiB from end of flash
 #define CACHE_MEM_START_ADDR ((uint32_t)&_cache_start)
