@@ -11,6 +11,8 @@
   #error device not specified!
 #endif
 
+#include "system_TM4C123.h"
+
 #include "py/runtime.h"
 #include "py/stackctrl.h"
 #include "py/gc.h"
@@ -746,21 +748,22 @@ void _start(void) {
 void tm4c123_init(void) {
     // basic MCU config
 
-    // set system clock to 80MHz
-    SYSCTL->RCC |= (uint32_t)0x00000800;   // set BYPASS bit
-    SYSCTL->RCC2 |= (uint32_t)0xC0000800;  // set BYPASS2 bit, DIV400 and USERCC2
-    SYSCTL->RCC &= (uint32_t)0xFFBFFFFF;   // clear USESYSDIV bit
-    SYSCTL->RCC = (SYSCTL->RCC & (uint32_t)0xFFFFF83F) | (uint32_t)0x00000B70;    // XTAL to 16 MHz
-    SYSCTL->MISC &= 0xFFFFFFBF;            // clear PLLLRIS bit
-    SYSCTL->RCC2 &= (uint32_t)0xFFFFDFFF;  // clear PWRDN2 Bit to enable PLL
-    SYSCTL->RCC2 = (SYSCTL->RCC2 & (uint32_t)0xE03FFFFF) | (uint32_t)0x01000000;  // Set SYSDIV2 to 0x2 for 80MHz
-    SYSCTL->RCC |= (uint32_t)0x00400000;   // set USESYSDIV bit
-    while(!(SYSCTL->RIS & 0x00000040)){};  // wait for Pll to lock, PLLLRIS bit
-    SYSCTL->RCC2 &= 0xFFFFF7FF;            // clear BYPASS2 bit, clears BYPASS as well
-    // write final configuration
-    SYSCTL->RCC = (uint32_t)(0x07C00550);  // 0b0000 0 1111 1 0 0 000 000 0 0 0 10101 01 000 0
-    SYSCTL->RCC2 = (uint32_t)(0xC1000000); // 0b 1100 0001 0000 0000 0000 0000 0000 0000
+    // // set system clock to 80MHz
+    // SYSCTL->RCC |= (uint32_t)0x00000800;   // set BYPASS bit
+    // SYSCTL->RCC2 |= (uint32_t)0xC0000800;  // set BYPASS2 bit, DIV400 and USERCC2
+    // SYSCTL->RCC &= (uint32_t)0xFFBFFFFF;   // clear USESYSDIV bit
+    // SYSCTL->RCC = (SYSCTL->RCC & (uint32_t)0xFFFFF83F) | (uint32_t)0x00000B70;    // XTAL to 16 MHz
+    // SYSCTL->MISC &= 0xFFFFFFBF;            // clear PLLLRIS bit
+    // SYSCTL->RCC2 &= (uint32_t)0xFFFFDFFF;  // clear PWRDN2 Bit to enable PLL
+    // SYSCTL->RCC2 = (SYSCTL->RCC2 & (uint32_t)0xE03FFFFF) | (uint32_t)0x01000000;  // Set SYSDIV2 to 0x2 for 80MHz
+    // SYSCTL->RCC |= (uint32_t)0x00400000;   // set USESYSDIV bit
+    // while(!(SYSCTL->RIS & 0x00000040)){};  // wait for Pll to lock, PLLLRIS bit
+    // SYSCTL->RCC2 &= 0xFFFFF7FF;            // clear BYPASS2 bit, clears BYPASS as well
+    // // write final configuration
+    // SYSCTL->RCC = (uint32_t)(0x07C00550);  // 0b0000 0 1111 1 0 0 000 000 0 0 0 10101 01 000 0
+    // SYSCTL->RCC2 = (uint32_t)(0xC1000000); // 0b 1100 0001 0000 0000 0000 0000 0000 0000
 
+    SystemInit();
     // enable high performance GPIO BUS Ctl
     SYSCTL->GPIOHBCTL = 0x0000003F;
 

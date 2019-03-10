@@ -25,8 +25,8 @@ PROJECT_NAME = uPY_TM4C123
 
 # Location of the TivaWare library
 # Can be pointed to a newer version if desired
-#TIVAWARE_LIB = /mnt/c/ti/TivaWare
-TIVAWARE_LIB = /home/raphael/ti/tivaware
+TIVAWARE_LIB = /mnt/c/ti/TivaWare
+#TIVAWARE_LIB = /home/raphael/ti/tivaware
 
 # qstr definitions (must come before including py.mk)
 QSTR_DEFS = qstrdefsport.h $(BUILD)/pins_qstr.h
@@ -48,8 +48,8 @@ LFLAGS = --gc-sections
 CPFLAGS = -O binary
 
 LINKER_FILE = tm4c123gh6pm.ld
-STARTUP_FILE = startup_ARMCM4.c
-SYSTEM_FILE = system_TM4C123.c
+STARTUP_FILE = startup_TM4C123.c
+SYSTEM_FILE = misc/system_TM4C123.c
 
 USBDEV_DIR=usbdev
 
@@ -221,8 +221,8 @@ CORE_SRC_C = \
 	$(STARTUP_FILE) \
 	main.c \
 	uart_core.c \
-	gccollect.c 
-	#$(SYSTEM_FILE) \
+	gccollect.c \
+	$(SYSTEM_FILE) \
 	
 ASM_SRC_S = \
 	gchelper.s 

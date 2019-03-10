@@ -2,16 +2,23 @@
  * @file     system_TM4C.c
  * @brief    CMSIS Device System Source File for
  *           Texas Instruments TIVA TM4C123 Device Series
- * @version  V1.01
- * @date     19. March 2015
+ * @version  V1.00
+ * @date     27. March 2013
  *
  * @note
- *                                                             modified by Keil
+ *
  ******************************************************************************/
 
 #include <stdint.h>
 #include "system_TM4C123.h"
-
+#if defined (ARMCM4)
+  #include "ARMCM4.h"
+#elif defined (ARMCM4_FP)
+  #include "ARMCM4_FP.h"
+#else
+  #error device not specified!
+#endif
+#include "modmachine.h"
 
 /*----------------------------------------------------------------------------
   DEFINES
@@ -46,7 +53,7 @@
 // The following value is the system clock divisor.  This will be applied if
 // USESYSDIV (see below) is enabled.  The valid range of dividers is 2-16.
 //
-#define CFG_RCC_SYSDIV 4
+#define CFG_RCC_SYSDIV 0xF
 
 //      <q> USESYSDIV: Enable System Clock Divider
 //          <i> Check this box to use the System Clock Divider
@@ -66,7 +73,7 @@
 // PWM divider is defined by PWMDIV (see below).  If the value is 0, then
 // the PWM clock divider is not used.
 //
-#define CFG_RCC_USEPWMDIV 1
+#define CFG_RCC_USEPWMDIV 0
 
 //      <o> PWMDIV: PWM Unit Clock Divisor
 //              <0=> 0: SysClk / 2
@@ -150,7 +157,7 @@
 // The following value chooses the oscillator source according to the table in
 // the comments above.
 //
-#define CFG_RCC_OSCSRC 0
+#define CFG_RCC_OSCSRC 1
 
 //      <q> IOSCDIS: Internal Oscillator Disable
 //          <i> Check this box to turn off the internal oscillator
@@ -158,7 +165,7 @@
 // Set the following value to 1 to turn off the internal oscillator.  This
 // value can be set to 1 if you are not using the internal oscillator.
 //
-#define CFG_RCC_IOSCDIS 1
+#define CFG_RCC_IOSCDIS 0
 
 //      <q> MOSCDIS: Main Oscillator Disable
 //          <i> Check this box to turn off the main oscillator
@@ -183,7 +190,14 @@
 // Set the following value to 1 to use the RCC2 register.  The RCC2 register
 // overrides some of the fields in the RCC register if it is used.
 //
-#define CFG_RCC2_USERCC2 0
+#define CFG_RCC2_USERCC2 1
+
+//      <q> DIV400: Divide PLL as 400MHz instead of 200MHz
+//          <i> Check this box to double the PLL frequency
+//          <i> If set to 1, the CFG_RCC2_SYSDIV2LSB needs to be set too
+//
+//
+#define CFG_RCC2_DIV400 1
 
 //      <o> SYSDIV2: System Clock Divisor <2-64>
 //          <i> Specifies the divisor used to generate the system clock from
@@ -192,7 +206,14 @@
 // The following value is the system clock divisor.  This will be applied if
 // USESYSDIV in RCC is enabled.  The valid range of dividers is 2-64.
 //
-#define CFG_RCC_SYSDIV2 4
+#define CFG_RCC_SYSDIV2 2
+
+//      <o> SYSDIV2LSB: System Clock Divisor LSB <2-64>
+//          <i> Specifies the divisor used to generate the system clock from
+//          <i> either the PLL output of 400 MHz, or the oscillator.
+//
+//
+#define CFG_RCC2_SYSDIV2LSB 0
 
 //      <q> PWRDN2: Power Down PLL
 //          <i> Check this box to disable the PLL.  You must also choose
@@ -239,7 +260,7 @@
 //
 #define RCC_Val                                                               \
 (                                                                             \
-    ((CFG_RCC_SYSDIV - 1)   << 23) |                                          \
+    (CFG_RCC_SYSDIV         << 23) |                                          \
     (CFG_RCC_USESYSDIV      << 22) |                                          \
     (CFG_RCC_USEPWMDIV      << 20) |                                          \
     (CFG_RCC_PWMDIV         << 17) |                                          \
@@ -253,8 +274,10 @@
 
 #define RCC2_Val                                                              \
 (                                                                             \
-    (CFG_RCC2_USERCC2      << 31) |                                           \
-    ((CFG_RCC_SYSDIV2 - 1)  << 23) |                                          \
+    (CFG_RCC2_USERCC2       << 31) |                                          \
+    (CFG_RCC2_DIV400        << 30) |                                          \
+    (CFG_RCC_SYSDIV2        << 23) |                                          \
+    (CFG_RCC2_SYSDIV2LSB    << 22) |                                          \
     (CFG_RCC_PWRDN2         << 13) |                                          \
     (CFG_RCC_BYPASS2        << 11) |                                          \
     (CFG_RCC_OSCSRC2        << 4)\
@@ -264,8 +287,8 @@
 /*----------------------------------------------------------------------------
   Define clocks
  *----------------------------------------------------------------------------*/
-#define XTALM       (16000000UL)            /* Main         oscillator freq */
-#define XTALI       (16000000UL)            /* Internal     oscillator freq */
+#define XTALM       ( 6000000UL)            /* Main         oscillator freq */
+#define XTALI       (12000000UL)            /* Internal     oscillator freq */
 #define XTAL30K     (   30000UL)            /* Internal 30K oscillator freq */
 #define XTAL32K     (   32768UL)            /* external 32K oscillator freq */
 
@@ -545,7 +568,7 @@ void SystemCoreClockUpdate (void)            /* Get Core Clock Frequency      */
     } else {
   //    if (RCC_Val & (1UL<<11)) {                            /* check BYPASS */
       if (rcc & (1UL<<11)) {                            /* check BYPASS */ /* Simulation does not work at this point */
-        SystemCoreClock = getOscClk (((rcc>>6) & 0x1F),((rcc>>4) & 0x03));
+        SystemCoreClock = getOscClk (((rcc>>6) & 0x0F),((rcc>>4) & 0x03));
       } else {
         SystemCoreClock = PLL_CLK;
       }
