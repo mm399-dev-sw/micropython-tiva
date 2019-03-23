@@ -103,15 +103,15 @@ LIBM := ${shell ${CC} ${CFLAGS} -print-file-name=libm.a}
 #lib
 SRC_LIB = $(addprefix lib/,\
 	libc/string0.c \
-	oofatfs/ff.c \
-	oofatfs/option/unicode.c \
 	mp-readline/readline.c \
 	netutils/netutils.c \
 	timeutils/timeutils.c \
-	utils/pyexec.c \
 	utils/interrupt_char.c \
+	utils/pyexec.c \
 	utils/sys_stdio_mphal.c \
 	)
+	#oofatfs/ff.c 
+	#oofatfs/option/unicode.c 
 
 
 # ifeq ($(MICROPY_FLOAT_IMPL),double)
@@ -195,22 +195,23 @@ MODS_SRC_C = $(addprefix mods/,\
 	mphalport.c \
 	pin.c \
 	pin_named_pins.c \
+	modmachine.c \
 	uart.c \
 	rtc.c \
-	fatfs_port.c \
-	irq.c \
-	modmachine.c \
-	modutime.c \
 	systick.c \
-	moduos.c \
-	globals.c \
-	pybthread.c \
-	pendsv.c \
-	flashbdev.c \
-	storage.c \
 	handlers.c \
-	flash.c \
-	)
+	globals.c \
+)
+	# fatfs_port.c \
+	# irq.c \
+	# modutime.c \	
+	# moduos.c \
+	# pybthread.c \
+	# pendsv.c \
+	# flashbdev.c \
+	# storage.c \
+	# flash.c \
+	# )
 	#	extint.c see forum
 
 # QSTR sources

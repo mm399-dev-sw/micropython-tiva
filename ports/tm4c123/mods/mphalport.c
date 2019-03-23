@@ -110,10 +110,10 @@ MP_WEAK int mp_hal_stdin_rx_chr(void) {
        if (MP_STATE_PORT(pyb_stdio_uart) != NULL && uart_rx_any(MP_STATE_PORT(pyb_stdio_uart))) {
            return uart_rx_char(MP_STATE_PORT(pyb_stdio_uart));
        }
-       int dupterm_c = mp_uos_dupterm_rx_chr();
-       if (dupterm_c >= 0) {
-           return dupterm_c;
-       }
+    //    int dupterm_c = mp_uos_dupterm_rx_chr();
+    //    if (dupterm_c >= 0) {
+    //        return dupterm_c;
+    //    }
        MICROPY_EVENT_POLL_HOOK
    }
 }

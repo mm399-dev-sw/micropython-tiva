@@ -289,7 +289,7 @@ void DebugMon_Handler(void) {
   * @retval None
   */
 void PendSV_Handler(void) {
-    pendsv_isr_handler();
+    // pendsv_isr_handler();
 }
 
 /**
@@ -467,7 +467,7 @@ void FLASH_IRQHandler(void) {
     }
     */
     // This call the storage IRQ handler, to check if the flash cache needs flushing
-    storage_irq_handler();
+    // storage_irq_handler();
     IRQ_EXIT(FLASH_IRQn);
 }
 #ifdef MOREINTS

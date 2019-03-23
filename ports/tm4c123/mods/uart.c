@@ -507,10 +507,10 @@ void uart_irq_handler(mp_uint_t uart_id) {
                 int data = self->regs->DR; // clears UART_FLAG_RXNE
                 data &= self->char_mask;
                 // Handle interrupt coming in on a UART REPL
-                if (self->attached_to_repl && data == mp_interrupt_char) {
-                    pendsv_kbd_intr();
-                    return;
-                }
+                // if (self->attached_to_repl && data == mp_interrupt_char) {
+                //     // TODO pendsv_kbd_intr();
+                //     return;
+                // }
                 if (self->char_width == CHAR_WIDTH_9BIT) {
                     ((uint16_t*)self->read_buf)[self->read_buf_head] = data;
                 } else {
