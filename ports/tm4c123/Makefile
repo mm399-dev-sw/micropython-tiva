@@ -31,7 +31,9 @@ TIVAWARE_LIB = /mnt/c/ti/TivaWare
 # qstr definitions (must come before including py.mk)
 QSTR_DEFS = qstrdefsport.h $(BUILD)/pins_qstr.h
 QSTR_GLOBAL_DEPENDENCIES = board/mpconfigboard.h
-#MICROPY_FLOAT_IMPL=none
+
+MICROPY_FLOAT_IMPL=double
+LONGINT_IMPL=mpz
 
 # include py core make definitions
 include $(TOP)/py/py.mk
@@ -76,12 +78,19 @@ CFLAGS = $(INC) -Wall -Werror -std=gnu99 -nostdlib $(CFLAGS_CORTEX_M4) $(COPT)
 #Preprocessor Flags
 CFLAGS += -DPART_$(PART) -c -D$(PART) -DARMCM4_FP -DTARGET_IS_TM4C123_RB1 -DMICROPY_PIN_DEFS_PORT_H=\"mods/pin_defs_tm4c123.h\" #-DMICROPY_MPHALPORT_H=\"mphalport.h\"
 CFLAGS += -DFFCONF_H=\"lib/oofatfs/ffconf.h\"
-# ifeq ($(MICROPY_FLOAT_IMPL),double)
-# CFLAGS += -DMICROPY_FLOAT_IMPL=MICROPY_FLOAT_IMPL_DOUBLE
-# else
-# CFLAGS += -DMICROPY_FLOAT_IMPL=MICROPY_FLOAT_IMPL_FLOAT
-# CFLAGS += -fsingle-precision-constant -Wdouble-promotion
-# endif
+
+ifeq ($(LONGINT_IMPL), mpz)
+CFLAGS += -DMICROPY_LONGINT_IMPL=MICROPY_LONGINT_IMPL_MPZ
+else
+CFLAGS += -DMICROPY_LONGINT_IMPL=MICROPY_LONGINT_IMPL_NONE
+endif
+
+ifeq ($(MICROPY_FLOAT_IMPL),double)
+CFLAGS += -DMICROPY_FLOAT_IMPL=MICROPY_FLOAT_IMPL_DOUBLE
+else
+CFLAGS += -DMICROPY_FLOAT_IMPL=MICROPY_FLOAT_IMPL_FLOAT
+CFLAGS += -fsingle-precision-constant -Wdouble-promotion
+endif
 LDFLAGS = -nostdlib -T $(LINKER_FILE) -Map=$@.map --cref --gc-sections
 
 # Tune for Debugging or Optimization
@@ -94,7 +103,7 @@ endif
 
 # Libraries
 LIBS = $(TIVAWARE_LIB)/driverlib/gcc/libdriver.a
-LICGCC := ${shell $(CC) $(CFLAGS) -print-libgcc-file-name}
+LIBGCC := ${shell $(CC) $(CFLAGS) -print-libgcc-file-name}
 LIBC := ${shell ${CC} ${CFLAGS} -print-file-name=libc.a}
 LIBM := ${shell ${CC} ${CFLAGS} -print-file-name=libm.a}
 
@@ -114,80 +123,80 @@ SRC_LIB = $(addprefix lib/,\
 	#oofatfs/option/unicode.c 
 
 
-# ifeq ($(MICROPY_FLOAT_IMPL),double)
-# SRC_LIBM = $(addprefix lib/libm_dbl/,\
-# 	__cos.c \
-# 	__expo2.c \
-# 	__fpclassify.c \
-# 	__rem_pio2.c \
-# 	__rem_pio2_large.c \
-# 	__signbit.c \
-# 	__sin.c \
-# 	__tan.c \
-# 	acos.c \
-# 	acosh.c \
-# 	asin.c \
-# 	asinh.c \
-# 	atan.c \
-# 	atan2.c \
-# 	atanh.c \
-# 	ceil.c \
-# 	cos.c \
-# 	cosh.c \
-# 	erf.c \
-# 	exp.c \
-# 	expm1.c \
-# 	floor.c \
-# 	fmod.c \
-# 	frexp.c \
-# 	ldexp.c \
-# 	lgamma.c \
-# 	log.c \
-# 	log10.c \
-# 	log1p.c \
-# 	modf.c \
-# 	nearbyint.c \
-# 	pow.c \
-# 	rint.c \
-# 	scalbn.c \
-# 	sin.c \
-# 	sinh.c \
-# 	sqrt.c \
-# 	tan.c \
-# 	tanh.c \
-# 	tgamma.c \
-# 	trunc.c \
-# 	)
-# else
-# SRC_LIBM = $(addprefix lib/libm/,\
-# 	math.c \
-# 	thumb_vfp_sqrtf.c \
-# 	acoshf.c \
-# 	asinfacosf.c \
-# 	asinhf.c \
-# 	atan2f.c \
-# 	atanf.c \
-# 	atanhf.c \
-# 	ef_rem_pio2.c \
-# 	erf_lgamma.c \
-# 	fmodf.c \
-# 	kf_cos.c \
-# 	kf_rem_pio2.c \
-# 	kf_sin.c \
-# 	kf_tan.c \
-# 	log1pf.c \
-# 	nearbyintf.c \
-# 	sf_cos.c \
-# 	sf_erf.c \
-# 	sf_frexp.c \
-# 	sf_ldexp.c \
-# 	sf_modf.c \
-# 	sf_sin.c \
-# 	sf_tan.c \
-# 	wf_lgamma.c \
-# 	wf_tgamma.c \
-# 	)
-# endif
+ifeq ($(MICROPY_FLOAT_IMPL),double)
+SRC_LIBM = $(addprefix lib/libm_dbl/,\
+	__cos.c \
+	__expo2.c \
+	__fpclassify.c \
+	__rem_pio2.c \
+	__rem_pio2_large.c \
+	__signbit.c \
+	__sin.c \
+	__tan.c \
+	acos.c \
+	acosh.c \
+	asin.c \
+	asinh.c \
+	atan.c \
+	atan2.c \
+	atanh.c \
+	ceil.c \
+	cos.c \
+	cosh.c \
+	erf.c \
+	exp.c \
+	expm1.c \
+	floor.c \
+	fmod.c \
+	frexp.c \
+	ldexp.c \
+	lgamma.c \
+	log.c \
+	log10.c \
+	log1p.c \
+	modf.c \
+	nearbyint.c \
+	pow.c \
+	rint.c \
+	scalbn.c \
+	sin.c \
+	sinh.c \
+	sqrt.c \
+	tan.c \
+	tanh.c \
+	tgamma.c \
+	trunc.c \
+	)
+else
+SRC_LIBM = $(addprefix lib/libm/,\
+	math.c \
+	thumb_vfp_sqrtf.c \
+	acoshf.c \
+	asinfacosf.c \
+	asinhf.c \
+	atan2f.c \
+	atanf.c \
+	atanhf.c \
+	ef_rem_pio2.c \
+	erf_lgamma.c \
+	fmodf.c \
+	kf_cos.c \
+	kf_rem_pio2.c \
+	kf_sin.c \
+	kf_tan.c \
+	log1pf.c \
+	nearbyintf.c \
+	sf_cos.c \
+	sf_erf.c \
+	sf_frexp.c \
+	sf_ldexp.c \
+	sf_modf.c \
+	sf_sin.c \
+	sf_tan.c \
+	wf_lgamma.c \
+	wf_tgamma.c \
+	)
+endif
 
 
 # Module sources
@@ -308,7 +317,7 @@ ${PROJECT_NAME}.axf: $(OBJ)
 	$(MAKE) -C ${TIVAWARE_LIB}/driverlib/
 	@echo
 	@echo Linking...
-	$(LD) -T $(LINKER_FILE) $(LFLAGS) -o ${PROJECT_NAME}.axf $(OBJ) $(LIBS)  $(LIBM) $(LIBC) $(LIBGCC)
+	$(LD) -T $(LINKER_FILE) $(LFLAGS) -o ${PROJECT_NAME}.axf $(OBJ) $(LIBS) $(LIBM) $(LIBC) $(LIBGCC)
 
 ${PROJECT_NAME}: ${PROJECT_NAME}.axf
 	@echo

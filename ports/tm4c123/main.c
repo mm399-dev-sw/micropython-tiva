@@ -806,7 +806,7 @@ void tm4c123_init(void) {
     UART0->CTL &= ~0x00000001;
     UART0->IBRD = 0x00000208;
     UART0->FBRD = 0x00000035;
-    UART0->LCRH = 0x00000060; // no stick parity, word length 8bit, FIFO enable, one STOP bit, odd parity, no parity check, no break
+    UART0->LCRH = 0x00000070; // no stick parity, word length 8bit, FIFO enable, one STOP bit, odd parity, no parity check, no break
     UART0->CC = 0x00000000;   // use SysClock
     UART0->CTL = 0x00000300; // disable cts & rts, RXE, TXE, no loopback, 16x oversampling, TXRIS on IFLS match, no smart card, no low power, no SIR, UART enabled
     UART0->CTL |= 0x00000001;

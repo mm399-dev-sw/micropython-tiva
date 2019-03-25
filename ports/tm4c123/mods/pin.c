@@ -211,7 +211,7 @@ STATIC void pin_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t
     } else {
         // IO mode
         bool af = false;
-        qstr mode_qst;
+        qstr mode_qst = MP_QSTR_NULL;
         if (dir == GPIO_DIR_MODE_IN) {
             mode_qst = MP_QSTR_IN;
         } else if (dir == GPIO_DIR_MODE_OUT) {

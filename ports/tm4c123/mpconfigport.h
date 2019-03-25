@@ -60,12 +60,12 @@
 #define MICROPY_READER_VFS          (0)
 #define MICROPY_MODULE_FROZEN_MPY   (0) //was 1
 #define MICROPY_CPYTHON_COMPAT      (0)
-#define MICROPY_LONGINT_IMPL        (MICROPY_LONGINT_IMPL_NONE)
-#define MICROPY_FLOAT_IMPL          (MICROPY_FLOAT_IMPL_NONE)
+// #define MICROPY_LONGINT_IMPL        (MICROPY_LONGINT_IMPL_NONE)
+// #define MICROPY_FLOAT_IMPL          (MICROPY_FLOAT_IMPL_NONE)
 #define MICROPY_PY_THREAD           (0)
 #define MICROPY_PY_OS_DUPTERM       (0)
 #define MICROPY_PY_MACHINE          (0)
-#define MICROPY_KBD_EXCEPTION       (0)
+#define MICROPY_KBD_EXCEPTION       (1)
 
 // optimisations
 #define MICROPY_OPT_COMPUTED_GOTO   (1)
