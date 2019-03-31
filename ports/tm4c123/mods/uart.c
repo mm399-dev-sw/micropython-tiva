@@ -84,12 +84,15 @@
 
 
 enum {
-    CHAR_WIDTH_8BIT = 0,
-    CHAR_WIDTH_7BIT,
+    CHAR_WIDTH_5BIT = 5,
     CHAR_WIDTH_6BIT,
-    CHAR_WIDTH_5BIT,
+    CHAR_WIDTH_7BIT,
+    CHAR_WIDTH_8BIT,
     CHAR_WIDTH_9BIT
 };
+
+// doubles the length if char width exeeds 1 byte
+#define LARGER_THAN_BYTE(width_of_char)  (width_of_char / CHAR_WIDTH_9BIT)
 
 struct _pyb_uart_obj_t {
     mp_obj_base_t base;
@@ -598,7 +601,6 @@ STATIC mp_obj_t pyb_uart_init_helper(pyb_uart_obj_t *self, size_t n_args, const 
 
 
     uint32_t config = 0;
-    MAP_UART9BitDisable(self->uart);
 
     // parity
     mp_int_t bits = args.bits.u_int;
@@ -630,7 +632,7 @@ STATIC mp_obj_t pyb_uart_init_helper(pyb_uart_obj_t *self, size_t n_args, const 
         mp_raise_ValueError("unsupported combination of bits and parity");
     }
 
-    self->char_mask = 0xFF >> self->char_width;
+    self->char_mask = ~(0xFF << self->char_width);
 
     // stop bits
     switch (args.stop.u_int) {
@@ -641,19 +643,25 @@ STATIC mp_obj_t pyb_uart_init_helper(pyb_uart_obj_t *self, size_t n_args, const 
     //baud rate
     mp_uint_t req_baudrate = args.baudrate.u_int;
 
-    MAP_UARTConfigSetExpClk(self->uart, SysCtlClockGet(), req_baudrate, config);
 
-    // flow control
-    MAP_UARTFlowControlSet(self->uart, args.flow.u_int);
     // extra config (not yet configurable)
 //    init->Mode = UART_MODE_TX_RX;
 //    init->OverSampling = UART_OVERSAMPLING_16;
 
 
     // init UART (if it fails, it's because the port doesn't exist)
+    // enables Periph clock
     if (!uart_init2(self)) {
         nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_ValueError, "UART(%d) doesn't exist", self->uart_id));
     }
+
+    // now we can config the peripheral
+    MAP_UART9BitDisable(self->uart);
+
+    MAP_UARTConfigSetExpClk(self->uart, SysCtlClockGet(), req_baudrate, config);
+
+    // flow control
+    MAP_UARTFlowControlSet(self->uart, args.flow.u_int);
 
     // set timeout
     self->timeout = args.timeout.u_int;
@@ -668,7 +676,7 @@ STATIC mp_obj_t pyb_uart_init_helper(pyb_uart_obj_t *self, size_t n_args, const 
     }
 
     // setup the read buffer
-    m_del(byte, self->read_buf, self->read_buf_len << self->char_width);
+    m_del(byte, self->read_buf, self->read_buf_len << LARGER_THAN_BYTE(self->char_width));
 
     self->read_buf_head = 0;
     self->read_buf_tail = 0;
@@ -681,7 +689,7 @@ STATIC mp_obj_t pyb_uart_init_helper(pyb_uart_obj_t *self, size_t n_args, const 
     } else {
         // read buffer using interrupts
         self->read_buf_len = args.read_buf_len.u_int + 1; // +1 to adjust for usable length of buffer
-        self->read_buf = m_new(byte, self->read_buf_len << self->char_width);
+        self->read_buf = m_new(byte,  self->read_buf_len << LARGER_THAN_BYTE(self->char_width));
 
         MAP_UARTIntEnable(self->uart, UART_INT_RX);
         MAP_IntPrioritySet(self->irqn, 0xE0); //lowest
@@ -894,13 +902,13 @@ STATIC mp_uint_t pyb_uart_read(mp_obj_t self_in, void *buf_in, mp_uint_t size, i
     byte *buf = buf_in;
 
     // check that size is a multiple of character width
-    if (size & self->char_width) {
+    if (size & LARGER_THAN_BYTE(self->char_width)) {
         *errcode = MP_EIO;
         return MP_STREAM_ERROR;
     }
 
     // convert byte size to char size
-    size >>= self->char_width;
+    size >>= LARGER_THAN_BYTE(self->char_width);
 
     // make sure we want at least 1 char
     if (size == 0) {
@@ -936,7 +944,7 @@ STATIC mp_uint_t pyb_uart_write(mp_obj_t self_in, const void *buf_in, mp_uint_t 
     const byte *buf = buf_in;
 
     // check that size is a multiple of character width
-    if (size & self->char_width) {
+    if (size & LARGER_THAN_BYTE(self->char_width)) {
         *errcode = MP_EIO;
         return MP_STREAM_ERROR;
     }
@@ -948,11 +956,11 @@ STATIC mp_uint_t pyb_uart_write(mp_obj_t self_in, const void *buf_in, mp_uint_t 
     }
 
     // write the data
-    size_t num_tx = uart_tx_data(self, buf, size >> self->char_width, errcode);
+    size_t num_tx = uart_tx_data(self, buf, size >> LARGER_THAN_BYTE(self->char_width), errcode);
 
     if (*errcode == 0 || *errcode == MP_ETIMEDOUT) {
         // return number of bytes written, even if there was a timeout
-        return num_tx << self->char_width;
+        return num_tx << LARGER_THAN_BYTE(self->char_width);
     } else {
         return MP_STREAM_ERROR;
     }

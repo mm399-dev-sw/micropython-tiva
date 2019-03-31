@@ -552,6 +552,7 @@ int tm4c_main(int reset_mode) {
 
     // Main script is finished, so now go into REPL mode.
     // The REPL mode can change, or it can request a soft reset.
+    pyexec_mode_kind = PYEXEC_MODE_FRIENDLY_REPL;
     for (;;) {
         if (pyexec_mode_kind == PYEXEC_MODE_RAW_REPL) {
             if (pyexec_raw_repl() != 0) {
