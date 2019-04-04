@@ -51,6 +51,8 @@ ports/tm4c123/\.directory
 
 ports/tm4c123/\.vscode
 
+*.ipch
+
 ports/tm4c123/vscode\.code-workspace
 
 ports/stm32/\.directory

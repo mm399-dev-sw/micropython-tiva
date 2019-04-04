@@ -488,8 +488,8 @@ int tm4c_main(int reset_mode) {
 //         mp_obj_list_append(mp_sys_path, MP_OBJ_NEW_QSTR(MP_QSTR__slash_flash_slash_lib));
 //     }
 
-//     // reset config variables; they should be set by boot.py
-//     MP_STATE_PORT(pyb_config_main) = MP_OBJ_NULL;
+    // reset config variables; they should be set by boot.py
+    MP_STATE_PORT(pyb_config_main) = MP_OBJ_NULL;
 
 //     // run boot.py, if it exists
 //     // TODO perhaps have pyb.reboot([bootpy]) function to soft-reboot and execute custom boot.py

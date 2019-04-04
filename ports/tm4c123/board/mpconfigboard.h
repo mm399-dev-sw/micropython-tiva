@@ -39,8 +39,9 @@
 #define MICROPY_HW_UART1_NAME   "1"
 #define MICROPY_HW_UART1_TX     (pin_PB0)
 #define MICROPY_HW_UART1_RX     (pin_PB1)
-#define MICROPY_HW_UART1_RTS    (pin_PF0) //pin_PC4
-#define MICROPY_HW_UART1_CTS    (pin_PF1) //pin_PC5
+// TODO pin overlap possible, until fix no flowcontrol
+//#define MICROPY_HW_UART1_RTS    (pin_PC4) //pin_PF0
+//#define MICROPY_HW_UART1_CTS    (pin_PC5) //pin_PF1
 
 #define MICROPY_HW_UART2_NAME   "2"
 #define MICROPY_HW_UART2_RX     (pin_PD6)
@@ -66,13 +67,13 @@
 #define MICROPY_HW_UART7_RX     (pin_PE0)
 #define MICROPY_HW_UART7_TX     (pin_PE1)
 
-
-#define MICROPY_HW_ENABLE_INTERNAL_FLASH_STORAGE (1)
-#define MICROPY_HW_HAS_SWITCH       (0)
-#define MICROPY_HW_HAS_FLASH        (1)
-#define MICROPY_HW_ENABLE_RNG       (0)
-#define MICROPY_HW_ENABLE_RTC       (1)
-#define MICROPY_HW_ENABLE_USB       (0)
+// TODO
+// #define MICROPY_HW_ENABLE_INTERNAL_FLASH_STORAGE (1)
+// #define MICROPY_HW_HAS_SWITCH       (0)
+// #define MICROPY_HW_HAS_FLASH        (1)
+// #define MICROPY_HW_ENABLE_RNG       (0)
+// #define MICROPY_HW_ENABLE_RTC       (1)
+// #define MICROPY_HW_ENABLE_USB       (0)
 
 // use external SPI flash for storage
 #define MICROPY_HW_SPIFLASH_SIZE_BITS (128 * 1024 * 1024)

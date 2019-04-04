@@ -407,8 +407,8 @@ STATIC bool uart_tx_wait(pyb_uart_obj_t *self, uint32_t timeout) {
     uint32_t start = mp_hal_ticks_cpu();
     for (;;) {
 
-        if (!(self->regs->FR & UART_FR_TXFE)) {
-            return true; // tx register is empty
+        if (!(self->regs->FR & UART_FR_TXFF)) {
+            return true; // tx register is not full
         }
         if (mp_hal_ticks_cpu() - start >= timeout) {
             return false; // timeout
@@ -417,14 +417,30 @@ STATIC bool uart_tx_wait(pyb_uart_obj_t *self, uint32_t timeout) {
     }
 }
 
+// // Waits at most timeout milliseconds for UART flag to be set.
+// // Returns true if flag is/was set, false on timeout.
+// STATIC bool uart_wait_flag_set(pyb_uart_obj_t *self, uint32_t flag, uint32_t timeout) {
+//     // Note: we don't use WFI to idle in this loop because UART tx doesn't generate
+//     // an interrupt and the flag can be set quickly if the baudrate is large.
+//     uint32_t start = mp_hal_ticks_cpu();
+//     for (;;) {
+//         if ((self->regs->FR & flag)) {
+//             return true;
+//         }
+//         if (timeout == 0 || mp_hal_ticks_cpu() - start >= timeout) {
+//             return false; // timeout
+//         }
+//     }
+// }
+
 // Waits at most timeout milliseconds for UART flag to be set.
 // Returns true if flag is/was set, false on timeout.
-STATIC bool uart_wait_flag_set(pyb_uart_obj_t *self, uint32_t flag, uint32_t timeout) {
+STATIC bool uart_wait_flag_unset(pyb_uart_obj_t *self, uint32_t flag, uint32_t timeout) {
     // Note: we don't use WFI to idle in this loop because UART tx doesn't generate
     // an interrupt and the flag can be set quickly if the baudrate is large.
     uint32_t start = mp_hal_ticks_cpu();
     for (;;) {
-        if ((self->regs->FR & flag)) {
+        if (!(self->regs->FR & flag)) {
             return true;
         }
         if (timeout == 0 || mp_hal_ticks_cpu() - start >= timeout) {
@@ -461,7 +477,7 @@ STATIC size_t uart_tx_data(pyb_uart_obj_t *self, const void *src_in, size_t num_
     size_t num_tx = 0;
 
     while (num_tx < num_chars) {
-        if (!uart_wait_flag_set(self, UART_FR_TXFE, timeout)) {
+        if (!uart_wait_flag_unset(self, UART_FR_TXFF, timeout)) {
             *errcode = MP_ETIMEDOUT;
             return num_tx;
         }
@@ -477,7 +493,7 @@ STATIC size_t uart_tx_data(pyb_uart_obj_t *self, const void *src_in, size_t num_
     }
 
     // wait for the UART frame to complete
-    if (!uart_wait_flag_set(self, UART_FR_BUSY, timeout)) {
+    if (!uart_wait_flag_unset(self, UART_FR_BUSY, timeout)) {
         *errcode = MP_ETIMEDOUT;
         return num_tx;
     }
@@ -660,7 +676,8 @@ STATIC mp_obj_t pyb_uart_init_helper(pyb_uart_obj_t *self, size_t n_args, const 
 
     MAP_UARTConfigSetExpClk(self->uart, SysCtlClockGet(), req_baudrate, config);
 
-    // flow control
+    // flow control 
+    // TODO only with UART1
     MAP_UARTFlowControlSet(self->uart, args.flow.u_int);
 
     // set timeout
