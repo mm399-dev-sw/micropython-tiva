@@ -174,42 +174,42 @@ extern uint32_t _heap_end;
 //static char heap[2048];
 #endif
 
-static const char fresh_boot_py[] =
-"# boot.py -- run on boot-up\r\n"
-"# can run arbitrary Python, but best to keep it minimal\r\n"
-"\r\n"
-"import machine\r\n"
-"import pyb\r\n"
-"#pyb.main('main.py') # main script to run after this one\r\n"
-#if MICROPY_HW_ENABLE_USB
-"#pyb.usb_mode('VCP+MSC') # act as a serial and a storage device\r\n"
-"#pyb.usb_mode('VCP+HID') # act as a serial device and a mouse\r\n"
-#endif
-;
+// static const char fresh_boot_py[] =
+// "# boot.py -- run on boot-up\r\n"
+// "# can run arbitrary Python, but best to keep it minimal\r\n"
+// "\r\n"
+// "import machine\r\n"
+// "import pyb\r\n"
+// "#pyb.main('main.py') # main script to run after this one\r\n"
+// #if MICROPY_HW_ENABLE_USB
+// "#pyb.usb_mode('VCP+MSC') # act as a serial and a storage device\r\n"
+// "#pyb.usb_mode('VCP+HID') # act as a serial device and a mouse\r\n"
+// #endif
+// ;
 
-static const char fresh_main_py[] =
-"# main.py -- put your code here!\r\n"
-;
+// static const char fresh_main_py[] =
+// "# main.py -- put your code here!\r\n"
+// ;
 
-// TODO
-static const char fresh_pybcdc_inf[] =
-#include "genhdr/pybcdc_inf.h"
-;
+// // TODO
+// static const char fresh_pybcdc_inf[] =
+// #include "genhdr/pybcdc_inf.h"
+// ;
 
-static const char fresh_readme_txt[] =
-"This is a MicroPython board\r\n"
-"\r\n"
-"You can get started right away by writing your Python code in 'main.py'.\r\n"
-"\r\n"
-"For a serial prompt:\r\n"
-" - Windows: you need to go to 'Device manager', right click on the unknown device,\r\n"
-"   then update the driver software, using the 'pybcdc.inf' file found on this drive.\r\n"
-"   Then use a terminal program like Hyperterminal or putty.\r\n"
-" - Mac OS X: use the command: screen /dev/tty.usbmodem*\r\n"
-" - Linux: use the command: screen /dev/ttyACM0\r\n"
-"\r\n"
-"Please visit http://micropython.org/help/ for further help.\r\n"
-;
+// static const char fresh_readme_txt[] =
+// "This is a MicroPython board\r\n"
+// "\r\n"
+// "You can get started right away by writing your Python code in 'main.py'.\r\n"
+// "\r\n"
+// "For a serial prompt:\r\n"
+// " - Windows: you need to go to 'Device manager', right click on the unknown device,\r\n"
+// "   then update the driver software, using the 'pybcdc.inf' file found on this drive.\r\n"
+// "   Then use a terminal program like Hyperterminal or putty.\r\n"
+// " - Mac OS X: use the command: screen /dev/tty.usbmodem*\r\n"
+// " - Linux: use the command: screen /dev/ttyACM0\r\n"
+// "\r\n"
+// "Please visit http://micropython.org/help/ for further help.\r\n"
+// ;
 
 // avoid inlining to avoid stack usage within main()
 // MP_NOINLINE STATIC bool init_flash_fs(uint reset_mode) {
@@ -818,6 +818,10 @@ void tm4c123_init(void) {
     //Already registered in int vector
 //    SysTickIntDisable();
 //    SysTickIntRegister(SysTick_Handler);
+
+    ROM_FPUEnable();
+    ROM_FPULazyStackingEnable();
+    
     SysTickIntEnable();
     SysTickPeriodSet(SysCtlClockGet()/1000);
     SysTickEnable();

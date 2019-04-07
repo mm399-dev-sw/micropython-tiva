@@ -25,8 +25,8 @@ PROJECT_NAME = uPY_TM4C123
 
 # Location of the TivaWare library
 # Can be pointed to a newer version if desired
-TIVAWARE_LIB = /mnt/c/ti/TivaWare
-#TIVAWARE_LIB = /home/raphael/ti/tivaware
+#TIVAWARE_LIB = /mnt/c/ti/TivaWare
+TIVAWARE_LIB = /home/raphael/ti/tivaware
 
 # qstr definitions (must come before including py.mk)
 QSTR_DEFS = qstrdefsport.h $(BUILD)/pins_qstr.h
@@ -73,8 +73,11 @@ INC += -I$(USBDEV_DIR)/core/inc -I$(USBDEV_DIR)/class/inc
 DFU = $(TOP)/tools/dfu.py
 PYDFU = $(TOP)/tools/pydfu.py
 FATFS_DIR=lib/oofatfs
-CFLAGS_CORTEX_M4 = -mthumb -mtune=cortex-m4 -mabi=aapcs-linux -mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mfloat-abi=hard 
-CFLAGS = $(INC) -Wall -Werror -std=gnu99 -nostdlib $(CFLAGS_CORTEX_M4) $(COPT)
+CFLAGS_CORTEX_M4 = -mthumb -mtune=cortex-m4 -mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mabi=aapcs-linux
+#Warnings
+CFLAGS = $(INC) -Wall -Werror -Wpointer-arith
+#Compiler
+CFLAGS += -std=gnu99 -nostdlib $(CFLAGS_CORTEX_M4) $(COPT) -fno-short-enums
 #Preprocessor Flags
 CFLAGS += -DPART_$(PART) -c -D$(PART) -DARMCM4_FP -DTARGET_IS_TM4C123_RB1 -DMICROPY_PIN_DEFS_PORT_H=\"mods/pin_defs_tm4c123.h\" #-DMICROPY_MPHALPORT_H=\"mphalport.h\"
 CFLAGS += -DFFCONF_H=\"lib/oofatfs/ffconf.h\"
@@ -103,9 +106,9 @@ endif
 
 # Libraries
 LIBS = $(TIVAWARE_LIB)/driverlib/gcc/libdriver.a
-LIBGCC := ${shell $(CC) $(CFLAGS) -print-libgcc-file-name}
-LIBC := ${shell ${CC} ${CFLAGS} -print-file-name=libc.a}
-LIBM := ${shell ${CC} ${CFLAGS} -print-file-name=libm.a}
+LIBGCC := ${shell $(CC) $(CFLAGS) --print-libgcc-file-name}
+LIBC := ${shell ${CC} ${CFLAGS} --print-file-name=libc.a}
+LIBM := ${shell ${CC} ${CFLAGS} --print-file-name=libm.a}
 
 # Sources	
 
@@ -317,7 +320,10 @@ ${PROJECT_NAME}.axf: $(OBJ)
 	$(MAKE) -C ${TIVAWARE_LIB}/driverlib/
 	@echo
 	@echo Linking...
+	@echo AXF:
 	$(LD) -T $(LINKER_FILE) $(LFLAGS) -o ${PROJECT_NAME}.axf $(OBJ) $(LIBS) $(LIBM) $(LIBC) $(LIBGCC)
+	@echo ELF:
+	$(LD) -T $(LINKER_FILE) $(LFLAGS) -o ${PROJECT_NAME}.elf $(OBJ) $(LIBS) $(LIBM) $(LIBC) $(LIBGCC)
 
 ${PROJECT_NAME}: ${PROJECT_NAME}.axf
 	@echo
@@ -347,7 +353,7 @@ $(GEN_CDCINF_FILE): $(CDCINF_TEMPLATE) $(INSERT_USB_IDS) $(USB_IDS_FILE) | $(HEA
 	$(ECHO) "GEN $@"
 	$(Q)$(PYTHON) $(INSERT_USB_IDS) $(USB_IDS_FILE) $< > $@
 
-CLEAN_EXTRA += *.axf *.bin *.lst #$(TIVAWARE_LIB)/driverlib/gcc/* 
+CLEAN_EXTRA += *.axf *.bin *.lst *.elf #$(TIVAWARE_LIB)/driverlib/gcc/* 
 
 include $(TOP)/py/mkrules.mk
 
