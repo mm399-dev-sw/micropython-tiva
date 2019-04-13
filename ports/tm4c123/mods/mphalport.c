@@ -70,8 +70,7 @@ void mp_hal_pin_config(mp_hal_pin_obj_t pin_obj, uint32_t dir, uint32_t type, ui
 
 void mp_hal_pin_set_af(mp_hal_pin_obj_t pin_obj, uint8_t af_id) {
     if (af_id == 0xFF) return;
-    MAP_GPIODirModeSet(pin_obj->gpio, pin_obj->pin_mask, GPIO_DIR_MODE_HW);
-    MAP_GPIOPadConfigSet(pin_obj->gpio, pin_obj->pin_mask, GPIO_STRENGTH_2MA, GPIO_PIN_TYPE_STD);
+    mp_hal_gpio_clock_enable(pin_obj->periph);
     MAP_GPIOPinConfigure((pin_obj->af_list)[af_id].conf);
 }
 
@@ -80,9 +79,10 @@ bool mp_hal_pin_config_alt(mp_hal_pin_obj_t pin, uint32_t mode, uint32_t pull, u
     if (af == NULL) {
         return false;
     }
-    mp_hal_pin_config(pin, mode, pull, af->idx);
+    mp_hal_pin_set_af(pin, af->idx);
+    // af->config_pin_func(pin->gpio, pin->pin_mask);
     return true;
-}
+}   
 
 uint32_t HAL_GetTick() {
     extern uint32_t uwTick;

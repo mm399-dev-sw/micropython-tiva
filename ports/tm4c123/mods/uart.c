@@ -218,18 +218,20 @@ STATIC bool uart_init2(pyb_uart_obj_t *uart_obj) {
 
         #if defined(MICROPY_HW_UART1_TX) && defined(MICROPY_HW_UART1_RX)
         case PYB_UART_1:
-            uart_unit = 1;
-            uart_base = UART1_BASE;
-            irqn = INT_UART1_TM4C123;
-            pins[0] = MICROPY_HW_UART1_TX;
-            pins[1] = MICROPY_HW_UART1_RX;
-            peripheral = SYSCTL_PERIPH_UART1;
-            #if defined(MICROPY_HW_UART1_RTS)
-            pins[2] = MICROPY_HW_UART1_RTS;
-            #endif
-            #if defined(MICROPY_HW_UART1_CTS)
-            pins[3] = MICROPY_HW_UART1_CTS;
-            #endif
+            // TODO
+            return false;
+            // uart_unit = 1;
+            // uart_base = UART1_BASE;
+            // irqn = INT_UART1_TM4C123;
+            // pins[0] = MICROPY_HW_UART1_TX;
+            // pins[1] = MICROPY_HW_UART1_RX;
+            // peripheral = SYSCTL_PERIPH_UART1;
+            // #if defined(MICROPY_HW_UART1_RTS)
+            // pins[2] = MICROPY_HW_UART1_RTS;
+            // #endif
+            // #if defined(MICROPY_HW_UART1_CTS)
+            // pins[3] = MICROPY_HW_UART1_CTS;
+            // #endif
             break;
         #endif
 
@@ -315,6 +317,16 @@ STATIC bool uart_init2(pyb_uart_obj_t *uart_obj) {
             }
         }
     }
+
+    // Pins always on same GPIO!
+    GPIOPinTypeUART(pins[0]->gpio, pins[0]->pin_mask | pins[1]->pin_mask);
+    #if defined(MICROPY_HW_UART1_RTS)
+    GPIOPinTypeUART(pins[2]->gpio, pins[2]->pin_mask);
+    #endif
+    #if defined(MICROPY_HW_UART1_CTS)
+    GPIOPinTypeUART(pins[3]->gpio, pins[3]->pin_mask);
+    #endif
+    
 
     uart_obj->irqn = irqn;
     uart_obj->uart = uart_base;
@@ -460,7 +472,7 @@ STATIC size_t uart_tx_data(pyb_uart_obj_t *self, const void *src_in, size_t num_
     }
 
     uint32_t timeout;
-    if (self->regs->FR & UART_FR_CTS) {
+    if (!(self->regs->FR & UART_FR_CTS) && (self->regs->CTL & UART_CTL_CTSEN)) {
         // CTS can hold off transmission for an arbitrarily long time. Apply
         // the overall timeout rather than the character timeout.
         timeout = self->timeout;
@@ -475,20 +487,20 @@ STATIC size_t uart_tx_data(pyb_uart_obj_t *self, const void *src_in, size_t num_
 
     const uint8_t *src = (const uint8_t*)src_in;
     size_t num_tx = 0;
+    uint32_t data = 0;
 
     while (num_tx < num_chars) {
         if (!uart_wait_flag_unset(self, UART_FR_TXFF, timeout)) {
             *errcode = MP_ETIMEDOUT;
             return num_tx;
         }
-        uint32_t data;
-        if (self->char_width == CHAR_WIDTH_9BIT) {
-            data = *((uint16_t*)src) & 0x1ff;
-            src += 2;
-        } else {
+        // if (self->char_width == CHAR_WIDTH_9BIT) {
+        //     data = *((uint16_t*)src) & 0x1ff;
+        //     src += 2;
+        // } else {
             data = *src++;
-        }
-        self->regs->DR = data;
+        // }
+        self->regs->DR = 0xFF & data;
         ++num_tx;
     }
 
@@ -671,6 +683,8 @@ STATIC mp_obj_t pyb_uart_init_helper(pyb_uart_obj_t *self, size_t n_args, const 
         nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_ValueError, "UART(%d) doesn't exist", self->uart_id));
     }
 
+    MAP_UARTDisable(self->uart);
+
     // now we can config the peripheral
     MAP_UART9BitDisable(self->uart);
 
@@ -678,7 +692,7 @@ STATIC mp_obj_t pyb_uart_init_helper(pyb_uart_obj_t *self, size_t n_args, const 
 
     // flow control 
     // TODO only with UART1
-    MAP_UARTFlowControlSet(self->uart, args.flow.u_int);
+    // MAP_UARTFlowControlSet(self->uart, args.flow.u_int);
 
     // set timeout
     self->timeout = args.timeout.u_int;
@@ -735,6 +749,8 @@ STATIC mp_obj_t pyb_uart_init_helper(pyb_uart_obj_t *self, size_t n_args, const 
     if (20 * baudrate_diff > req_baudrate) {
         nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_ValueError, "set baudrate %d is not within 5%% of desired value", actual_baudrate));
     }
+
+    MAP_UARTEnable(self->uart);
 
     return mp_const_none;
 }
