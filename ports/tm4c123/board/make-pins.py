@@ -75,11 +75,11 @@ class AF:
 
     def print(self):
         if self.idx == 0:
-            print ('    AF_AN({:16s}, {:4d}, {:8s}, {:4d}, {:8s}),    // {}'.format(self.name, self.idx, self.fn, self.unit, self.type, self.name))
+            print ('    AF_AN({:s}, {:4d}, {:s}, {:4d}, {:s}),    // {}'.format(self.name, self.idx, self.fn, self.unit, self.type, self.name))
         elif self.short == '':
-            print ('    AF_2({:16s}, {:4d}, {:8s}, {:4d}, {:8s}, {:3s}),    // {}'.format(self.name, self.idx, self.fn, self.unit, self.type, self.pin_name, self.name))
+            print ('    AF_2({:s}, {:4d}, {:s}, {:4d}, {:s}, {:s}),    // {}'.format(self.name, self.idx, self.fn, self.unit, self.type, self.pin_name, self.name))
         else:
-            print ('    AF_1({:16s}, {:4d}, {:8s}, {:4d}, {:8s}, {}, {:3s}),    // {}'.format(self.name, self.idx, self.fn, self.unit, self.type, self.short, self.pin_name, self.name))
+            print ('    AF_1({:s}, {:4d}, {:s}, {:4d}, {:s}, {}, {:s}),    // {}'.format(self.name, self.idx, self.fn, self.unit, self.type, self.short, self.pin_name, self.name))
 
 
 class Pin:

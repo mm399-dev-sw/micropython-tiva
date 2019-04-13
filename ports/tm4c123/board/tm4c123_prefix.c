@@ -49,7 +49,7 @@
     .unit = (af_unit), \
     .type = AF_ ## af_fn ## _ ## af_type, \
     .conf = GPIO_ ## pin_board_name ## _ ## af_short ## af_type, \
-}
+} // .config_pin_func = &GPIOPinType ## af_fn, 
 
 #define AF_2(af_name, af_idx, af_fn, af_unit, af_type, pin_board_name) \
 { \
@@ -59,7 +59,8 @@
     .unit = (af_unit), \
     .type = AF_ ## af_fn ## _ ## af_type, \
     .conf = GPIO_ ## pin_board_name ## _ ## af_type, \
-}
+}    // .config_pin_func = &GPIOPinType ## af_fn, 
+
 
 #define AF_AN(af_name, af_idx, af_fn, af_unit, af_type) \
 { \
@@ -69,7 +70,8 @@
     .unit = (af_unit), \
     .type = AF_ ## af_fn ## _ ## af_type, \
     .conf = GPIO_ADC, \
-}
+}    // .config_pin_func = &GPIOPinType ## af_fn, 
+
 
 
 

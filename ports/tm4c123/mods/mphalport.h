@@ -228,6 +228,7 @@ enum {
 
 #define mp_hal_pin_get_af(p)    (((p)->regs->PCTL >> ((p)->pin_num * 4)) & 0xF)
 #define mp_hal_pin_get_dir(p)   (MAP_GPIODirModeGet((p)->gpio, (p)->pin_mask))
+
 //#define mp_hal_pin_get_type(p)  ()
 //#define mp_hal_pin_get_drive(p)
 
