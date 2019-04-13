@@ -77,7 +77,7 @@ CFLAGS_CORTEX_M4 = -mthumb -mtune=cortex-m4 -mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -m
 #Warnings
 CFLAGS = $(INC) -Wall -Werror -Wpointer-arith
 #Compiler
-CFLAGS += -std=gnu99 -nostdlib $(CFLAGS_CORTEX_M4) $(COPT) -fno-short-enums
+CFLAGS += -std=gnu99 -nostdlib $(CFLAGS_CORTEX_M4) $(COPT) #-fno-short-enums
 #Preprocessor Flags
 CFLAGS += -DPART_$(PART) -c -D$(PART) -DARMCM4_FP -DTARGET_IS_TM4C123_RB1 -DMICROPY_PIN_DEFS_PORT_H=\"mods/pin_defs_tm4c123.h\" #-DMICROPY_MPHALPORT_H=\"mphalport.h\"
 CFLAGS += -DFFCONF_H=\"lib/oofatfs/ffconf.h\"
@@ -208,6 +208,7 @@ MODS_SRC_C = $(addprefix mods/,\
 	pin.c \
 	pin_named_pins.c \
 	modmachine.c \
+	modpyb.c \
 	uart.c \
 	rtc.c \
 	systick.c \
