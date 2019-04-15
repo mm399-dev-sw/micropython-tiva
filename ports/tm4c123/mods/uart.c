@@ -379,12 +379,12 @@ mp_uint_t uart_rx_any(pyb_uart_obj_t *self) {
 // reading (from buf or for direct reading).
 // Returns true if something available, false if not.
 STATIC bool uart_rx_wait(pyb_uart_obj_t *self, uint32_t timeout) {
-    uint32_t start = mp_hal_ticks_cpu();
+    uint32_t start = mp_hal_ticks_ms();
     for (;;) {
         if (self->read_buf_tail != self->read_buf_head || (!(self->regs->FR & UART_FR_RXFE))) {
             return true; // have at least 1 char ready for reading
         }
-        if (mp_hal_ticks_cpu() - start >= timeout) {
+        if (mp_hal_ticks_ms() - start >= timeout) {
             return false; // timeout
         }
         MICROPY_EVENT_POLL_HOOK
@@ -392,7 +392,7 @@ STATIC bool uart_rx_wait(pyb_uart_obj_t *self, uint32_t timeout) {
 }
 
 // assumes there is a character available
-int uart_rx_char(pyb_uart_obj_t *self, int *errcode) {
+int uart_rx_char(pyb_uart_obj_t *self) {
     if (self->read_buf_tail != self->read_buf_head) {
         // buffering via IRQ
         int data;
@@ -427,13 +427,13 @@ int uart_rx_char(pyb_uart_obj_t *self, int *errcode) {
 // Waits at most timeout milliseconds for TX register to become empty.
 // Returns true if can write, false if can't.
 STATIC bool uart_tx_wait(pyb_uart_obj_t *self, uint32_t timeout) {
-    uint32_t start = mp_hal_ticks_cpu();
+    uint32_t start = mp_hal_ticks_ms();
     for (;;) {
 
         if (!(self->regs->FR & UART_FR_TXFF)) {
             return true; // tx register is not full
         }
-        if (mp_hal_ticks_cpu() - start >= timeout) {
+        if (mp_hal_ticks_ms() - start >= timeout) {
             return false; // timeout
         }
         MICROPY_EVENT_POLL_HOOK
@@ -461,12 +461,12 @@ STATIC bool uart_tx_wait(pyb_uart_obj_t *self, uint32_t timeout) {
 STATIC bool uart_wait_flag_unset(pyb_uart_obj_t *self, uint32_t flag, uint32_t timeout) {
     // Note: we don't use WFI to idle in this loop because UART tx doesn't generate
     // an interrupt and the flag can be set quickly if the baudrate is large.
-    uint32_t start = mp_hal_ticks_cpu();
+    uint32_t start = mp_hal_ticks_ms();
     for (;;) {
         if (!(self->regs->FR & flag)) {
             return true;
         }
-        if (timeout == 0 || mp_hal_ticks_cpu() - start >= timeout) {
+        if (timeout == 0 || mp_hal_ticks_ms() - start >= timeout) {
             return false; // timeout
         }
     }
