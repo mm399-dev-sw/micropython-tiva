@@ -392,7 +392,7 @@ STATIC bool uart_rx_wait(pyb_uart_obj_t *self, uint32_t timeout) {
 }
 
 // assumes there is a character available
-int uart_rx_char(pyb_uart_obj_t *self) {
+int uart_rx_char(pyb_uart_obj_t *self, int *errcode) {
     if (self->read_buf_tail != self->read_buf_head) {
         // buffering via IRQ
         int data;
@@ -409,7 +409,18 @@ int uart_rx_char(pyb_uart_obj_t *self) {
         return data;
     } else {
         // no buffering
-        return MAP_UARTCharGetNonBlocking(self->uart) & self->char_mask;
+        // TODO
+        uint32_t data = self->regs->DR;
+        // if(data & UART_DR_BE) {
+            // BREAK ERROR
+        // } else if(data & UART_DR_FE){
+            // FRAMING ERROR
+        // } else if(data & UART_DR_OE){
+            // OVERRUN ERROR
+        // } else if(data & UART_DR_PE){
+            // PARITY ERROR
+        // }
+        return data & self->char_mask;;
     }
 }
 
