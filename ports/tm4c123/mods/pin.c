@@ -174,6 +174,7 @@ const pin_obj_t *pin_find(mp_obj_t user_obj) {
     }
 
     // See if the pin name matches a cpu pin
+    // TODO
 //    pin_obj = pin_find_named_pin(&pin_cpu_pins_locals_dict, user_obj);
 //    if (pin_obj) {
 //        if (pin_class_debug) {
@@ -439,6 +440,7 @@ STATIC mp_obj_t pin_on(mp_obj_t self_in) {
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(pin_on_obj, pin_on);
 
 // pin.irq(handler=None, trigger=IRQ_RISING, hard=False)
+// TODO
 STATIC mp_obj_t pin_irq(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
 //    enum { ARG_handler, ARG_trigger, ARG_hard };
 //    static const mp_arg_t allowed_args[] = {
