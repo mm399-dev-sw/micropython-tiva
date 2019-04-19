@@ -84,8 +84,7 @@ typedef struct {
   uint8_t fn;
   uint8_t unit;
   uint32_t type;
-  uint32_t conf;
-//   void (*config_pin_func)(uint32_t, uint8_t); // Function pointer to pin config function for specific af
+  uint32_t conf;   // stores the parameter needed for GPIOPinConfigure
 } pin_af_obj_t;
 
 typedef struct {

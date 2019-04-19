@@ -74,13 +74,54 @@ void mp_hal_pin_set_af(mp_hal_pin_obj_t pin_obj, uint8_t af_id) {
     MAP_GPIOPinConfigure((pin_obj->af_list)[af_id].conf);
 }
 
-bool mp_hal_pin_config_alt(mp_hal_pin_obj_t pin, uint32_t mode, uint32_t pull, uint8_t fn, uint8_t unit) {
+bool mp_hal_pin_config_alt(mp_hal_pin_obj_t pin, uint8_t fn, uint8_t unit) {
     const pin_af_obj_t *af = pin_find_af(pin, fn, unit);
+    // default settings:
+    uint32_t strength = GPIO_STRENGTH_2MA;
+    uint32_t type = GPIO_PIN_TYPE_STD;
+    uint32_t dir = GPIO_DIR_MODE_HW;
     if (af == NULL) {
         return false;
     }
     mp_hal_pin_set_af(pin, af->idx);
-    // af->config_pin_func(pin->gpio, pin->pin_mask);
+    switch(fn) {
+        case PIN_FN_ADC:
+            type = GPIO_PIN_TYPE_ANALOG;
+            dir = GPIO_DIR_MODE_IN;
+            break;
+        case PIN_FN_COMP:
+            if(af->type != AF_COMP_OUT) { // AF COMP NEG/POS
+                type = GPIO_PIN_TYPE_ANALOG;
+                dir = GPIO_DIR_MODE_IN;
+            }
+            break;
+        case PIN_FN_I2C:
+            if(af->type == AF_I2C_SDA) {
+                type = GPIO_PIN_TYPE_OD;
+            }
+            break;
+        case PIN_FN_CAN:
+            strength = GPIO_STRENGTH_8MA;
+            break;
+        case PIN_FN_QEI:
+            type = GPIO_PIN_TYPE_STD_WPU;
+            break;
+        case PIN_FN_USB:
+            if(!(af->type == AF_USB_EPEN || af->type == AF_USB_PFLT)) { 
+                type = GPIO_PIN_TYPE_ANALOG;
+                dir = GPIO_DIR_MODE_IN;
+            }
+        break;
+        case PIN_FN_UART:
+        case PIN_FN_SSI:
+        case PIN_FN_MTRL:
+        case PIN_FN_TIM:
+        case PIN_FN_WTIM:
+        case PIN_FN_TR:
+        default:
+            break;
+    }
+    mp_hal_pin_config(pin, dir, type, strength);
     return true;
 }   
 

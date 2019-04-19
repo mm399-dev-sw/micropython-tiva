@@ -311,22 +311,12 @@ STATIC bool uart_init2(pyb_uart_obj_t *uart_obj) {
 
     for (uint i = 0; i < 4; i++) {
         if (pins[i] != NULL) {
-            bool ret = mp_hal_pin_config_alt(pins[i], mode, pull, PIN_FN_UART, uart_unit);
+            bool ret = mp_hal_pin_config_alt(pins[i], PIN_FN_UART, uart_unit);
             if (!ret) {
                 return false;
             }
         }
     }
-
-    // Pins always on same GPIO!
-    GPIOPinTypeUART(pins[0]->gpio, pins[0]->pin_mask | pins[1]->pin_mask);
-    #if defined(MICROPY_HW_UART1_RTS)
-    GPIOPinTypeUART(pins[2]->gpio, pins[2]->pin_mask);
-    #endif
-    #if defined(MICROPY_HW_UART1_CTS)
-    GPIOPinTypeUART(pins[3]->gpio, pins[3]->pin_mask);
-    #endif
-    
 
     uart_obj->irqn = irqn;
     uart_obj->uart = uart_base;

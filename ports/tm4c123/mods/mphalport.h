@@ -243,7 +243,7 @@ enum {
 
 void mp_hal_gpio_clock_enable(const uint32_t port);
 void mp_hal_pin_config(mp_hal_pin_obj_t pin_obj, uint32_t dir, uint32_t type, uint32_t drive);
-bool mp_hal_pin_config_alt(mp_hal_pin_obj_t pin_obj, uint32_t dir, uint32_t type, uint8_t fn, uint8_t unit);
+bool mp_hal_pin_config_alt(mp_hal_pin_obj_t pin_obj, uint8_t fn, uint8_t unit);
 void mp_hal_pin_set_af(mp_hal_pin_obj_t pin_obj, uint8_t af_id);
 uint32_t HAL_GetTick();
 
