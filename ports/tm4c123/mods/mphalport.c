@@ -5,8 +5,24 @@
 #include "py/mperrno.h"
 #include "py/mphal.h"
 #include "extmod/misc.h"
+#include "driverlib/pin_map.h"
+#include "inc/hw_gpio.h"
+#include "inc/hw_memmap.h"
 //#include "usb.h"
 #include "uart.h"
+
+// prevent clash between driverlib and CMSIS
+#ifdef NVIC_BASE
+#undef NVIC_BASE
+#endif
+
+#ifdef DWT_BASE
+#undef DWT_BASE
+#endif
+
+#ifdef ITM_BASE
+#undef ITM_BASE
+#endif
 
 #if defined (ARMCM4)
   #include "ARMCM4.h"
@@ -61,11 +77,26 @@ void mp_hal_gpio_clock_enable(const uint32_t periph) {
     while(!MAP_SysCtlPeripheralReady(periph)){};
 }
 
-void mp_hal_pin_config(mp_hal_pin_obj_t pin_obj, uint32_t dir, uint32_t type, uint32_t drive) {
+void mp_hal_unlock_special_pin(mp_hal_pin_obj_t pin) {
+    pin->regs->LOCK = GPIO_LOCK_KEY;
+    pin->regs->CR |= pin->pin_mask;
+}
+
+bool mp_hal_pin_needs_unlocking(mp_hal_pin_obj_t pin) { 
+    return !(bool)(pin->regs->CR & pin->pin_mask);
+}
+
+bool mp_hal_pin_config(mp_hal_pin_obj_t pin_obj, uint32_t dir, uint32_t type, uint32_t drive) {
     mp_hal_gpio_clock_enable(pin_obj->periph);
+
+    if(mp_hal_pin_needs_unlocking(pin_obj)) {
+        nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_RuntimeError, "Pin \"%s\" needs to be unlocked first", qstr_str(pin_obj->name)));
+        return false;
+    }
 
     MAP_GPIODirModeSet(pin_obj->gpio, pin_obj->pin_mask, dir);
     MAP_GPIOPadConfigSet(pin_obj->gpio, pin_obj->pin_mask, drive, type);
+    return true;
 }
 
 void mp_hal_pin_set_af(mp_hal_pin_obj_t pin_obj, uint8_t af_id) {
@@ -76,14 +107,15 @@ void mp_hal_pin_set_af(mp_hal_pin_obj_t pin_obj, uint8_t af_id) {
 
 bool mp_hal_pin_config_alt(mp_hal_pin_obj_t pin, uint8_t fn, uint8_t unit) {
     const pin_af_obj_t *af = pin_find_af(pin, fn, unit);
+    // does af exist?
+    if (af == NULL) {
+        return false;
+    }
     // default settings:
     uint32_t strength = GPIO_STRENGTH_2MA;
     uint32_t type = GPIO_PIN_TYPE_STD;
     uint32_t dir = GPIO_DIR_MODE_HW;
-    if (af == NULL) {
-        return false;
-    }
-    mp_hal_pin_set_af(pin, af->idx);
+    
     switch(fn) {
         case PIN_FN_ADC:
             type = GPIO_PIN_TYPE_ANALOG;
@@ -121,7 +153,8 @@ bool mp_hal_pin_config_alt(mp_hal_pin_obj_t pin, uint8_t fn, uint8_t unit) {
         default:
             break;
     }
-    mp_hal_pin_config(pin, dir, type, strength);
+    if(!mp_hal_pin_config(pin, dir, type, strength)) return false;
+    mp_hal_pin_set_af(pin, af->idx);
     return true;
 }   
 

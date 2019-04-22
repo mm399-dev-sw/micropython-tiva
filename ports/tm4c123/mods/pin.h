@@ -92,7 +92,7 @@ typedef struct {
     const qstr          name;
     const uint32_t      gpio;   //Address of Port
     const uint32_t      periph;
-    const periph_gpio_t* regs;   //Structure for register access
+    periph_gpio_t* regs;   //Structure for register access
     const pin_af_obj_t  *af_list;
     uint32_t            dir;
     uint32_t            type;

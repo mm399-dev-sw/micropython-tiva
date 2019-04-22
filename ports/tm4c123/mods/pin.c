@@ -545,6 +545,19 @@ STATIC mp_obj_t pin_af(mp_obj_t self_in) {
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(pin_af_obj, pin_af);
 
+/// \classmethod unlock(str pin1, str pin2,..)
+/// Sets the Commit Flag on the corresponting GPIO enable
+/// re-assingment of the supplied pin
+STATIC void pin_unlock(size_t n_args, const mp_obj_t *args) {
+    if (n_args > 1) {
+        for (int i = 1 ; i < n_args ; i++) {
+            const pin_obj_t *p = pin_find(args[i]);
+            mp_hal_unlock_special_pin(p);
+        }
+    }
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(pin_unlock_fun_obj, 2, pin_unlock);
+STATIC MP_DEFINE_CONST_CLASSMETHOD_OBJ(pin_unlock_obj, MP_ROM_PTR(&pin_unlock_fun_obj));
 
 
 STATIC const mp_rom_map_elem_t pin_locals_dict_table[] = {
@@ -573,6 +586,7 @@ STATIC const mp_rom_map_elem_t pin_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_mapper),  MP_ROM_PTR(&pin_mapper_obj) },
     { MP_ROM_QSTR(MP_QSTR_dict),    MP_ROM_PTR(&pin_map_dict_obj) },
     { MP_ROM_QSTR(MP_QSTR_debug),   MP_ROM_PTR(&pin_debug_obj) },
+    { MP_ROM_QSTR(MP_QSTR_unlock),  MP_ROM_PTR(&pin_unlock_obj) },
 
     // class attributes
     { MP_ROM_QSTR(MP_QSTR_board),   MP_ROM_PTR(&pin_board_pins_obj_type) },
@@ -613,6 +627,7 @@ const mp_obj_type_t pin_mod = {
 //    .globals = (mp_obj_dict_t*)&pin_locals_dict,
 //};
 
+// TODO
 //STATIC const mp_irq_methods_t pin_irq_methods = {
 //    .init = pin_irq,
 //    .enable = pin_irq_enable,
