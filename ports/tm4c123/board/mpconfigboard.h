@@ -29,7 +29,9 @@
 
 // assumption: every GPIO is interrupt capable
 #define PYB_EXTI_NUM_VECTORS (78)
+
 #define MICROPY_HW_MAX_UART (8)
+#define MICROPY_HW_MAX_SPI (4)
 
 // UART config
 #define MICROPY_HW_UART0_NAME   "0"
@@ -66,6 +68,31 @@
 #define MICROPY_HW_UART7_NAME   "7"
 #define MICROPY_HW_UART7_RX     (pin_PE0)
 #define MICROPY_HW_UART7_TX     (pin_PE1)
+
+#define MICROPY_HW_SPI0_NAME    "0"
+#define MICROPY_HW_SPI0_SCK     (pin_PA2)
+#define MICROPY_HW_SPI0_FSS     (pin_PA3)
+#define MICROPY_HW_SPI0_MISO    (pin_PA4)
+#define MICROPY_HW_SPI0_MOSI    (pin_PA5)
+
+#define MICROPY_HW_SPI1_NAME    "1"
+#define MICROPY_HW_SPI1_SCK     (pin_PF0)
+#define MICROPY_HW_SPI1_FSS     (pin_PF1)
+#define MICROPY_HW_SPI1_MISO    (pin_PF2)
+#define MICROPY_HW_SPI1_MOSI    (pin_PF3)
+
+#define MICROPY_HW_SPI2_NAME    "2"
+#define MICROPY_HW_SPI2_SCK     (pin_PB4)
+#define MICROPY_HW_SPI2_FSS     (pin_PB5)
+#define MICROPY_HW_SPI2_MISO    (pin_PB6)
+#define MICROPY_HW_SPI2_MOSI    (pin_PB7)
+
+#define MICROPY_HW_SPI3_NAME    "3"
+#define MICROPY_HW_SPI3_SCK     (pin_PD0)
+#define MICROPY_HW_SPI3_FSS     (pin_PD1)
+#define MICROPY_HW_SPI3_MISO    (pin_PD2)
+#define MICROPY_HW_SPI3_MOSI    (pin_PD3)
+
 
 // TODO
 // #define MICROPY_HW_ENABLE_INTERNAL_FLASH_STORAGE (1)
