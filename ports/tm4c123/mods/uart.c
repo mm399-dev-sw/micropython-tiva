@@ -306,9 +306,6 @@ STATIC bool uart_init2(pyb_uart_obj_t *uart_obj) {
             return false;
     }
 
-    uint32_t mode = MP_HAL_PIN_MODE_ALT;
-    uint32_t pull = MP_HAL_PIN_PULL_UP;
-
     for (uint i = 0; i < 4; i++) {
         if (pins[i] != NULL) {
             bool ret = mp_hal_pin_config_alt(pins[i], PIN_FN_UART, uart_unit);
@@ -613,7 +610,7 @@ STATIC mp_obj_t pyb_uart_init_helper(pyb_uart_obj_t *self, size_t n_args, const 
         { MP_QSTR_parity, MP_ARG_OBJ, {.u_obj = mp_const_none} },
         { MP_QSTR_stop, MP_ARG_INT, {.u_int = 1} },
         { MP_QSTR_flow, MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = UART_FLOWCONTROL_NONE} },
-        { MP_QSTR_timeout, MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = 1000} },
+        { MP_QSTR_timeout, MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = 10} },
         { MP_QSTR_timeout_char, MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = 0} },
         { MP_QSTR_read_buf_len, MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = 64} },
     };
@@ -681,7 +678,7 @@ STATIC mp_obj_t pyb_uart_init_helper(pyb_uart_obj_t *self, size_t n_args, const 
     // init UART (if it fails, it's because the port doesn't exist)
     // enables Periph clock
     if (!uart_init2(self)) {
-        nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_ValueError, "UART(%d) doesn't exist", self->uart_id));
+        nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_RuntimeError, "UART(%d) init failed!", self->uart_id));
     }
 
     MAP_UARTDisable(self->uart);
@@ -705,6 +702,10 @@ STATIC mp_obj_t pyb_uart_init_helper(pyb_uart_obj_t *self, size_t n_args, const 
     uint32_t min_timeout_char = 13000 / args.baudrate.u_int + 2;
     if (self->timeout_char < min_timeout_char) {
         self->timeout_char = min_timeout_char;
+    }
+
+    if(self->timeout < self->timeout_char) {
+        self->timeout = self->timeout_char;
     }
 
     // setup the read buffer
