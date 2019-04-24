@@ -32,7 +32,6 @@
 #include "inc/hw_memmap.h"
 #include "driverlib/ssi.h"
 
-typedef struct _spi_obj_t spi_obj_t;
 extern const mp_obj_type_t machine_hard_spi_type;
 
 typedef struct _spi_t {
