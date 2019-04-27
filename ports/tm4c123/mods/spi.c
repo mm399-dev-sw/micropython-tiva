@@ -40,6 +40,7 @@
 #include "inc/hw_memmap.h"
 #include "driverlib/rom.h"
 #include "driverlib/rom_map.h"
+#include "inc/hw_udma.h"
 
 /// \moduleref pyb
 /// \class SPI - a master-driven serial protocol
@@ -127,6 +128,10 @@ STATIC int spi_find(mp_obj_t id) {
         const char *port = mp_obj_str_get_str(id);
         if (0) {
         #ifdef MICROPY_HW_SPI1_NAME
+        } else if (strcmp(port, MICROPY_HW_SPI0_NAME) == 0) {
+            return 0;
+        #endif
+        #ifdef MICROPY_HW_SPI1_NAME
         } else if (strcmp(port, MICROPY_HW_SPI1_NAME) == 0) {
             return 1;
         #endif
@@ -198,88 +203,86 @@ STATIC void spi_set_params(mp_obj_t *spi_obj, uint8_t prescale, int32_t baudrate
 }
 
 // TODO allow to take a list of pins to use
-void spi_init(const spi_t *self, bool enable_nss_pin) {
-    SPI_HandleTypeDef *spi = self->spi;
+void spi_init(const machine_hard_spi_obj_t *self_in) {
+    machine_hard_spi_obj_t *self = self_in;
     const pin_obj_t *pins[4] = { NULL, NULL, NULL, NULL };
 
     if (0) {
+    #if defined(MICROPY_HW_SPI0_SCK)
+    } else if (self->spi_id == PYB_SPI_0) {
+        self->spi_base = SSI0_BASE;
+        self->periph = SYSCTL_PERIPH_SSI0;
+        self->regs = (periph_spi_t*)SSI0_BASE;
+        self->irqn = INT_SSI0;
+        pins[0] = MICROPY_HW_SPI0_SCK;
+        #if defined(MICROPY_HW_SPI0_MISO)
+        pins[1] = MICROPY_HW_SPI0_MISO;
+        #endif
+        #if defined(MICROPY_HW_SPI0_MOSI)
+        pins[2] = MICROPY_HW_SPI0_MOSI;
+        #endif
+        #if defined(MICROPY_HW_SPI0_FSS)
+        if(!self->soft_fss) {
+            pins[3] = MICROPY_HW_SPI0_FSS;
+        }
+        #endif
+    #endif
     #if defined(MICROPY_HW_SPI1_SCK)
-    } else if (spi->Instance == SPI1) {
-        #if defined(MICROPY_HW_SPI1_NSS)
-        pins[0] = MICROPY_HW_SPI1_NSS;
-        #endif
-        pins[1] = MICROPY_HW_SPI1_SCK;
+    } else if (self->spi_id == PYB_SPI_1) {
+        self->spi_base = SSI1_BASE;
+        self->periph = SYSCTL_PERIPH_SSI1;
+        self->regs = (periph_spi_t*)SSI1_BASE;
+        self->irqn = INT_SSI1;
+        pins[0] = MICROPY_HW_SPI1_SCK;
         #if defined(MICROPY_HW_SPI1_MISO)
-        pins[2] = MICROPY_HW_SPI1_MISO;
+        pins[1] = MICROPY_HW_SPI1_MISO;
         #endif
-        pins[3] = MICROPY_HW_SPI1_MOSI;
-        // enable the SPI clock
-        __HAL_RCC_SPI1_CLK_ENABLE();
+        #if defined(MICROPY_HW_SPI1_MOSI)
+        pins[2] = MICROPY_HW_SPI1_MOSI;
+        #endif
+        #if defined(MICROPY_HW_SPI1_FSS)
+        if(!self->soft_fss) {
+            pins[3] = MICROPY_HW_SPI1_FSS;
+        }
+        #endif
     #endif
     #if defined(MICROPY_HW_SPI2_SCK)
-    } else if (spi->Instance == SPI2) {
-        #if defined(MICROPY_HW_SPI2_NSS)
-        pins[0] = MICROPY_HW_SPI2_NSS;
-        #endif
-        pins[1] = MICROPY_HW_SPI2_SCK;
+    } else if (self->spi_id == PYB_SPI_2) {
+        self->spi_base = SSI2_BASE;
+        self->periph = SYSCTL_PERIPH_SSI2;
+        self->regs = (periph_spi_t*)SSI2_BASE;
+        self->irqn = INT_SSI2;
+        pins[0] = MICROPY_HW_SPI2_SCK;
         #if defined(MICROPY_HW_SPI2_MISO)
-        pins[2] = MICROPY_HW_SPI2_MISO;
+        pins[1] = MICROPY_HW_SPI2_MISO;
         #endif
-        pins[3] = MICROPY_HW_SPI2_MOSI;
-        // enable the SPI clock
-        __HAL_RCC_SPI2_CLK_ENABLE();
+        #if defined(MICROPY_HW_SPI2_MOSI)
+        pins[2] = MICROPY_HW_SPI2_MOSI;
+        #endif
+        #if defined(MICROPY_HW_SPI2_FSS)
+        if(!self->soft_fss) {
+            pins[3] = MICROPY_HW_SPI2_FSS;
+        }
+        #endif
     #endif
     #if defined(MICROPY_HW_SPI3_SCK)
-    } else if (spi->Instance == SPI3) {
-        #if defined(MICROPY_HW_SPI3_NSS)
-        pins[0] = MICROPY_HW_SPI3_NSS;
-        #endif
-        pins[1] = MICROPY_HW_SPI3_SCK;
+    } else if (self->spi_id == PYB_SPI_3) {
+        self->spi_base = SSI3_BASE;
+        self->periph = SYSCTL_PERIPH_SSI3;
+        self->regs = (periph_spi_t*)SSI3_BASE;
+        self->irqn = INT_SSI3;
+        pins[0] = MICROPY_HW_SPI3_SCK;
         #if defined(MICROPY_HW_SPI3_MISO)
-        pins[2] = MICROPY_HW_SPI3_MISO;
+        pins[1] = MICROPY_HW_SPI3_MISO;
         #endif
-        pins[3] = MICROPY_HW_SPI3_MOSI;
-        // enable the SPI clock
-        __HAL_RCC_SPI3_CLK_ENABLE();
-    #endif
-    #if defined(MICROPY_HW_SPI4_SCK)
-    } else if (spi->Instance == SPI4) {
-        #if defined(MICROPY_HW_SPI4_NSS)
-        pins[0] = MICROPY_HW_SPI4_NSS;
+        #if defined(MICROPY_HW_SPI3_MOSI)
+        pins[2] = MICROPY_HW_SPI3_MOSI;
         #endif
-        pins[1] = MICROPY_HW_SPI4_SCK;
-        #if defined(MICROPY_HW_SPI4_MISO)
-        pins[2] = MICROPY_HW_SPI4_MISO;
+        #if defined(MICROPY_HW_SPI3_FSS)
+        if(!self->soft_fss) {
+            pins[3] = MICROPY_HW_SPI3_FSS;
+        }
         #endif
-        pins[3] = MICROPY_HW_SPI4_MOSI;
-        // enable the SPI clock
-        __HAL_RCC_SPI4_CLK_ENABLE();
-    #endif
-    #if defined(MICROPY_HW_SPI5_SCK)
-    } else if (spi->Instance == SPI5) {
-        #if defined(MICROPY_HW_SPI5_NSS)
-        pins[0] = MICROPY_HW_SPI5_NSS;
-        #endif
-        pins[1] = MICROPY_HW_SPI5_SCK;
-        #if defined(MICROPY_HW_SPI5_MISO)
-        pins[2] = MICROPY_HW_SPI5_MISO;
-        #endif
-        pins[3] = MICROPY_HW_SPI5_MOSI;
-        // enable the SPI clock
-        __HAL_RCC_SPI5_CLK_ENABLE();
-    #endif
-    #if defined(MICROPY_HW_SPI6_SCK)
-    } else if (spi->Instance == SPI6) {
-        #if defined(MICROPY_HW_SPI6_NSS)
-        pins[0] = MICROPY_HW_SPI6_NSS;
-        #endif
-        pins[1] = MICROPY_HW_SPI6_SCK;
-        #if defined(MICROPY_HW_SPI6_MISO)
-        pins[2] = MICROPY_HW_SPI6_MISO;
-        #endif
-        pins[3] = MICROPY_HW_SPI6_MOSI;
-        // enable the SPI clock
-        __HAL_RCC_SPI6_CLK_ENABLE();
     #endif
     } else {
         // SPI does not exist for this board (shouldn't get here, should be checked by caller)
@@ -287,29 +290,28 @@ void spi_init(const spi_t *self, bool enable_nss_pin) {
     }
 
     // init the GPIO lines
-    uint32_t mode = MP_HAL_PIN_MODE_ALT;
-    uint32_t pull = spi->Init.CLKPolarity == SPI_POLARITY_LOW ? MP_HAL_PIN_PULL_DOWN : MP_HAL_PIN_PULL_UP;
-    for (uint i = (enable_nss_pin ? 0 : 1); i < 4; i++) {
+    for (uint i = 0; i < (self->soft_fss ? 3 : 4); i++) {
         if (pins[i] == NULL) {
             continue;
         }
-        mp_hal_pin_config_alt(pins[i], mode, pull, AF_FN_SPI, (self - &spi_obj[0]) + 1);
+        mp_hal_pin_config_alt(pins[i], PIN_FN_SSI, self->spi_id);
+        // idle_high_polarity
+        if(i==0 && (self->protocol & 0x1) ) MAP_GPIOPadConfigSet(pins[i]->gpio, pins[i]->pin_mask, GPIO_STRENGTH_2MA, GPIO_PIN_TYPE_STD_WPU);
     }
 
     // init the SPI device
-    if (HAL_SPI_Init(spi) != HAL_OK) {
-        // init error
-        // TODO should raise an exception, but this function is not necessarily going to be
-        // called via Python, so may not be properly wrapped in an NLR handler
-        printf("OSError: HAL_SPI_Init failed\n");
-        return;
-    }
 
-    // After calling HAL_SPI_Init() it seems that the DMA gets disconnected if
-    // it was previously configured.  So we invalidate the DMA channel to force
-    // an initialisation the next time we use it.
-    dma_invalidate_channel(self->tx_dma_descr);
-    dma_invalidate_channel(self->rx_dma_descr);
+    SysCtlPeripheralEnable(self->periph);
+    while(!SysCtlPeripheralReady(self->periph));
+    IntDisable(self->irqn);
+    SSIDisable(self->spi_base);
+    
+    SSIClockSourceSet(self->spi_base, SSI_CLOCK_SYSTEM);
+    SSIConfigSetExpClk(self->spi_base, MAP_SysCtlClockGet(), self->protocol, self->mode, self->baudrate, self->bits);
+    SSIDMADisable(self->spi_base, SSI_DMA_TX | SSI_DMA_RX);
+    SSIDMAEnable(self->spi_base, self->dma_enabled);
+
+    SSIEnable(self->spi_base);
 }
 
 void spi_deinit(const spi_t *spi_obj) {
@@ -821,20 +823,20 @@ const mp_obj_type_t pyb_spi_type = {
 
 typedef struct _machine_hard_spi_obj_t {
     mp_obj_base_t base;
-    const uint32_t spi;
-    const uint32_t periph;
+    uint32_t spi_base;
+    uint32_t periph;
     periph_spi_t* regs;
     uint32_t irqn;
-    uint32_t mode;
+    uint8_t mode : 1;
     uint32_t baudrate;
-    uint8_t prescaler;
-    uint32_t polarity;
-    uint32_t phase;
-    uint32_t fss;
+    uint8_t bits;
+    // uint8_t polarity : 1;
+    // uint8_t phase : 1;
+    uint32_t protocol;
     spi_id_t spi_id : 3;
     bool is_enabled : 1;
-    bool dma_rx_enabled : 1;
-    bool dma_tx_enabled : 1;
+    bool soft_fss : 1; // Frame signal generated by hardware, or manually
+    uint8_t dma_enabled : 3;
 } machine_hard_spi_obj_t;
 
 STATIC void machine_hard_spi_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t kind) {
@@ -843,18 +845,19 @@ STATIC void machine_hard_spi_print(const mp_print_t *print, mp_obj_t self_in, mp
 }
 
 mp_obj_t machine_hard_spi_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *all_args) {
-    enum { ARG_mode, ARG_id, ARG_baudrate, ARG_prescaler, ARG_polarity, ARG_phase, ARG_bits, ARG_fss, ARG_dma, ARG_firstbit, ARG_sck, ARG_mosi, ARG_miso };
+    enum { ARG_mode, ARG_id, ARG_baudrate,/* ARG_prescaler, ARG_polarity, ARG_phase,*/ ARG_bits, ARG_fss, ARG_protocol, ARG_dma, ARG_firstbit, ARG_sck, ARG_mosi, ARG_miso };
     static const mp_arg_t allowed_args[] = {
-        { MP_QSTR_mode,     MP_ARG_REQUIRED | MP_ARG_INT, {.u_int = SSI_CR1_MS} },
+        { MP_QSTR_mode,     MP_ARG_REQUIRED | MP_ARG_INT, {.u_int = SSI_MODE_MASTER} }, // Default as master
         { MP_QSTR_id,       MP_ARG_OBJ, {.u_obj = MP_OBJ_NEW_SMALL_INT(-1)} },
         { MP_QSTR_baudrate, MP_ARG_INT, {.u_int = 500000} },
-        { MP_QSTR_prescaler, MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = 0xFF} },
-        { MP_QSTR_polarity, MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = 0} },
-        { MP_QSTR_phase,    MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = 0} },
+        //{ MP_QSTR_prescaler, MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = 0xFF} },       // max prescaler
+        // { MP_QSTR_polarity, MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = 0} }, // idle low          
+        // { MP_QSTR_phase,    MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = 0} }, // first clock edge
         //{ MP_QSTR_dir,      MP_ARG_KW_ONLY | MP_ARG_INT,  {.u_int = SSI_CR1_DIR} },
-        { MP_QSTR_bits,     MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = 8} },
-        { MP_QSTR_fss,      MP_ARG_KW_ONLY | MP_ARG_INT,  {.u_int = SSI_CR0_FRF_MOTO} },
-        { MP_QSTR_dma,      MP_ARG_KW_ONLY | MP_ARG_BOOL, {.u_bool = false}},
+        { MP_QSTR_bits,     MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = 8} }, 
+        { MP_QSTR_fss,   MP_ARG_KW_ONLY | MP_ARG_BOOL, {.u_bool = false}}, // chip select mode (software or hardware)
+        { MP_QSTR_protocol,      MP_ARG_KW_ONLY | MP_ARG_INT,  {.u_int = SSI_FRF_MOTO_MODE_0} }, // SSI in SPI mode
+        { MP_QSTR_dma,      MP_ARG_KW_ONLY | MP_ARG_BOOL, {.u_int = 0}}, // no dma
         //{ MP_QSTR_firstbit, MP_ARG_KW_ONLY | MP_ARG_INT,  {.u_int = SPI_FIRSTBIT_MSB} },
         //{ MP_QSTR_ti,       MP_ARG_KW_ONLY | MP_ARG_BOOL, {.u_bool = false} },
         //{ MP_QSTR_crc,      MP_ARG_KW_ONLY | MP_ARG_OBJ,  {.u_obj = mp_const_none} },
@@ -869,13 +872,13 @@ mp_obj_t machine_hard_spi_make_new(const mp_obj_type_t *type, size_t n_args, siz
     spi_id_t spi_id = spi_find(args[ARG_id].u_obj);
     machine_hard_spi_obj_t *self;
     if (MP_STATE_PORT(machine_spi_obj_all)[spi_id - 1] == NULL) {
-        // create new UART object
+        // create new SSI object
         self = m_new0(machine_hard_spi_obj_t, 1);
         self->base.type = &machine_hard_spi_type;
         self->spi_id = spi_id;
         MP_STATE_PORT(machine_spi_obj_all)[spi_id - 1] = self;
     } else {
-        // reference existing UART object
+        // reference existing SSI object
         self = MP_STATE_PORT(machine_spi_obj_all)[spi_id - 1];
     }
 
@@ -883,30 +886,85 @@ mp_obj_t machine_hard_spi_make_new(const mp_obj_type_t *type, size_t n_args, siz
     if (args[ARG_sck].u_obj != MP_OBJ_NULL
         || args[ARG_mosi].u_obj != MP_OBJ_NULL
         || args[ARG_miso].u_obj != MP_OBJ_NULL) {
-        mp_raise_ValueError("explicit choice of sck/mosi/miso is not implemented");
+        nlr_raise(mp_obj_new_exception_msg_varg(&mp_raise_ValueError,"explicit choice of sck/mosi/miso is not implemented"));
     }
 
     // set the SPI configuration values
-    self->mode = args[ARG_mode].u_int;
-    uint8_t prescale = args[ARG_prescaler].u_int;
-    uint32_t baudrate = args[ARG_baudrate].u_int;
-    // set configurable paramaters
-    if (prescale != 0xff || baudrate != -1) {
-        if (prescale == 0xff) {
-            // prescaler not given, so select one that yields at most the requested baudrate
-            prescale = (MAP_SysCtlClockGet() / baudrate);
-            self->baudrate = baudrate;
-        }
-        self->prescaler = prescale;
+    if(args[ARG_mode].u_int > 2) {
+        nlr_raise(mp_obj_new_exception_msg_varg(&mp_raise_ValueError, "Mode accepts only MASTER or SLAVE"));
     }
-    self->polarity = args[ARG_polarity].u_int;
-    self->phase = args[ARG_phase].u_int;
-    self->fss = args[ARG_fss].u_int;
-    self->
-    
+    self->mode = args[ARG_mode].u_int;
 
+    if(args[ARG_bits].u_int >= 16 || args[ARG_bits].u_int <= 4) {
+        nlr_raise(mp_obj_new_exception_msg_varg(&mp_raise_ValueError, "invalid word length, only values 4..16 are available"));
+    }
+    self->bits = args[ARG_bits].u_int;
+
+    // if(args[ARG_prescaler].u_int & 0xFFFFFF00) {
+    //     nlr_raise(mp_obj_new_exception_msg_varg(&mp_raise_ValueError, "prescaler only 2-254!"));
+    // }
+    // uint8_t prescale = args[ARG_prescaler].u_int;
+
+    if(self->mode) {
+        if(args[ARG_baudrate].u_int >= 25000000) {
+            nlr_raise(mp_obj_new_exception_msg_varg(&mp_raise_ValueError, "baudrate too high, max 25 Mbaud as master"));
+        }
+    } else {
+        if(args[ARG_baudrate].u_int >= 6666666) {
+            nlr_raise(mp_obj_new_exception_msg_varg(&mp_raise_ValueError, "baudrate too high, max 6.66 mBaud as slave"));
+        }
+    }
+    self->baudrate = args[ARG_baudrate].u_int;
+    // BR = Clk / (prescale * (1+ clockrate))
+    // assume cr as 0x7F, prescaler only even values
+    // if (prescale != 0xff || baudrate != -1) {
+    //     if (prescale == 0xff) {
+    //         // prescaler not given, so select one that yields at most the requested baudrate
+    //         prescale = MAP_SysCtlClockGet() / (baudrate * 0x80);
+    //         prescale &= 0xFE;
+    //         if(!prescale) prescale = 2;
+    //     }
+    //     self->prescaler = prescale;
+    // }
+//! Polarity Phase       Mode
+//!   0       0   SSI_FRF_MOTO_MODE_0
+//!   0       1   SSI_FRF_MOTO_MODE_1
+//!   1       0   SSI_FRF_MOTO_MODE_2
+//!   1       1   SSI_FRF_MOTO_MODE_3
+
+    // if(args[ARG_polarity].u_int != 0 || args[ARG_polarity].u_int != 1) {
+    //     nlr_raise(mp_obj_new_exception_msg_varg(&mp_raise_ValueError, "polarity accepts only IDLE_LOW(0) or IDLE_HIGH(1)"));
+    // }
+    // self->polarity = args[ARG_polarity].u_int;
+    // if(args[ARG_phase].u_int != 0 || args[ARG_phase].u_int != 1) {
+    //     nlr_raise(mp_obj_new_exception_msg_varg(&mp_raise_ValueError, "phase accepts only FIRST_EDGE(0) or SECOND_EDGE(1)"));
+    // }
+    // self->phase = args[ARG_phase].u_int;
+
+    if(!(args[ARG_protocol].u_int == SSI_FRF_MOTO_MODE_0 || args[ARG_protocol].u_int == SSI_FRF_MOTO_MODE_1  ||
+         args[ARG_protocol].u_int == SSI_FRF_MOTO_MODE_2 || args[ARG_protocol].u_int == SSI_FRF_MOTO_MODE_3  ||
+         args[ARG_protocol].u_int == SSI_FRF_TI || args[ARG_protocol].u_int == SSI_FRF_NMW)) {
+        nlr_raise(mp_obj_new_exception_msg_varg(&mp_raise_ValueError, "protocol not supported, please use SPI0..3, TI or MICROWIRE!"));
+    }
+    self->protocol = args[ARG_fss].u_int;
+
+    if(args[ARG_fss].u_int != 0 || args[ARG_fss].u_int != 1) {
+        nlr_raise(mp_obj_new_exception_msg_varg(&mp_raise_ValueError, "fss only accepts CS_HARD(0) or CS_SOFT(1)"));
+    }
+    // Automatic or Manually assert chipselect? Only applicable in SPI mode
+    if(self->protocol == SSI_CR0_FRF_MOTO) {
+        self->soft_fss = args[ARG_fss].u_bool;
+    } else {
+        self->soft_fss = false;
+    }
+
+    if(!(args[ARG_dma].u_int & 0x03)) {
+        nlr_raise(mp_obj_new_exception_msg_varg(&mp_raise_ValueError, "dma accepts only DMA_NONE(0), DMA_RX(1), DMA_TX(2) or DMA_BOTH(3)"));
+    }
+    self->dma_enabled = args[ARG_dma].u_int;
+    
     // init the SPI bus
-    spi_init(self->spi, false);
+    spi_init(self);
 
     return MP_OBJ_FROM_PTR(self);
 }
@@ -964,13 +1022,28 @@ STATIC const mp_rom_map_elem_t pyb_spi_locals_dict_table[] = {
     /// \constant SLAVE - for initialising the bus to slave mode
     /// \constant MSB - set the first bit to MSB
     /// \constant LSB - set the first bit to LSB
-    { MP_ROM_QSTR(MP_QSTR_MASTER), MP_ROM_INT(SSI_CR1_MS) },
-    { MP_ROM_QSTR(MP_QSTR_SLAVE),  MP_ROM_INT(0) },
-    { MP_ROM_QSTR(MP_QSTR_MSB),    MP_ROM_INT(SPI_FIRSTBIT_MSB) },
-    { MP_ROM_QSTR(MP_QSTR_LSB),    MP_ROM_INT(SPI_FIRSTBIT_LSB) },
-    { MP_ROM_QSTR(MP_QSTR_SPI),    MP_ROM_INT(SSI_CR0_FRF_MOTO)},
-    { MP_ROM_QSTR(MP_QSTR_TISSFF), MP_ROM_INT(SSI_CR0_FRF_TI)},
-    { MP_ROM_QSTR(MP_QSTR_MICROWIRE),    MP_ROM_INT(SSI_CR0_FRF_NMW)},
+    { MP_ROM_QSTR(MP_QSTR_MASTER), MP_ROM_INT(SSI_MODE_MASTER) },
+    { MP_ROM_QSTR(MP_QSTR_SLAVE),  MP_ROM_INT(SSI_MODE_SLAVE) },
+    { MP_ROM_QSTR(MP_QSTR_SLAVE_OD),  MP_ROM_INT(SSI_MODE_SLAVE_OD) },
+    // { MP_ROM_QSTR(MP_QSTR_MSB),    MP_ROM_INT(SPI_FIRSTBIT_MSB) },
+    // { MP_ROM_QSTR(MP_QSTR_LSB),    MP_ROM_INT(SPI_FIRSTBIT_LSB) },
+    { MP_ROM_QSTR(MP_QSTR_SPI0),    MP_ROM_INT(SSI_FRF_MOTO_MODE_0)},
+    { MP_ROM_QSTR(MP_QSTR_SPI1),    MP_ROM_INT(SSI_FRF_MOTO_MODE_1)},
+    { MP_ROM_QSTR(MP_QSTR_SPI2),    MP_ROM_INT(SSI_FRF_MOTO_MODE_2)},
+    { MP_ROM_QSTR(MP_QSTR_SPI3),    MP_ROM_INT(SSI_FRF_MOTO_MODE_3)},
+    { MP_ROM_QSTR(MP_QSTR_TI),      MP_ROM_INT(SSI_FRF_TI)},
+    { MP_ROM_QSTR(MP_QSTR_MICROWIRE),    MP_ROM_INT(SSI_FRF_NMW)},
+    { MP_ROM_QSTR(MP_QSTR_FIRST_EDGE),    MP_ROM_INT(0)},
+    { MP_ROM_QSTR(MP_QSTR_SECOND_EDGE),    MP_ROM_INT(1)},
+    { MP_ROM_QSTR(MP_QSTR_IDLE_LOW),    MP_ROM_INT(0)},
+    { MP_ROM_QSTR(MP_QSTR_IDLE_HIGH),    MP_ROM_INT(1)},
+    { MP_ROM_QSTR(MP_QSTR_FSS_SOFT),    MP_ROM_INT(true)},
+    { MP_ROM_QSTR(MP_QSTR_FSS_HARD),    MP_ROM_INT(false)},
+    { MP_ROM_QSTR(MP_QSTR_DMA_NONE),    MP_ROM_INT(0)},
+    { MP_ROM_QSTR(MP_QSTR_DMA_RX),    MP_ROM_INT(SSI_DMA_RX)},
+    { MP_ROM_QSTR(MP_QSTR_DMA_TX),    MP_ROM_INT(SSI_DMA_TX)},
+    { MP_ROM_QSTR(MP_QSTR_DMA_BOTH),    MP_ROM_INT(SSI_DMA_TX | SSI_DMA_RX)},
+
     /* TODO
     { MP_ROM_QSTR(MP_QSTR_DIRECTION_2LINES             ((uint32_t)0x00000000)
     { MP_ROM_QSTR(MP_QSTR_DIRECTION_2LINES_RXONLY      SPI_CR1_RXONLY
