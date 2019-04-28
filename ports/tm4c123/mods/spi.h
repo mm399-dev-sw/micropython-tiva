@@ -34,11 +34,11 @@
 
 extern const mp_obj_type_t machine_hard_spi_type;
 
-typedef struct _spi_t {
-    spi_obj_t *spi;
-    const dma_descr_t *tx_dma_descr;
-    const dma_descr_t *rx_dma_descr;
-} spi_t;
+// typedef struct _spi_t {
+//     spi_obj_t *spi;
+//     const dma_descr_t *tx_dma_descr;
+//     const dma_descr_t *rx_dma_descr;
+// } spi_t;
 
 typedef enum {
     PYB_SPI_NONE =4,
@@ -122,7 +122,7 @@ extern const mp_obj_type_t machine_soft_spi_type;
 extern const mp_obj_type_t machine_hard_spi_type;
 
 void spi_init0(void);
-void spi_init(const spi_t *spi, bool enable_nss_pin);
+void spi_init(const machine_hard_spi_obj_t *self);
 const spi_t *spi_from_mp_obj(mp_obj_t o);
 
 #endif // MICROPY_INCLUDED_STM32_SPI_H
