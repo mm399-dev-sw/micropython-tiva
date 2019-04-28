@@ -548,15 +548,16 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_1(pin_af_obj, pin_af);
 /// \classmethod unlock(str pin1, str pin2,..)
 /// Sets the Commit Flag on the corresponting GPIO enable
 /// re-assingment of the supplied pin
-STATIC void pin_unlock(size_t n_args, const mp_obj_t *args) {
+STATIC mp_obj_t pin_unlock(size_t n_args, const mp_obj_t *args) {
     if (n_args > 1) {
         for (int i = 1 ; i < n_args ; i++) {
             const pin_obj_t *p = pin_find(args[i]);
             mp_hal_unlock_special_pin(p);
         }
     }
+    return mp_const_none;
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(pin_unlock_fun_obj, 2, pin_unlock);
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(pin_unlock_fun_obj, 2, 2, pin_unlock);
 STATIC MP_DEFINE_CONST_CLASSMETHOD_OBJ(pin_unlock_obj, MP_ROM_PTR(&pin_unlock_fun_obj));
 
 

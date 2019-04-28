@@ -181,8 +181,8 @@ MP_WEAK int mp_hal_stdin_rx_chr(void) {
            return c;
        }
        #endif
-       if (MP_STATE_PORT(pyb_stdio_uart) != NULL && uart_rx_any(MP_STATE_PORT(pyb_stdio_uart))) {
-           return uart_rx_char(MP_STATE_PORT(pyb_stdio_uart));
+       if (MP_STATE_PORT(machine_stdio_uart) != NULL && uart_rx_any(MP_STATE_PORT(machine_stdio_uart))) {
+           return uart_rx_char(MP_STATE_PORT(machine_stdio_uart));
        }
     //    int dupterm_c = mp_uos_dupterm_rx_chr();
     //    if (dupterm_c >= 0) {
@@ -197,8 +197,8 @@ void mp_hal_stdout_tx_str(const char *str) {
 }
 
 MP_WEAK void mp_hal_stdout_tx_strn(const char *str, size_t len) {
-   if (MP_STATE_PORT(pyb_stdio_uart) != NULL) {
-       uart_tx_strn(MP_STATE_PORT(pyb_stdio_uart), str, len);
+   if (MP_STATE_PORT(machine_stdio_uart) != NULL) {
+       uart_tx_strn(MP_STATE_PORT(machine_stdio_uart), str, len);
    }
 #if 0 && defined(USE_HOST_MODE) && MICROPY_HW_HAS_LCD
    lcd_print_strn(str, len);

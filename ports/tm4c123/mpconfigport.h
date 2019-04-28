@@ -209,9 +209,9 @@ extern const struct _mp_obj_module_t pyb_module;
     \
     mp_obj_t test_callback_obj; \
     /* stdio is repeated on this UART object if it's not null */ \
-    struct _pyb_uart_obj_t *pyb_stdio_uart; \
+    struct _machine_uart_obj_t *machine_stdio_uart; \
     \
     /* pointers to all UART objects (if they have been created) */ \
-    struct _pyb_uart_obj_t *pyb_uart_obj_all[MICROPY_HW_MAX_UART]; \
-    struct _machine_hard_spi_obj_t *machine_hard_spi_obj_all[MICROPY_HW_MAX_SPI];\
+    struct _machine_uart_obj_t *machine_uart_obj_all[MICROPY_HW_MAX_UART]; \
+    struct _machine_hard_spi_obj_t *machine_spi_obj_all[MICROPY_HW_MAX_SPI];\
 
