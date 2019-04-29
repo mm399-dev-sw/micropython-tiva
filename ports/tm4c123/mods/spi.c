@@ -30,6 +30,7 @@
 #include "py/runtime.h"
 #include "py/mphal.h"
 #include "extmod/machine_spi.h"
+#include "errno.h"
 #include "irq.h"
 #include "pin.h"
 #include "bufhelper.h"
@@ -326,12 +327,34 @@ STATIC HAL_StatusTypeDef spi_wait_dma_finished(const spi_t *spi, uint32_t timeou
     return HAL_OK;
 }
 
+mp_uint_t spi_tx_only(machine_hard_spi_obj_t *self, uint16_t* data, size_t len, uint32_t timeout) {
+    uint start;
+    uint32_t dummy;
+    for(int i=0; i<len;i++) {
+        start = mp_hal_ticks_ms();
+        for(;;) {
+            if(self->regs->SR & SSI_SR_TNF) {
+                SSIDataPutNonBlocking(self->spi_base, data[i]);
+                SSIDataGetNonBlocking(self->spi_base, &dummy);
+                break;
+            } else {
+                if(mp_hal_ticks_ms() - start > timeout) {
+                    return ETIMEDOUT;
+                }
+            }
+        }
+    }
+    return 0;
+}
+
 // A transfer of "len" bytes should take len*8*1000/baudrate milliseconds.
 // To simplify the calculation we assume the baudrate is never less than 8kHz
 // and use that value for the baudrate in the formula, plus a small constant.
 #define SPI_TRANSFER_TIMEOUT(len) ((len) + 100)
 
-STATIC void spi_transfer(const machine_hard_spi_obj_t *self, size_t len, const uint8_t *src, uint8_t *dest, uint32_t timeout) {
+STATIC void spi_transfer(const machine_hard_spi_obj_t *self, size_t len, const uint16_t *src, uint8_t *dest, uint32_t timeout) {
+    mp_uint_t status = 0;
+    mp_uint_t bytes_trans = 0;
 
     if (dest == NULL) {
         // send only
@@ -917,7 +940,11 @@ STATIC void machine_hard_spi_init(mp_obj_base_t *self_in, size_t n_args, const m
 
 STATIC void machine_hard_spi_deinit(mp_obj_base_t *self_in) {
     machine_hard_spi_obj_t *self = (machine_hard_spi_obj_t*)self_in;
-    spi_deinit(self->spi);
+    spi_deinit(self);
+}
+
+STATIC mp_uint_t machine_hard_spi_transmit(const machine_hard_spi_obj_t *self, size_t len, const uint8_t *src, uint32_t timeout) {
+    
 }
 
 STATIC void machine_hard_spi_transfer(mp_obj_base_t *self_in, size_t len, const uint8_t *src, uint8_t *dest) {
