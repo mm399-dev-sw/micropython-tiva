@@ -33,7 +33,7 @@
 #define MICROPY_HW_MAX_UART (8)
 #define MICROPY_HW_MAX_SPI (4)
 
-//#define MICROPY_PY_MACHINE_SPI (1)
+#define MICROPY_PY_MACHINE_SPI (1)
 
 // UART config
 #define MICROPY_HW_UART0_NAME   "0"

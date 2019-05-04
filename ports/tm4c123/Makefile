@@ -214,6 +214,7 @@ MODS_SRC_C = $(addprefix mods/,\
 	systick.c \
 	handlers.c \
 	globals.c \
+	spi.c \
 )
 	# fatfs_port.c \
 	# irq.c \

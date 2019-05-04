@@ -23,18 +23,26 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#ifndef MICROPY_INCLUDED_STM32_SPI_H
-#define MICROPY_INCLUDED_STM32_SPI_H
+#ifndef MICROPY_INCLUDED_TM4C_SPI_H
+#define MICROPY_INCLUDED_TM4C_SPI_H
 
 #include <stdint.h>
-#include "dma.h"
+//#include "dma.h"
 #include "inc/hw_ssi.h"
 #include "inc/hw_memmap.h"
 #include "driverlib/ssi.h"
 
-extern const mp_obj_type_t machine_hard_spi_type;
+//extern const mp_obj_type_ttypedef struct _spi_t {
+//     spi_obj_t *spi;
+//     const dma_descr_t *tx_dma_descr;
+//     const dma_descr_t *rx_dma_descr;
+// } spi_t;
 
-// typedef struct _spi_t {
+// typedef struct _spi_t {typedef struct _spi_t {
+//     spi_obj_t *spi;
+//     const dma_descr_t *tx_dma_descr;
+//     const dma_descr_t *rx_dma_descr;
+// } spi_t;
 //     spi_obj_t *spi;
 //     const dma_descr_t *tx_dma_descr;
 //     const dma_descr_t *rx_dma_descr;
@@ -115,14 +123,14 @@ typedef struct  {
 //     .dma_tx_enabled = false,
 // };
 
-extern const spi_t spi_obj[6];
+//extern const spi_t spi_obj[6];
 
-extern const mp_obj_type_t pyb_spi_type;
+//extern const mp_obj_type_t pyb_spi_type;
 extern const mp_obj_type_t machine_soft_spi_type;
 extern const mp_obj_type_t machine_hard_spi_type;
 
 void spi_init0(void);
-void spi_init(const machine_hard_spi_obj_t *self);
-const spi_t *spi_from_mp_obj(mp_obj_t o);
+void spi_init(const mp_obj_t *self);
+//const spi_t *spi_from_mp_obj(mp_obj_t o);
 
-#endif // MICROPY_INCLUDED_STM32_SPI_H
+#endif // MICROPY_INCLUDED_TM4C_SPI_H
