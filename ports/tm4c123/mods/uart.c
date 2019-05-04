@@ -456,6 +456,7 @@ STATIC bool uart_wait_flag_unset(machine_uart_obj_t *self, uint32_t flag, uint32
         if (timeout == 0 || mp_hal_ticks_ms() - start >= timeout) {
             return false; // timeout
         }
+        MICROPY_EVENT_POLL_HOOK
     }
 }
 
