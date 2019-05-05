@@ -214,9 +214,9 @@ enum {
 #define mp_hal_pin_obj_t const pin_obj_t*
 #define mp_hal_get_pin_obj(o)   pin_find(o)
 #define mp_hal_pin_name(p)      ((p)->name)
-#define mp_hal_pin_input(p)     mp_hal_pin_config((p)->gpio, (p)->pin_mask, MP_HAL_PIN_MODE_INPUT, MP_HAL_PIN_PULL_NONE, MP_HAL_PIN_STRENGTH_LOW)
-#define mp_hal_pin_output(p)    mp_hal_pin_config((p)->gpio, (p)->pin_mask, MP_HAL_PIN_MODE_OUTPUT, MP_HAL_PIN_PULL_NONE, MP_HAL_PIN_STRENGTH_LOW)
-#define mp_hal_pin_open_drain(p) mp_hal_pin_config((p)->gpio, (p)->pin_mask, MP_HAL_PIN_MODE_OUTPUT, MP_HAL_PIN_MODE_OPEN_DRAIN, MP_HAL_PIN_STRENGTH_LOW)
+#define mp_hal_pin_input(p)     mp_hal_pin_config((p), MP_HAL_PIN_MODE_INPUT, MP_HAL_PIN_PULL_NONE, MP_HAL_PIN_STRENGTH_LOW)
+#define mp_hal_pin_output(p)    mp_hal_pin_config((p), MP_HAL_PIN_MODE_OUTPUT, MP_HAL_PIN_PULL_NONE, MP_HAL_PIN_STRENGTH_LOW)
+#define mp_hal_pin_open_drain(p) mp_hal_pin_config((p), MP_HAL_PIN_MODE_OUTPUT, MP_HAL_PIN_MODE_OPEN_DRAIN, MP_HAL_PIN_STRENGTH_LOW)
 
 #define mp_hal_pin_high(p)      MAP_GPIOPinWrite((p)->gpio, (p)->pin_mask, (p)->pin_mask)
 #define mp_hal_pin_low(p)       MAP_GPIOPinWrite((p)->gpio, (p)->pin_mask,  0)
@@ -245,6 +245,7 @@ void mp_hal_gpio_clock_enable(const uint32_t port);
 bool mp_hal_pin_config(mp_hal_pin_obj_t pin_obj, uint32_t dir, uint32_t type, uint32_t drive);
 bool mp_hal_pin_config_alt(mp_hal_pin_obj_t pin_obj, uint8_t fn, uint8_t unit);
 void mp_hal_pin_set_af(mp_hal_pin_obj_t pin_obj, uint8_t af_id);
+NORETURN void mp_hal_raise(int status);
 uint32_t HAL_GetTick();
 
 #endif // MICROPY_INCLUDED_TM4C_HAL_PINS_H

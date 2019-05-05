@@ -40,9 +40,9 @@
 //    [HAL_TIMEOUT] = MP_ETIMEDOUT,
 //};
 
-//NORETURN void mp_hal_raise(HAL_StatusTypeDef status) {
-//    mp_raise_OSError(mp_hal_status_to_errno_table[status]);
-//}
+NORETURN void mp_hal_raise(int status) {
+   mp_raise_OSError(status);
+}
 
 void mp_hal_ticks_cpu_enable(void) {
    if (!(DWT->CTRL & DWT_CTRL_CYCCNTENA_Msk)) {
