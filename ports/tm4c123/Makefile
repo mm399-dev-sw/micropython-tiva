@@ -201,6 +201,9 @@ SRC_LIBM = $(addprefix lib/libm/,\
 	)
 endif
 
+# Additional sources
+# ADD_SRC_C = 
+# 	drivers/bus/softspi.c 
 
 # Module sources
 MODS_SRC_C = $(addprefix mods/,\
@@ -242,7 +245,7 @@ CORE_SRC_C = \
 ASM_SRC_S = \
 	gchelper.s 
 		
-SRC_C = $(CORE_SRC_C) $(MODS_SRC_C) $(GEN_PINS_SRC) $(SRC_LIB) $(SRC_LIBM) 
+SRC_C = $(CORE_SRC_C) $(MODS_SRC_C) $(GEN_PINS_SRC) $(SRC_LIB) $(SRC_LIBM) $(ADD_SRC_C)
 
 ASM_OBJ = $(addprefix $(BUILD)/, $(ASM_SRC_S:.s=.o))
 
