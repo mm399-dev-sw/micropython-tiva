@@ -146,21 +146,21 @@ STATIC int spi_find(mp_obj_t id) {
         // given a string id
         const char *port = mp_obj_str_get_str(id);
         if (0) {
-        #ifdef MICROPY_HW_SPI1_NAME
+        #ifdef MICROPY_HW_SPI0_NAME
         } else if (strcmp(port, MICROPY_HW_SPI0_NAME) == 0) {
-            return 0;
+            return SPI_0;
         #endif
         #ifdef MICROPY_HW_SPI1_NAME
         } else if (strcmp(port, MICROPY_HW_SPI1_NAME) == 0) {
-            return 1;
+            return SPI_1;
         #endif
         #ifdef MICROPY_HW_SPI2_NAME
         } else if (strcmp(port, MICROPY_HW_SPI2_NAME) == 0) {
-            return 2;
+            return SPI_2;
         #endif
         #ifdef MICROPY_HW_SPI3_NAME
         } else if (strcmp(port, MICROPY_HW_SPI3_NAME) == 0) {
-            return 3;
+            return SPI_3;
         #endif
         }
         nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_ValueError,
@@ -168,8 +168,7 @@ STATIC int spi_find(mp_obj_t id) {
     } else {
         // given an integer id
         int spi_id = mp_obj_get_int(id);
-        if (spi_id >= 0 && spi_id <= MP_ARRAY_SIZE(MP_STATE_PORT(machine_spi_obj_all))
-            && MP_STATE_PORT(machine_spi_obj_all)[spi_id - 1] != NULL) {
+        if (spi_id >= 0 && spi_id <= MP_ARRAY_SIZE(MP_STATE_PORT(machine_spi_obj_all))) {
             return spi_id;
         }
         nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_ValueError,
@@ -216,7 +215,7 @@ void spi_init(const mp_obj_t *self_in) {
 
     if (0) {
     #if defined(MICROPY_HW_SPI0_SCK)
-    } else if (self->spi_id == PYB_SPI_0) {
+    } else if (self->spi_id == SPI_0) {
         self->spi_base = SSI0_BASE;
         self->periph = SYSCTL_PERIPH_SSI0;
         self->regs = (periph_spi_t*)SSI0_BASE;
@@ -235,7 +234,7 @@ void spi_init(const mp_obj_t *self_in) {
         #endif
     #endif
     #if defined(MICROPY_HW_SPI1_SCK)
-    } else if (self->spi_id == PYB_SPI_1) {
+    } else if (self->spi_id == SPI_1) {
         self->spi_base = SSI1_BASE;
         self->periph = SYSCTL_PERIPH_SSI1;
         self->regs = (periph_spi_t*)SSI1_BASE;
@@ -254,7 +253,7 @@ void spi_init(const mp_obj_t *self_in) {
         #endif
     #endif
     #if defined(MICROPY_HW_SPI2_SCK)
-    } else if (self->spi_id == PYB_SPI_2) {
+    } else if (self->spi_id == SPI_2) {
         self->spi_base = SSI2_BASE;
         self->periph = SYSCTL_PERIPH_SSI2;
         self->regs = (periph_spi_t*)SSI2_BASE;
@@ -273,7 +272,7 @@ void spi_init(const mp_obj_t *self_in) {
         #endif
     #endif
     #if defined(MICROPY_HW_SPI3_SCK)
-    } else if (self->spi_id == PYB_SPI_3) {
+    } else if (self->spi_id == SPI_3) {
         self->spi_base = SSI3_BASE;
         self->periph = SYSCTL_PERIPH_SSI3;
         self->regs = (periph_spi_t*)SSI3_BASE;
@@ -521,7 +520,7 @@ STATIC void machine_hard_spi_print(const mp_print_t *print, mp_obj_t self_in, mp
 }
 
 STATIC mp_obj_t machine_hard_spi_init_helper(mp_obj_t* self_in, size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
-    enum { ARG_mode, ARG_id, ARG_baudrate,/* ARG_prescaler, ARG_polarity, ARG_phase,*/ ARG_bits, ARG_fss, ARG_protocol, ARG_dma, ARG_firstbit, ARG_sck, ARG_mosi, ARG_miso };
+    enum { ARG_mode, ARG_id, ARG_baudrate,/* ARG_prescaler, ARG_polarity, ARG_phase,*/ ARG_bits, ARG_fss, ARG_protocol, ARG_dma, /*ARG_firstbit,*/ ARG_sck, ARG_mosi, ARG_miso };
     static const mp_arg_t allowed_args[] = {
         { MP_QSTR_mode,     MP_ARG_REQUIRED | MP_ARG_INT, {.u_int = SSI_MODE_MASTER} }, // Default as master
         { MP_QSTR_id,       MP_ARG_OBJ, {.u_obj = MP_OBJ_NEW_SMALL_INT(-1)} },
@@ -537,9 +536,9 @@ STATIC mp_obj_t machine_hard_spi_init_helper(mp_obj_t* self_in, size_t n_args, c
         //{ MP_QSTR_firstbit, MP_ARG_KW_ONLY | MP_ARG_INT,  {.u_int = SPI_FIRSTBIT_MSB} },
         //{ MP_QSTR_ti,       MP_ARG_KW_ONLY | MP_ARG_BOOL, {.u_bool = false} },
         //{ MP_QSTR_crc,      MP_ARG_KW_ONLY | MP_ARG_OBJ,  {.u_obj = mp_const_none} },
-        //{ MP_QSTR_sck,      MP_ARG_KW_ONLY | MP_ARG_OBJ, {.u_obj = MP_OBJ_NULL} },
-        //{ MP_QSTR_mosi,     MP_ARG_KW_ONLY | MP_ARG_OBJ, {.u_obj = MP_OBJ_NULL} },
-        //{ MP_QSTR_miso,     MP_ARG_KW_ONLY | MP_ARG_OBJ, {.u_obj = MP_OBJ_NULL} },
+        { MP_QSTR_sck,      MP_ARG_KW_ONLY | MP_ARG_OBJ, {.u_obj = MP_OBJ_NULL} },
+        { MP_QSTR_mosi,     MP_ARG_KW_ONLY | MP_ARG_OBJ, {.u_obj = MP_OBJ_NULL} },
+        { MP_QSTR_miso,     MP_ARG_KW_ONLY | MP_ARG_OBJ, {.u_obj = MP_OBJ_NULL} },
     };
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
     mp_arg_parse_all(n_args, pos_args, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
@@ -569,7 +568,7 @@ STATIC mp_obj_t machine_hard_spi_init_helper(mp_obj_t* self_in, size_t n_args, c
     // }
     // uint8_t prescale = args[ARG_prescaler].u_int;
 
-    if(self->mode) {
+    if(!self->mode) {
         if(args[ARG_baudrate].u_int >= 25000000) {
             nlr_raise(mp_obj_new_exception_msg(&mp_type_ValueError, "baudrate too high, max 25 Mbaud as master"));
         }
@@ -585,11 +584,11 @@ STATIC mp_obj_t machine_hard_spi_init_helper(mp_obj_t* self_in, size_t n_args, c
          args[ARG_protocol].u_int == SSI_FRF_TI || args[ARG_protocol].u_int == SSI_FRF_NMW)) {
         nlr_raise(mp_obj_new_exception_msg(&mp_type_ValueError, "protocol not supported, please use SPI0..3, TI or MICROWIRE!"));
     }
-    self->protocol = args[ARG_fss].u_int;
+    self->protocol = args[ARG_protocol].u_int;
 
-    if(args[ARG_fss].u_int != 0 || args[ARG_fss].u_int != 1) {
-        nlr_raise(mp_obj_new_exception_msg(&mp_type_ValueError, "fss only accepts CS_HARD(0) or CS_SOFT(1)"));
-    }
+//    if(args[ARG_fss].u_int != 0 || args[ARG_fss].u_int != 1) {
+//        nlr_raise(mp_obj_new_exception_msg(&mp_type_ValueError, "fss only accepts CS_HARD(0) or CS_SOFT(1)"));
+//    }
     // Automatic or Manually assert chipselect? Only applicable in SPI mode
     if(self->protocol == SSI_CR0_FRF_MOTO) {
         self->soft_fss = args[ARG_fss].u_bool;
@@ -597,7 +596,7 @@ STATIC mp_obj_t machine_hard_spi_init_helper(mp_obj_t* self_in, size_t n_args, c
         self->soft_fss = false;
     }
 
-    if(!(args[ARG_dma].u_int & 0x03)) {
+    if(!(args[ARG_dma].u_int <= 3 && args[ARG_dma].u_int >= 0)) {
         nlr_raise(mp_obj_new_exception_msg(&mp_type_ValueError, "dma accepts only DMA_NONE(0), DMA_RX(1), DMA_TX(2) or DMA_BOTH(3)"));
     }
     self->dma_enabled = args[ARG_dma].u_int;
@@ -608,13 +607,13 @@ STATIC mp_obj_t machine_hard_spi_init_helper(mp_obj_t* self_in, size_t n_args, c
     return mp_const_none;
 }
 
-STATIC void machine_hard_spi_init(mp_obj_base_t *self_in, size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
-    machine_hard_spi_init_helper((mp_obj_t*)self_in, n_args, pos_args, kw_args);
+STATIC mp_obj_t machine_hard_spi_init(size_t n_args, const mp_obj_t *args, mp_map_t *kw_args) {  
+    return machine_hard_spi_init_helper(args[0], n_args - 1, args + 1, kw_args);
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_KW(machine_hard_spi_init_obj, 1, machine_hard_spi_init);
+STATIC MP_DEFINE_CONST_FUN_OBJ_KW(machine_spi_init_obj, 1, machine_hard_spi_init);
+
 
 mp_obj_t machine_hard_spi_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *all_args) {
-    
 
     // check arguments
     mp_arg_check_num(n_args, n_kw, 1, MP_OBJ_FUN_ARGS_MAX, true);
@@ -648,11 +647,14 @@ mp_obj_t machine_hard_spi_make_new(const mp_obj_type_t *type, size_t n_args, siz
     return MP_OBJ_FROM_PTR(self);
 }
 
-STATIC void machine_hard_spi_deinit(mp_obj_base_t *self_in) {
+STATIC mp_obj_t machine_hard_spi_deinit(mp_obj_t self_in) {
     // machine_hard_spi_obj_t *self = (machine_hard_spi_obj_t*)self_in;
-    spi_deinit((mp_obj_t*) self_in);
+    spi_deinit(&self_in);
+    return mp_const_none;
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_1(machine_hard_spi_deinit_obj, machine_hard_spi_deinit);
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(machine_spi_deinit_obj, machine_hard_spi_deinit);
+
 
 // STATIC mp_uint_t machine_hard_spi_transmit(const machine_hard_spi_obj_t *self, size_t len, const uint8_t *src, uint32_t timeout) {
     
@@ -667,7 +669,7 @@ STATIC mp_obj_t mp_machine_hard_spi_read(size_t n_args, const mp_obj_t *args) {
     vstr_t vstr;
     vstr_init_len(&vstr, mp_obj_get_int(args[1]));
     memset(vstr.buf, n_args == 3 ? mp_obj_get_int(args[2]) : 0, vstr.len);
-    machine_hard_spi_transfer(args[0], vstr.len, vstr.buf, vstr.buf);
+    machine_hard_spi_transfer(args[0], vstr.len, (uint8_t*)vstr.buf, (uint8_t*)vstr.buf);
     return mp_obj_new_str_from_vstr(&mp_type_bytes, &vstr);
 }
 MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mp_machine_hard_spi_read_obj, 2, 3, mp_machine_hard_spi_read);
@@ -704,8 +706,8 @@ MP_DEFINE_CONST_FUN_OBJ_3(mp_machine_hard_spi_write_readinto_obj, mp_machine_har
 
 STATIC const mp_rom_map_elem_t machine_hard_spi_locals_dict_table[] = {
     // instance methods
-    { MP_ROM_QSTR(MP_QSTR_init), MP_ROM_PTR(&machine_hard_spi_init_obj) },
-    { MP_ROM_QSTR(MP_QSTR_deinit), MP_ROM_PTR(&machine_hard_spi_deinit_obj) },
+    { MP_ROM_QSTR(MP_QSTR_init), MP_ROM_PTR(&machine_spi_init_obj) },
+    { MP_ROM_QSTR(MP_QSTR_deinit), MP_ROM_PTR(&machine_spi_deinit_obj) },
 
     { MP_ROM_QSTR(MP_QSTR_read), MP_ROM_PTR(&mp_machine_hard_spi_read_obj) },
     { MP_ROM_QSTR(MP_QSTR_readinto), MP_ROM_PTR(&mp_machine_hard_spi_readinto_obj) },
@@ -751,18 +753,18 @@ STATIC const mp_rom_map_elem_t machine_hard_spi_locals_dict_table[] = {
 
 STATIC MP_DEFINE_CONST_DICT(machine_hard_spi_locals_dict, machine_hard_spi_locals_dict_table);
 
-STATIC const mp_machine_spi_p_t machine_hard_spi_p = {
-    .init = machine_hard_spi_init,
-    .deinit = machine_hard_spi_deinit,
-    .transfer = machine_hard_spi_transfer,
-};
+// STATIC const mp_machine_spi_p_t machine_hard_spi_p = {
+//     .init = machine_hard_spi_init,
+//     .deinit = machine_hard_spi_deinit,
+//     .transfer = machine_hard_spi_transfer,
+// };
 
 const mp_obj_type_t machine_hard_spi_type = {
     { &mp_type_type },
     .name = MP_QSTR_SPI,
     .print = machine_hard_spi_print,
     .make_new = machine_hard_spi_make_new,
-    .protocol = &machine_hard_spi_p,
+    // .protocol = &machine_hard_spi_p,
     .locals_dict = (mp_obj_t)&machine_hard_spi_locals_dict,
 };
 

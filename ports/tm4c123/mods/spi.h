@@ -49,11 +49,11 @@
 // } spi_t;
 
 typedef enum {
-    PYB_SPI_NONE =4,
-    PYB_SPI_0 = 0,
-    PYB_SPI_1 = 1,
-    PYB_SPI_2 = 2,
-    PYB_SPI_3 = 3,
+    SPI_NONE =4,
+    SPI_0 = 0,
+    SPI_1 = 1,
+    SPI_2 = 2,
+    SPI_3 = 3,
 } spi_id_t;
 
 typedef struct  {
