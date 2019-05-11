@@ -29,7 +29,7 @@
 #include <stdint.h>
 //#include "dma.h"
 #include "inc/hw_ssi.h"
-#include "inc/hw_memmap.h"
+//#include "inc/hw_memmap.h"
 #include "driverlib/ssi.h"
 
 //extern const mp_obj_type_ttypedef struct _spi_t {

@@ -102,7 +102,7 @@ bool mp_hal_pin_config(mp_hal_pin_obj_t pin_obj, uint32_t dir, uint32_t type, ui
 void mp_hal_pin_set_af(mp_hal_pin_obj_t pin_obj, uint8_t af_id) {
     if (af_id == 0xFF) return;
     mp_hal_gpio_clock_enable(pin_obj->periph);
-    MAP_GPIOPinConfigure((pin_obj->af_list)[af_id].conf);
+    GPIOPinConfigure(pin_find_af_by_index(pin_obj,af_id)->conf);
 }
 
 bool mp_hal_pin_config_alt(mp_hal_pin_obj_t pin, uint8_t fn, uint8_t unit) {

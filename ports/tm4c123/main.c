@@ -33,7 +33,7 @@
 #include "gccollect.h"
 #include "modmachine.h"
 //#include "i2c.h"
-//#include "spi.h"
+#include "spi.h"
 #include "uart.h"
 #include "timer.h"
 //#include "led.h"
@@ -408,7 +408,9 @@ int tm4c_main(int reset_mode) {
     #if MICROPY_HW_ENABLE_RTC
     rtc_init_start(false);
     #endif
-    // TODO spi_init0();
+    spi_init0();
+    //disable_irq();
+    // TODO 
 //     #if MICROPY_HW_ENABLE_HW_I2C
 //     i2c_init0();
 //     #endif
