@@ -73,6 +73,9 @@
 #define MICROPY_OPT_CACHE_MAP_LOOKUP_IN_BYTECODE (0)
 #define MICROPY_OPT_MPZ_BITWISE     (1)
 
+// sd card
+#define MICROPY_HW_HAS_SDCARD       (1)
+
 // fatfs configuration used in ffconf.h
 // #define MICROPY_FATFS_ENABLE_LFN       (1)
 // #define MICROPY_FATFS_LFN_CODE_PAGE    (437) /* 1=SFN/ANSI 437=LFN/U.S.(OEM) */
