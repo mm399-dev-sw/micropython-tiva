@@ -32,7 +32,7 @@ TIVAWARE_LIB = /home/raphael/ti/tivaware
 QSTR_DEFS = qstrdefsport.h $(BUILD)/pins_qstr.h
 QSTR_GLOBAL_DEPENDENCIES = board/mpconfigboard.h
 
-MICROPY_FLOAT_IMPL=double
+MICROPY_FLOAT_IMPL=single
 LONGINT_IMPL=mpz
 
 # include py core make definitions
@@ -322,6 +322,7 @@ $(BUILD)/pins.o: $(BUILD)/pins.c
 ${PROJECT_NAME}.axf: $(OBJ)
 	@echo
 	@echo Used these C-Flags: $(CFLAGS)
+	#$(CC) $(CFLAGS) -E build/pins.c	-o build/pins.e
 	@echo
 	@echo Making driverlib
 	$(MAKE) -C ${TIVAWARE_LIB}/driverlib/
