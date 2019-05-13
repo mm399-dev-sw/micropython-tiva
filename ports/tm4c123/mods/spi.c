@@ -41,6 +41,7 @@
 #include "inc/hw_memmap.h"
 #include "driverlib/rom.h"
 #include "driverlib/rom_map.h"
+#include "driverlib/udma.h"
 #include "inc/hw_udma.h"
 
 /// \moduleref pyb
