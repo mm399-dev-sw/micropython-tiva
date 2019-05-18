@@ -218,6 +218,8 @@ MODS_SRC_C = $(addprefix mods/,\
 	handlers.c \
 	globals.c \
 	spi.c \
+	sd_spi_driver.c \
+	sdcard.c \
 )
 	# fatfs_port.c \
 	# irq.c \

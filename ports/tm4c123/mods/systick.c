@@ -39,7 +39,7 @@
 #include "pybthread.h"
 #include "driverlib/rom_map.h"
 
-extern __IO uint32_t uwTick;
+uint32_t uwTick;
 
 // We provide our own version of HAL_Delay that calls __WFI while waiting,
 // and works when interrupts are disabled.  This function is intended to be
@@ -118,10 +118,6 @@ mp_uint_t mp_hal_ticks_ms(void) {
     return uwTick;
 }
 
-// The SysTick timer counts down at 168 MHz, so we can use that knowledge
-// to grab a microsecond counter.
-//
-// We assume that HAL_GetTickis returns milliseconds.
 mp_uint_t mp_hal_ticks_us(void) {
     mp_uint_t irq_state = disable_irq();
     uint32_t counter = SysTick->VAL;

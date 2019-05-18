@@ -31,6 +31,7 @@
 #include "lib/oofatfs/ff.h"
 #include "extmod/vfs_fat.h"
 
+#include "sd_spi_driver.h"
 #include "sdcard.h"
 #include "pin.h"
 #include "bufhelper.h"
@@ -39,144 +40,19 @@
 
 #if MICROPY_HW_HAS_SDCARD
 
-#if defined(STM32F7) || defined(STM32H7) || defined(STM32L4)
-
-// The F7 has 2 SDMMC units but at the moment we only support using one of them in
-// a given build.  If a boards config file defines MICROPY_HW_SDMMC2_CK then SDMMC2
-// is used, otherwise SDMMC1 is used.
-
-#if defined(MICROPY_HW_SDMMC2_CK)
-#define SDIO SDMMC2
-#define SDMMC_CLK_ENABLE() __HAL_RCC_SDMMC2_CLK_ENABLE()
-#define SDMMC_CLK_DISABLE() __HAL_RCC_SDMMC2_CLK_DISABLE()
-#define SDMMC_IRQn SDMMC2_IRQn
-#define SDMMC_TX_DMA dma_SDMMC_2_TX
-#define SDMMC_RX_DMA dma_SDMMC_2_RX
-#else
-#define SDIO SDMMC1
-#define SDMMC_CLK_ENABLE() __HAL_RCC_SDMMC1_CLK_ENABLE()
-#define SDMMC_CLK_DISABLE() __HAL_RCC_SDMMC1_CLK_DISABLE()
-#define SDMMC_IRQn SDMMC1_IRQn
-#define SDMMC_TX_DMA dma_SDIO_0_TX
-#define SDMMC_RX_DMA dma_SDIO_0_RX
-#endif
-
-// The F7 & L4 series calls the peripheral SDMMC rather than SDIO, so provide some
-// #defines for backwards compatability.
-
-#define SDIO_CLOCK_EDGE_RISING              SDMMC_CLOCK_EDGE_RISING
-#define SDIO_CLOCK_EDGE_FALLING             SDMMC_CLOCK_EDGE_FALLING
-
-#define SDIO_CLOCK_BYPASS_DISABLE           SDMMC_CLOCK_BYPASS_DISABLE
-#define SDIO_CLOCK_BYPASS_ENABLE            SDMMC_CLOCK_BYPASS_ENABLE
-
-#define SDIO_CLOCK_POWER_SAVE_DISABLE       SDMMC_CLOCK_POWER_SAVE_DISABLE
-#define SDIO_CLOCK_POWER_SAVE_ENABLE        SDMMC_CLOCK_POWER_SAVE_ENABLE
-
-#define SDIO_BUS_WIDE_1B                    SDMMC_BUS_WIDE_1B
-#define SDIO_BUS_WIDE_4B                    SDMMC_BUS_WIDE_4B
-#define SDIO_BUS_WIDE_8B                    SDMMC_BUS_WIDE_8B
-
-#define SDIO_HARDWARE_FLOW_CONTROL_DISABLE  SDMMC_HARDWARE_FLOW_CONTROL_DISABLE
-#define SDIO_HARDWARE_FLOW_CONTROL_ENABLE   SDMMC_HARDWARE_FLOW_CONTROL_ENABLE
-
-#if defined(STM32H7)
-#define GPIO_AF12_SDIO                      GPIO_AF12_SDIO1
-#define SDIO_IRQHandler                     SDMMC1_IRQHandler
-#define SDIO_TRANSFER_CLK_DIV               SDMMC_NSpeed_CLK_DIV
-#define SDIO_USE_GPDMA                      0
-#else
-#define SDIO_TRANSFER_CLK_DIV               SDMMC_TRANSFER_CLK_DIV
-#define SDIO_USE_GPDMA                      1
-#endif
-
-#else
-
 // These are definitions for F4 MCUs so there is a common macro across all MCUs.
+#define MICROPY_HW_SDCARD_DETECT_PIN    (pinPB3)
+#define MICROPY_HW_SDCARD_DETECT_PRESENT (1)
 
-#define SDMMC_CLK_ENABLE() __SDIO_CLK_ENABLE()
-#define SDMMC_CLK_DISABLE() __SDIO_CLK_DISABLE()
-#define SDMMC_IRQn SDIO_IRQn
-#define SDMMC_TX_DMA dma_SDIO_0_TX
-#define SDMMC_RX_DMA dma_SDIO_0_RX
-#define SDIO_USE_GPDMA 1
-
-#endif
-
-// If no custom SDIO pins defined, use the default ones
-#ifndef MICROPY_HW_SDMMC_CK
-
-#define MICROPY_HW_SDMMC_D0 (pin_C8)
-#define MICROPY_HW_SDMMC_D1 (pin_C9)
-#define MICROPY_HW_SDMMC_D2 (pin_C10)
-#define MICROPY_HW_SDMMC_D3 (pin_C11)
-#define MICROPY_HW_SDMMC_CK (pin_C12)
-#define MICROPY_HW_SDMMC_CMD (pin_D2)
-
-#endif
-
-// TODO: Since SDIO is fundamentally half-duplex, we really only need to
-//       tie up one DMA channel. However, the HAL DMA API doesn't
-// seem to provide a convenient way to change the direction. I believe that
-// its as simple as changing the CR register and the Init.Direction field
-// and make DMA_SetConfig public.
-
-// TODO: I think that as an optimization, we can allocate these dynamically
-//       if an sd card is detected. This will save approx 260 bytes of RAM
-//       when no sdcard was being used.
-static SD_HandleTypeDef sd_handle;
 #if SDIO_USE_GPDMA
 static DMA_HandleTypeDef sd_rx_dma, sd_tx_dma;
 #endif
 
 void sdcard_init(void) {
-    // invalidate the sd_handle
-    sd_handle.Instance = NULL;
-
-    // configure SD GPIO
-    // we do this here an not in HAL_SD_MspInit because it apparently
-    // makes it more robust to have the pins always pulled high
-    // Note: the mp_hal_pin_config function will configure the GPIO in
-    // fast mode which can do up to 50MHz.  This should be plenty for SDIO
-    // which clocks up to 25MHz maximum.
-    #if defined(MICROPY_HW_SDMMC2_CK)
-    // Use SDMMC2 peripheral with pins provided by the board's config
-    mp_hal_pin_config_alt(MICROPY_HW_SDMMC2_CK, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_UP, AF_FN_SDMMC, 2);
-    mp_hal_pin_config_alt(MICROPY_HW_SDMMC2_CMD, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_UP, AF_FN_SDMMC, 2);
-    mp_hal_pin_config_alt(MICROPY_HW_SDMMC2_D0, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_UP, AF_FN_SDMMC, 2);
-    mp_hal_pin_config_alt(MICROPY_HW_SDMMC2_D1, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_UP, AF_FN_SDMMC, 2);
-    mp_hal_pin_config_alt(MICROPY_HW_SDMMC2_D2, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_UP, AF_FN_SDMMC, 2);
-    mp_hal_pin_config_alt(MICROPY_HW_SDMMC2_D3, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_UP, AF_FN_SDMMC, 2);
-    #else
-    // Default SDIO/SDMMC1 config
-    mp_hal_pin_config(MICROPY_HW_SDMMC_D0, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_UP, GPIO_AF12_SDIO);
-    mp_hal_pin_config(MICROPY_HW_SDMMC_D1, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_UP, GPIO_AF12_SDIO);
-    mp_hal_pin_config(MICROPY_HW_SDMMC_D2, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_UP, GPIO_AF12_SDIO);
-    mp_hal_pin_config(MICROPY_HW_SDMMC_D3, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_UP, GPIO_AF12_SDIO);
-    mp_hal_pin_config(MICROPY_HW_SDMMC_CK, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_UP, GPIO_AF12_SDIO);
-    mp_hal_pin_config(MICROPY_HW_SDMMC_CMD, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_UP, GPIO_AF12_SDIO);
-    #endif
-
-    // configure the SD card detect pin
-    // we do this here so we can detect if the SD card is inserted before powering it on
-    mp_hal_pin_config(MICROPY_HW_SDCARD_DETECT_PIN, MP_HAL_PIN_MODE_INPUT, MICROPY_HW_SDCARD_DETECT_PULL, 0);
-}
-
-void HAL_SD_MspInit(SD_HandleTypeDef *hsd) {
-    // enable SDIO clock
-    SDMMC_CLK_ENABLE();
-
-    #if defined(STM32H7)
-    // Reset SDMMC
-    __HAL_RCC_SDMMC1_FORCE_RESET();
-    __HAL_RCC_SDMMC1_RELEASE_RESET();
-    #endif
-
-    // NVIC configuration for SDIO interrupts
-    NVIC_SetPriority(SDMMC_IRQn, IRQ_PRI_SDIO);
-    HAL_NVIC_EnableIRQ(SDMMC_IRQn);
-
-    // GPIO have already been initialised by sdcard_init
+    
+    power_on();
+    set_max_speed();
+    send_initial_clock_train();
 }
 
 void HAL_SD_MspDeInit(SD_HandleTypeDef *hsd) {
@@ -185,7 +61,7 @@ void HAL_SD_MspDeInit(SD_HandleTypeDef *hsd) {
 }
 
 bool sdcard_is_present(void) {
-    return HAL_GPIO_ReadPin(MICROPY_HW_SDCARD_DETECT_PIN->gpio, MICROPY_HW_SDCARD_DETECT_PIN->pin_mask) == MICROPY_HW_SDCARD_DETECT_PRESENT;
+    return mp_hal_pin_read(MICROPY_HW_SDCARD_DETECT_PIN) == MICROPY_HW_SDCARD_DETECT_PRESENT;
 }
 
 bool sdcard_power_on(void) {
@@ -220,8 +96,8 @@ bool sdcard_power_on(void) {
     // use maximum SDMMC clock speed on F7 MCUs
     sd_handle.Init.ClockBypass = SDMMC_CLOCK_BYPASS_ENABLE;
     #endif
-    if (HAL_SD_ConfigWideBusOperation(&sd_handle, SDIO_BUS_WIDE_4B) != HAL_OK) {
-        HAL_SD_DeInit(&sd_handle);
+    if (sdc) {
+        sdcard_power_off();
         goto error;
     }
 
@@ -233,20 +109,24 @@ error:
 }
 
 void sdcard_power_off(void) {
-    if (!sd_handle.Instance) {
-        return;
-    }
-    HAL_SD_DeInit(&sd_handle);
-    sd_handle.Instance = NULL;
+    power_off();
 }
 
 uint64_t sdcard_get_capacity_in_bytes(void) {
-    if (sd_handle.Instance == NULL) {
-        return 0;
+    uint8_t csd[16];
+    send_cmd(CMD9, 0);
+    rcvr_datablock(csd, 16);
+    if(csd[127] & 0b11000000) {
+        // SDHC XC
+        uint32_t size = uint32_t(csd[6]) + (uint32_t(csd[7]) << 8) + ((uint32_t(csd[8]) & 0b00111111) << 16);
+        return uint64_t(size);
+    } else {
+        // SD
+        uint16_t size = ((csd[7] & 0b11000000) >> 6) +  (uint16_t(csd[8] & 0b11111111) << 2) + (uint16_t(csd[9] & 0b00000011) << 10);
+        uint16_t size_multi = (csd[5] & 0v00000001) + ((csd[6] & 0b00000011) << 1);
+        return uint64_t(size * size_multi);
     }
-    HAL_SD_CardInfoTypeDef cardinfo;
-    HAL_SD_GetCardInfo(&sd_handle, &cardinfo);
-    return (uint64_t)cardinfo.LogBlockNbr * (uint64_t)cardinfo.LogBlockSize;
+    
 }
 
 #if !defined(MICROPY_HW_SDMMC2_CK)

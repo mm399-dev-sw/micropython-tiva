@@ -27,6 +27,8 @@
 #define MICROPY_HW_BOARD_NAME       "Tiva Launch Pad"
 #define MICROPY_HW_MCU_NAME         "TM4C123GH6PM"
 
+#define SYS_TICK_DIVIDER            (1000)
+
 // assumption: every GPIO is interrupt capable
 #define PYB_EXTI_NUM_VECTORS (78)
 
@@ -104,12 +106,23 @@
 // #define MICROPY_HW_ENABLE_RTC       (1)
 // #define MICROPY_HW_ENABLE_USB       (0)
 
+
+// SPI defines for SD card
+#if MICROPY_HW_HAS_SDCARD
+#define MICROPY_HW_SDSPI_CK MICROPY_HW_SPI2_SCK
+#define MICROPY_HW_SDSPI_FSS MICROPY_HW_SPI2_FSS
+#define MICROPY_HW_SDSPI_RX MICROPY_HW_SPI2_MISO
+#define MICROPY_HW_SDSPI_TX MICROPY_HW_SPI2_MOSI
+#define MICROPY_HW_SDCARD_DETECT_PIN (pin_PB3)
+#define MICROPY_HW_SDCARD_DETECT_PULL MP_HAL_PIN_PULL_UP
+#endif
+
 // use external SPI flash for storage
-#define MICROPY_HW_SPIFLASH_SIZE_BITS (128 * 1024 * 1024)
-#define MICROPY_HW_SPIFLASH_CS      (pin_E11)
-#define MICROPY_HW_SPIFLASH_SCK     (pin_E10)
-#define MICROPY_HW_SPIFLASH_MOSI    (pin_E12)
-#define MICROPY_HW_SPIFLASH_MISO    (pin_E13)
+// #define MICROPY_HW_SPIFLASH_SIZE_BITS (128 * 1024 * 1024)
+// #define MICROPY_HW_SPIFLASH_CS      (pin_E11)
+// #define MICROPY_HW_SPIFLASH_SCK     (pin_E10)
+// #define MICROPY_HW_SPIFLASH_MOSI    (pin_E12)
+// #define MICROPY_HW_SPIFLASH_MISO    (pin_E13)
 
 #if MICROPY_HW_ENABLE_INTERNAL_FLASH_STORAGE
 // Provide block device macros if internal flash storage is enabled

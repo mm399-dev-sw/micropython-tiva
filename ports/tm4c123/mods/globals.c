@@ -27,4 +27,4 @@
 // In this File we declare all the globals, that would normally be declared in the STMCube lib and cannot be worked around
 #include <stdint.h>
 #include <stdbool.h>
-uint32_t uwTick = 0;
+//uint32_t uwTick = 0;
