@@ -38,50 +38,25 @@
 // gradually bring this driver over and add missing commands for disk size etc
 // sd spec
 
-#include "sd_spi_driver.h"
+#include "mpconfigport.h"
+#include "mods/sd_spi_driver.h"
+#include "driverlib/gpio.h"
+#include "driverlib/rom.h"
+#include "driverlib/rom_map.h"
+#include "driverlib/ssi.h"
+#include "driverlib/sysctl.h"
+#include "lib/oofatfs/diskio.h"
 
 #if MICROPY_HW_HAS_SDCARD
-
-/* Definitions for MMC/SDC command */
-#define CMD0    (0x40+0)    /* GO_IDLE_STATE */
-#define CMD1    (0x40+1)    /* SEND_OP_COND */
-#define CMD8    (0x40+8)    /* SEND_IF_COND */
-#define CMD9    (0x40+9)    /* SEND_CSD */
-#define CMD10    (0x40+10)    /* SEND_CID */
-#define CMD12    (0x40+12)    /* STOP_TRANSMISSION */
-#define CMD16    (0x40+16)    /* SET_BLOCKLEN */
-#define CMD17    (0x40+17)    /* READ_SINGLE_BLOCK */
-#define CMD18    (0x40+18)    /* READ_MULTIPLE_BLOCK */
-#define CMD23    (0x40+23)    /* SET_BLOCK_COUNT */
-#define CMD24    (0x40+24)    /* WRITE_BLOCK */
-#define CMD25    (0x40+25)    /* WRITE_MULTIPLE_BLOCK */
-#define CMD41    (0x40+41)    /* SEND_OP_COND (ACMD) */
-#define CMD55    (0x40+55)    /* APP_CMD */
-#define CMD58    (0x40+58)    /* READ_OCR */
-
-// SSI port
-#define SDC_SSI_BASE            SSI2_BASE
-#define SDC_SSI_SYSCTL_PERIPH   SYSCTL_PERIPH_SSI2
-
-// GPIO for SSI pins
-#define SDC_GPIO_PORT_BASE      GPIO_PORTB_BASE
-#define SDC_GPIO_SYSCTL_PERIPH  SYSCTL_PERIPH_GPIOB
-#define SDC_SSI_CLK             GPIO_PIN_4
-#define SDC_SSI_TX              GPIO_PIN_7
-#define SDC_SSI_RX              GPIO_PIN_6
-#define SDC_SSI_FSS             GPIO_PIN_5
-#define SDC_SSI_PINS            (SDC_SSI_TX | SDC_SSI_RX | SDC_SSI_CLK |      \
-                                 SDC_SSI_FSS)
-                                 
 // asserts the CS pin to the card
-static
+
 void SELECT (void)
 {
     ROM_GPIOPinWrite(SDC_GPIO_PORT_BASE, SDC_SSI_FSS, 0);
 }
 
 // de-asserts the CS pin to the card
-static
+
 void DESELECT (void)
 {
     ROM_GPIOPinWrite(SDC_GPIO_PORT_BASE, SDC_SSI_FSS, SDC_SSI_FSS);
@@ -93,23 +68,23 @@ void DESELECT (void)
 
 ---------------------------------------------------------------------------*/
 
-static volatile
+ volatile
 DSTATUS Stat = STA_NOINIT;    /* Disk status */
 
-static volatile
+ volatile
 BYTE Timer1, Timer2;    /* 100Hz decrement timer */
 
-static
+
 BYTE CardType;            /* b0:MMC, b1:SDC, b2:Block addressing */
 
-static
+
 BYTE PowerFlag = 0;     /* indicates if "power" is on */
 
 /*-----------------------------------------------------------------------*/
 /* Transmit a byte to MMC via SPI  (Platform dependent)                  */
 /*-----------------------------------------------------------------------*/
 
-static
+
 void xmit_spi(BYTE dat)
 {
     uint32_t ui32RcvDat;
@@ -124,7 +99,7 @@ void xmit_spi(BYTE dat)
 /* Receive a byte from MMC via SPI  (Platform dependent)                 */
 /*-----------------------------------------------------------------------*/
 
-static
+
 BYTE rcvr_spi (void)
 {
     uint32_t ui32RcvDat;
@@ -137,7 +112,7 @@ BYTE rcvr_spi (void)
 }
 
 
-static
+
 void rcvr_spi_m (BYTE *dst)
 {
     *dst = rcvr_spi();
@@ -147,7 +122,7 @@ void rcvr_spi_m (BYTE *dst)
 /* Wait for card ready                                                   */
 /*-----------------------------------------------------------------------*/
 
-static
+
 BYTE wait_ready (void)
 {
     BYTE res;
@@ -166,7 +141,7 @@ BYTE wait_ready (void)
 /* Send 80 or so clock transitions with CS and DI held high. This is     */
 /* required after card power up to get it into SPI mode                  */
 /*-----------------------------------------------------------------------*/
-static
+
 void send_initial_clock_train(void)
 {
     unsigned int i;
@@ -201,7 +176,7 @@ void send_initial_clock_train(void)
 /* When the target system does not support socket power control, there   */
 /* is nothing to do in these functions and chk_power always returns 1.   */
 
-static
+
 void power_on (void)
 {
     /*
@@ -243,7 +218,7 @@ void power_on (void)
 }
 
 // set the SSI speed to the max setting
-static
+
 void set_max_speed(void)
 {
     unsigned long i;
@@ -266,13 +241,13 @@ void set_max_speed(void)
     ROM_SSIEnable(SDC_SSI_BASE);
 }
 
-static
+
 void power_off (void)
 {
     PowerFlag = 0;
 }
 
-static
+
 int chk_power(void)        /* Socket power state: 0=off, 1=on */
 {
     return PowerFlag;
@@ -284,7 +259,7 @@ int chk_power(void)        /* Socket power state: 0=off, 1=on */
 /* Receive a data packet from MMC                                        */
 /*-----------------------------------------------------------------------*/
 
-static
+
 BOOL rcvr_datablock (
     BYTE *buff,            /* Data buffer to store received data */
     UINT btr            /* Byte count (must be even number) */
@@ -316,7 +291,7 @@ BOOL rcvr_datablock (
 /*-----------------------------------------------------------------------*/
 
 #if _READONLY == 0
-static
+
 BOOL xmit_datablock (
     const BYTE *buff,    /* 512 byte data block to be transmitted */
     BYTE token            /* Data/Stop token */
@@ -351,7 +326,7 @@ BOOL xmit_datablock (
 /* Send a command packet to MMC                                          */
 /*-----------------------------------------------------------------------*/
 
-static
+
 BYTE send_cmd (
     BYTE cmd,        /* Command byte */
     DWORD arg        /* Argument */
@@ -398,7 +373,7 @@ BYTE send_cmd (
  *
  *-----------------------------------------------------------------------*/
 
-static
+
 BYTE send_cmd12 (void)
 {
     BYTE n, res, val;
@@ -550,6 +525,41 @@ DRESULT disk_read (
     return count ? RES_ERROR : RES_OK;
 }
 
+DRESULT disk_read_dma (
+    BYTE drv,            /* Physical drive nmuber (0) */
+    BYTE *buff,            /* Pointer to the data buffer to store read data */
+    DWORD sector,        /* Start sector number (LBA) */
+    BYTE count            /* Sector count (1..255) */
+)
+{
+    if (drv || !count) return RES_PARERR;
+    if (Stat & STA_NOINIT) return RES_NOTRDY;
+
+    if (!(CardType & 4)) sector *= 512;    /* Convert to byte address if needed */
+
+    SELECT();            /* CS = L */
+
+    if (count == 1) {    /* Single block read */
+        if ((send_cmd(CMD17, sector) == 0)    /* READ_SINGLE_BLOCK */
+            && rcvr_datablock(buff, 512))
+            count = 0;
+    }
+    else {                /* Multiple block read */
+        if (send_cmd(CMD18, sector) == 0) {    /* READ_MULTIPLE_BLOCK */
+            do {
+                if (!rcvr_datablock(buff, 512)) break;
+                buff += 512;
+            } while (--count);
+            send_cmd12();                /* STOP_TRANSMISSION */
+        }
+    }
+
+    DESELECT();            /* CS = H */
+    rcvr_spi();            /* Idle (Release DO) */
+
+    return count ? RES_ERROR : RES_OK;
+}
+
 
 
 /*-----------------------------------------------------------------------*/
@@ -558,6 +568,46 @@ DRESULT disk_read (
 
 #if _READONLY == 0
 DRESULT disk_write (
+    BYTE drv,            /* Physical drive nmuber (0) */
+    const BYTE *buff,    /* Pointer to the data to be written */
+    DWORD sector,        /* Start sector number (LBA) */
+    BYTE count            /* Sector count (1..255) */
+)
+{
+    if (drv || !count) return RES_PARERR;
+    if (Stat & STA_NOINIT) return RES_NOTRDY;
+    if (Stat & STA_PROTECT) return RES_WRPRT;
+
+    if (!(CardType & 4)) sector *= 512;    /* Convert to byte address if needed */
+
+    SELECT();            /* CS = L */
+
+    if (count == 1) {    /* Single block write */
+        if ((send_cmd(CMD24, sector) == 0)    /* WRITE_BLOCK */
+            && xmit_datablock(buff, 0xFE))
+            count = 0;
+    }
+    else {                /* Multiple block write */
+        if (CardType & 2) {
+            send_cmd(CMD55, 0); send_cmd(CMD23, count);    /* ACMD23 */
+        }
+        if (send_cmd(CMD25, sector) == 0) {    /* WRITE_MULTIPLE_BLOCK */
+            do {
+                if (!xmit_datablock(buff, 0xFC)) break;
+                buff += 512;
+            } while (--count);
+            if (!xmit_datablock(0, 0xFD))    /* STOP_TRAN token */
+                count = 1;
+        }
+    }
+
+    DESELECT();            /* CS = H */
+    rcvr_spi();            /* Idle (Release DO) */
+
+    return count ? RES_ERROR : RES_OK;
+}
+
+DRESULT disk_write_dma (
     BYTE drv,            /* Physical drive nmuber (0) */
     const BYTE *buff,    /* Pointer to the data to be written */
     DWORD sector,        /* Start sector number (LBA) */

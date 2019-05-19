@@ -56,9 +56,9 @@
 #define MICROPY_PY_IO               (1)
 #define MICROPY_PY_STRUCT           (1)
 #define MICROPY_PY_SYS              (1)
-#define MICROPY_VFS                 (0)
-#define MICROPY_VFS_FAT             (0)
-#define MICROPY_READER_VFS          (0)
+#define MICROPY_VFS                 (1)
+#define MICROPY_VFS_FAT             (1)
+#define MICROPY_READER_VFS          (1)
 #define MICROPY_MODULE_FROZEN_MPY   (0) //was 1
 #define MICROPY_CPYTHON_COMPAT      (0)
 // #define MICROPY_LONGINT_IMPL        (MICROPY_LONGINT_IMPL_NONE)
@@ -77,20 +77,20 @@
 #define MICROPY_HW_HAS_SDCARD       (1)
 
 // fatfs configuration used in ffconf.h
-// #define MICROPY_FATFS_ENABLE_LFN       (1)
-// #define MICROPY_FATFS_LFN_CODE_PAGE    (437) /* 1=SFN/ANSI 437=LFN/U.S.(OEM) */
-// #define MICROPY_FATFS_USE_LABEL        (1)
-// #define MICROPY_FATFS_RPATH            (2)
-// #define MICROPY_FATFS_MULTI_PARTITION  (1)
+#define MICROPY_FATFS_ENABLE_LFN       (1)
+#define MICROPY_FATFS_LFN_CODE_PAGE    (437) /* 1=SFN/ANSI 437=LFN/U.S.(OEM) */
+#define MICROPY_FATFS_USE_LABEL        (1)
+#define MICROPY_FATFS_RPATH            (2)
+#define MICROPY_FATFS_MULTI_PARTITION  (1)
 
 // TODO these should be generic, not bound to fatfs
-// #define mp_type_fileio fatfs_type_fileio
-// #define mp_type_textio fatfs_type_textio
+#define mp_type_fileio fatfs_type_fileio
+#define mp_type_textio fatfs_type_textio
 
 // use vfs's functions for import stat and builtin open
-// #define mp_import_stat mp_vfs_import_stat
-// #define mp_builtin_open mp_vfs_open
-// #define mp_builtin_open_obj mp_vfs_open_obj
+#define mp_import_stat mp_vfs_import_stat
+#define mp_builtin_open mp_vfs_open
+#define mp_builtin_open_obj mp_vfs_open_obj
 
 
 // type definitions for the specific machine

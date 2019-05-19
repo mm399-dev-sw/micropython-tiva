@@ -43,7 +43,7 @@
 #include "usb.h"
 #include "rtc.h"
 #include "storage.h"
-//#include "sdcard.h"
+#include "sdcard.h"
 #include "rng.h"
 //#include "accel.h"
 //#include "servo.h"
@@ -174,141 +174,141 @@ extern uint32_t _heap_end;
 //static char heap[2048];
 #endif
 
-// static const char fresh_boot_py[] =
-// "# boot.py -- run on boot-up\r\n"
-// "# can run arbitrary Python, but best to keep it minimal\r\n"
-// "\r\n"
-// "import machine\r\n"
-// "import pyb\r\n"
-// "#pyb.main('main.py') # main script to run after this one\r\n"
-// #if MICROPY_HW_ENABLE_USB
-// "#pyb.usb_mode('VCP+MSC') # act as a serial and a storage device\r\n"
-// "#pyb.usb_mode('VCP+HID') # act as a serial device and a mouse\r\n"
-// #endif
-// ;
+static const char fresh_boot_py[] =
+"# boot.py -- run on boot-up\r\n"
+"# can run arbitrary Python, but best to keep it minimal\r\n"
+"\r\n"
+"import machine\r\n"
+"import pyb\r\n"
+"#pyb.main('main.py') # main script to run after this one\r\n"
+#if MICROPY_HW_ENABLE_USB
+"#pyb.usb_mode('VCP+MSC') # act as a serial and a storage device\r\n"
+"#pyb.usb_mode('VCP+HID') # act as a serial device and a mouse\r\n"
+#endif
+;
 
-// static const char fresh_main_py[] =
-// "# main.py -- put your code here!\r\n"
-// ;
+static const char fresh_main_py[] =
+"# main.py -- put your code here!\r\n"
+;
 
-// // TODO
-// static const char fresh_pybcdc_inf[] =
-// #include "genhdr/pybcdc_inf.h"
-// ;
+// TODO
+static const char fresh_pybcdc_inf[] =
+#include "genhdr/pybcdc_inf.h"
+;
 
-// static const char fresh_readme_txt[] =
-// "This is a MicroPython board\r\n"
-// "\r\n"
-// "You can get started right away by writing your Python code in 'main.py'.\r\n"
-// "\r\n"
-// "For a serial prompt:\r\n"
-// " - Windows: you need to go to 'Device manager', right click on the unknown device,\r\n"
-// "   then update the driver software, using the 'pybcdc.inf' file found on this drive.\r\n"
-// "   Then use a terminal program like Hyperterminal or putty.\r\n"
-// " - Mac OS X: use the command: screen /dev/tty.usbmodem*\r\n"
-// " - Linux: use the command: screen /dev/ttyACM0\r\n"
-// "\r\n"
-// "Please visit http://micropython.org/help/ for further help.\r\n"
-// ;
+static const char fresh_readme_txt[] =
+"This is a MicroPython board\r\n"
+"\r\n"
+"You can get started right away by writing your Python code in 'main.py'.\r\n"
+"\r\n"
+"For a serial prompt:\r\n"
+" - Windows: you need to go to 'Device manager', right click on the unknown device,\r\n"
+"   then update the driver software, using the 'pybcdc.inf' file found on this drive.\r\n"
+"   Then use a terminal program like Hyperterminal or putty.\r\n"
+" - Mac OS X: use the command: screen /dev/tty.usbmodem*\r\n"
+" - Linux: use the command: screen /dev/ttyACM0\r\n"
+"\r\n"
+"Please visit http://micropython.org/help/ for further help.\r\n"
+;
 
 // avoid inlining to avoid stack usage within main()
-// MP_NOINLINE STATIC bool init_flash_fs(uint reset_mode) {
-//     // init the vfs object
-//     fs_user_mount_t *vfs_fat = &fs_user_mount_flash;
-//     vfs_fat->flags = 0;
-//     pyb_flash_init_vfs(vfs_fat);
+MP_NOINLINE STATIC bool init_flash_fs(uint reset_mode) {
+    // init the vfs object
+    fs_user_mount_t *vfs_fat = &fs_user_mount_flash;
+    vfs_fat->flags = 0;
+    pyb_flash_init_vfs(vfs_fat);
 
-//     // try to mount the flash
-//     FRESULT res = f_mount(&vfs_fat->fatfs);
+    // try to mount the flash
+    FRESULT res = f_mount(&vfs_fat->fatfs);
 
-//     if (reset_mode == 3 || res == FR_NO_FILESYSTEM) {
-//         // no filesystem, or asked to reset it, so create a fresh one
+    if (reset_mode == 3 || res == FR_NO_FILESYSTEM) {
+        // no filesystem, or asked to reset it, so create a fresh one
 
-//         // LED on to indicate creation of LFS
-//         led_state(PYB_LED_GREEN, 1);
-//         uint32_t start_tick = HAL_GetTick();
+        // LED on to indicate creation of LFS
+        led_state(PYB_LED_GREEN, 1);
+        uint32_t start_tick = HAL_GetTick();
 
-//         uint8_t working_buf[_MAX_SS];
-//         res = f_mkfs(&vfs_fat->fatfs, FM_FAT, 0, working_buf, sizeof(working_buf));
-//         if (res == FR_OK) {
-//             // success creating fresh LFS
-//         } else {
-//             printf("PYB: can't create flash filesystem\n");
-//             return false;
-//         }
+        uint8_t working_buf[_MAX_SS];
+        res = f_mkfs(&vfs_fat->fatfs, FM_FAT, 0, working_buf, sizeof(working_buf));
+        if (res == FR_OK) {
+            // success creating fresh LFS
+        } else {
+            printf("PYB: can't create flash filesystem\n");
+            return false;
+        }
 
-//         // set label
-//         f_setlabel(&vfs_fat->fatfs, MICROPY_HW_FLASH_FS_LABEL);
+        // set label
+        f_setlabel(&vfs_fat->fatfs, MICROPY_HW_FLASH_FS_LABEL);
 
-//         // create empty main.py
-//         FIL fp;
-//         f_open(&vfs_fat->fatfs, &fp, "/main.py", FA_WRITE | FA_CREATE_ALWAYS);
-//         UINT n;
-//         f_write(&fp, fresh_main_py, sizeof(fresh_main_py) - 1 /* don't count null terminator */, &n);
-//         // TODO check we could write n bytes
-//         f_close(&fp);
+        // create empty main.py
+        FIL fp;
+        f_open(&vfs_fat->fatfs, &fp, "/main.py", FA_WRITE | FA_CREATE_ALWAYS);
+        UINT n;
+        f_write(&fp, fresh_main_py, sizeof(fresh_main_py) - 1 /* don't count null terminator */, &n);
+        // TODO check we could write n bytes
+        f_close(&fp);
 
-//         // create .inf driver file
-//         f_open(&vfs_fat->fatfs, &fp, "/pybcdc.inf", FA_WRITE | FA_CREATE_ALWAYS);
-//         f_write(&fp, fresh_pybcdc_inf, sizeof(fresh_pybcdc_inf) - 1 /* don't count null terminator */, &n);
-//         f_close(&fp);
+        // create .inf driver file
+        f_open(&vfs_fat->fatfs, &fp, "/pybcdc.inf", FA_WRITE | FA_CREATE_ALWAYS);
+        f_write(&fp, fresh_pybcdc_inf, sizeof(fresh_pybcdc_inf) - 1 /* don't count null terminator */, &n);
+        f_close(&fp);
 
-//         // create readme file
-//         f_open(&vfs_fat->fatfs, &fp, "/README.txt", FA_WRITE | FA_CREATE_ALWAYS);
-//         f_write(&fp, fresh_readme_txt, sizeof(fresh_readme_txt) - 1 /* don't count null terminator */, &n);
-//         f_close(&fp);
+        // create readme file
+        f_open(&vfs_fat->fatfs, &fp, "/README.txt", FA_WRITE | FA_CREATE_ALWAYS);
+        f_write(&fp, fresh_readme_txt, sizeof(fresh_readme_txt) - 1 /* don't count null terminator */, &n);
+        f_close(&fp);
 
-//         // keep LED on for at least 200ms
-//         sys_tick_wait_at_least(start_tick, 200);
-//         led_state(PYB_LED_GREEN, 0);
-//     } else if (res == FR_OK) {
-//         // mount sucessful
-//     } else {
-//     fail:
-//         printf("PYB: can't mount flash\n");
-//         return false;
-//     }
+        // keep LED on for at least 200ms
+        sys_tick_wait_at_least(start_tick, 200);
+        led_state(PYB_LED_GREEN, 0);
+    } else if (res == FR_OK) {
+        // mount sucessful
+    } else {
+    fail:
+        printf("PYB: can't mount flash\n");
+        return false;
+    }
 
-//     // mount the flash device (there should be no other devices mounted at this point)
-//     // we allocate this structure on the heap because vfs->next is a root pointer
-//     mp_vfs_mount_t *vfs = m_new_obj_maybe(mp_vfs_mount_t);
-//     if (vfs == NULL) {
-//         goto fail;
-//     }
-//     vfs->str = "/flash";
-//     vfs->len = 6;
-//     vfs->obj = MP_OBJ_FROM_PTR(vfs_fat);
-//     vfs->next = NULL;
-//     MP_STATE_VM(vfs_mount_table) = vfs;
+    // mount the flash device (there should be no other devices mounted at this point)
+    // we allocate this structure on the heap because vfs->next is a root pointer
+    mp_vfs_mount_t *vfs = m_new_obj_maybe(mp_vfs_mount_t);
+    if (vfs == NULL) {
+        goto fail;
+    }
+    vfs->str = "/flash";
+    vfs->len = 6;
+    vfs->obj = MP_OBJ_FROM_PTR(vfs_fat);
+    vfs->next = NULL;
+    MP_STATE_VM(vfs_mount_table) = vfs;
 
-//     // The current directory is used as the boot up directory.
-//     // It is set to the internal flash filesystem by default.
-//     MP_STATE_PORT(vfs_cur) = vfs;
+    // The current directory is used as the boot up directory.
+    // It is set to the internal flash filesystem by default.
+    MP_STATE_PORT(vfs_cur) = vfs;
 
-//     // Make sure we have a /flash/boot.py.  Create it if needed.
-//     FILINFO fno;
-//     res = f_stat(&vfs_fat->fatfs, "/boot.py", &fno);
-//     if (res != FR_OK) {
-//         // doesn't exist, create fresh file
+    // Make sure we have a /flash/boot.py.  Create it if needed.
+    FILINFO fno;
+    res = f_stat(&vfs_fat->fatfs, "/boot.py", &fno);
+    if (res != FR_OK) {
+        // doesn't exist, create fresh file
 
-//         // LED on to indicate creation of boot.py
-//         led_state(PYB_LED_GREEN, 1);
-//         uint32_t start_tick = HAL_GetTick();
+        // LED on to indicate creation of boot.py
+        led_state(PYB_LED_GREEN, 1);
+        uint32_t start_tick = HAL_GetTick();
 
-//         FIL fp;
-//         f_open(&vfs_fat->fatfs, &fp, "/boot.py", FA_WRITE | FA_CREATE_ALWAYS);
-//         UINT n;
-//         f_write(&fp, fresh_boot_py, sizeof(fresh_boot_py) - 1 /* don't count null terminator */, &n);
-//         // TODO check we could write n bytes
-//         f_close(&fp);
+        FIL fp;
+        f_open(&vfs_fat->fatfs, &fp, "/boot.py", FA_WRITE | FA_CREATE_ALWAYS);
+        UINT n;
+        f_write(&fp, fresh_boot_py, sizeof(fresh_boot_py) - 1 /* don't count null terminator */, &n);
+        // TODO check we could write n bytes
+        f_close(&fp);
 
-//         // keep LED on for at least 200ms
-//         sys_tick_wait_at_least(start_tick, 200);
-//         led_state(PYB_LED_GREEN, 0);
-//     }
+        // keep LED on for at least 200ms
+        sys_tick_wait_at_least(start_tick, 200);
+        led_state(PYB_LED_GREEN, 0);
+    }
 
-//     return true;
-// }
+    return true;
+}
 
 #if MICROPY_HW_HAS_SDCARD
 STATIC bool init_sdcard_fs(void) {
@@ -409,22 +409,22 @@ int tm4c_main(int reset_mode) {
     rtc_init_start(false);
     #endif
     spi_init0();
-    //disable_irq();
+    disable_irq();
     // TODO 
 //     #if MICROPY_HW_ENABLE_HW_I2C
 //     i2c_init0();
 //     #endif
-//     #if MICROPY_HW_HAS_SDCARD
-//     sdcard_init();
-//     #endif
+    #if MICROPY_HW_HAS_SDCARD
+    sdcard_init();
+    #endif
 //     storage_init();
 
-// soft_reset:
+soft_reset:
 
-//     // Python threading init
-//     #if MICROPY_PY_THREAD
-//     mp_thread_init();
-//     #endif
+    // Python threading init
+    #if MICROPY_PY_THREAD
+    mp_thread_init();
+    #endif
 //    int stack_dummy;
     mp_stack_ctrl_init();
 
@@ -458,20 +458,20 @@ int tm4c_main(int reset_mode) {
 //     pyb_usb_init0();
 //     #endif
 
-//     // Initialise the local flash filesystem.
-//     // Create it if needed, mount in on /flash, and set it as current dir.
-//     bool mounted_flash = init_flash_fs(reset_mode);
+    // Initialise the local flash filesystem.
+    // Create it if needed, mount in on /flash, and set it as current dir.
+    bool mounted_flash = init_flash_fs(reset_mode);
 
-//     bool mounted_sdcard = false;
-// #if MICROPY_HW_HAS_SDCARD
-//     // if an SD card is present then mount it on /sd/
-//     if (sdcard_is_present()) {
-//         // if there is a file in the flash called "SKIPSD", then we don't mount the SD card
-//         if (!mounted_flash || f_stat(&fs_user_mount_flash.fatfs, "/SKIPSD", NULL) != FR_OK) {
-//             mounted_sdcard = init_sdcard_fs();
-//         }
-//     }
-// #endif
+    bool mounted_sdcard = false;
+#if MICROPY_HW_HAS_SDCARD
+    // if an SD card is present then mount it on /sd/
+    if (sdcard_is_present()) {
+        // if there is a file in the flash called "SKIPSD", then we don't mount the SD card
+        if (!mounted_flash || f_stat(&fs_user_mount_flash.fatfs, "/SKIPSD", NULL) != FR_OK) {
+            mounted_sdcard = init_sdcard_fs();
+        }
+    }
+#endif
 
 //     #if MICROPY_HW_ENABLE_USB
 //     // if the SD card isn't used as the USB MSC medium then use the internal flash
@@ -480,34 +480,34 @@ int tm4c_main(int reset_mode) {
 //     }
 //     #endif
 
-//     // set sys.path based on mounted filesystems (/sd is first so it can override /flash)
-//     if (mounted_sdcard) {
-//         mp_obj_list_append(mp_sys_path, MP_OBJ_NEW_QSTR(MP_QSTR__slash_sd));
-//         mp_obj_list_append(mp_sys_path, MP_OBJ_NEW_QSTR(MP_QSTR__slash_sd_slash_lib));
-//     }
-//     if (mounted_flash) {
-//         mp_obj_list_append(mp_sys_path, MP_OBJ_NEW_QSTR(MP_QSTR__slash_flash));
-//         mp_obj_list_append(mp_sys_path, MP_OBJ_NEW_QSTR(MP_QSTR__slash_flash_slash_lib));
-//     }
+    // set sys.path based on mounted filesystems (/sd is first so it can override /flash)
+    if (mounted_sdcard) {
+        mp_obj_list_append(mp_sys_path, MP_OBJ_NEW_QSTR(MP_QSTR__slash_sd));
+        mp_obj_list_append(mp_sys_path, MP_OBJ_NEW_QSTR(MP_QSTR__slash_sd_slash_lib));
+    }
+    if (mounted_flash) {
+        mp_obj_list_append(mp_sys_path, MP_OBJ_NEW_QSTR(MP_QSTR__slash_flash));
+        mp_obj_list_append(mp_sys_path, MP_OBJ_NEW_QSTR(MP_QSTR__slash_flash_slash_lib));
+    }
 
     // reset config variables; they should be set by boot.py
-    //MP_STATE_PORT(pyb_config_main) = MP_OBJ_NULL;
+    MP_STATE_PORT(pyb_config_main) = MP_OBJ_NULL;
 
-//     // run boot.py, if it exists
-//     // TODO perhaps have pyb.reboot([bootpy]) function to soft-reboot and execute custom boot.py
-//     if (reset_mode == 1 || reset_mode == 3) {
-//         const char *boot_py = "boot.py";
-//         mp_import_stat_t stat = mp_import_stat(boot_py);
-//         if (stat == MP_IMPORT_STAT_FILE) {
-//             int ret = pyexec_file(boot_py);
-//             if (ret & PYEXEC_FORCED_EXIT) {
-//                 goto soft_reset_exit;
-//             }
-//             if (!ret) {
-//                 flash_error(4);
-//             }
-//         }
-//     }
+    // run boot.py, if it exists
+    // TODO perhaps have pyb.reboot([bootpy]) function to soft-reboot and execute custom boot.py
+    if (reset_mode == 1 || reset_mode == 3) {
+        const char *boot_py = "boot.py";
+        mp_import_stat_t stat = mp_import_stat(boot_py);
+        if (stat == MP_IMPORT_STAT_FILE) {
+            int ret = pyexec_file(boot_py);
+            if (ret & PYEXEC_FORCED_EXIT) {
+                goto soft_reset_exit;
+            }
+            if (!ret) {
+                flash_error(4);
+            }
+        }
+    }
 
 //     // turn boot-up LEDs off
 // #if !defined(MICROPY_HW_LED2)
@@ -532,25 +532,25 @@ int tm4c_main(int reset_mode) {
 //     #endif
 // // At this point everything is fully configured and initialised.
 
-//     // Run the main script from the current directory.
-//     if ((reset_mode == 1 || reset_mode == 3) && pyexec_mode_kind == PYEXEC_MODE_FRIENDLY_REPL) {
-//         const char *main_py;
-//         if (MP_STATE_PORT(pyb_config_main) == MP_OBJ_NULL) {
-//             main_py = "main.py";
-//         } else {
-//             main_py = mp_obj_str_get_str(MP_STATE_PORT(pyb_config_main));
-//         }
-//         mp_import_stat_t stat = mp_import_stat(main_py);
-//         if (stat == MP_IMPORT_STAT_FILE) {
-//             int ret = pyexec_file(main_py);
-//             if (ret & PYEXEC_FORCED_EXIT) {
-//                 goto soft_reset_exit;
-//             }
-//             if (!ret) {
-//                 flash_error(3);
-//             }
-//         }
-//     }
+    // Run the main script from the current directory.
+    if ((reset_mode == 1 || reset_mode == 3) && pyexec_mode_kind == PYEXEC_MODE_FRIENDLY_REPL) {
+        const char *main_py;
+        if (MP_STATE_PORT(pyb_config_main) == MP_OBJ_NULL) {
+            main_py = "main.py";
+        } else {
+            main_py = mp_obj_str_get_str(MP_STATE_PORT(pyb_config_main));
+        }
+        mp_import_stat_t stat = mp_import_stat(main_py);
+        if (stat == MP_IMPORT_STAT_FILE) {
+            int ret = pyexec_file(main_py);
+            if (ret & PYEXEC_FORCED_EXIT) {
+                goto soft_reset_exit;
+            }
+            if (!ret) {
+                flash_error(3);
+            }
+        }
+    }
 
     // Main script is finished, so now go into REPL mode.
     // The REPL mode can change, or it can request a soft reset.
@@ -568,26 +568,26 @@ int tm4c_main(int reset_mode) {
     }
     return 0;
 
-// soft_reset_exit:
+soft_reset_exit:
 
-//     // soft reset
+    // soft reset
 
-//     printf("PYB: sync filesystems\n");
-//     storage_flush();
+    printf("PYB: sync filesystems\n");
+    storage_flush();
 
-//     printf("PYB: soft reboot\n");
-//     // TODO timer_deinit();
-//     uart_deinit();
-// #if MICROPY_HW_ENABLE_CAN
-//     can_deinit();
-// #endif
-//     machine_deinit();
+    printf("PYB: soft reboot\n");
+    // TODO timer_deinit();
+    uart_deinit();
+#if MICROPY_HW_ENABLE_CAN
+    can_deinit();
+#endif
+    machine_deinit();
 
-//     #if MICROPY_PY_THREAD
-//     pyb_thread_deinit();
-//     #endif
+    #if MICROPY_PY_THREAD
+    pyb_thread_deinit();
+    #endif
 
-//     goto soft_reset;
+    goto soft_reset;
 }
 
 //void gc_collect(void) {

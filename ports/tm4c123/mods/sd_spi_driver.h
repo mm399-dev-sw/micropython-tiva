@@ -28,7 +28,8 @@
 /* Only rcvr_spi(), xmit_spi(), disk_timerproc() and some macros         */
 /* are platform dependent.                                               */
 /*-----------------------------------------------------------------------*/
-
+#ifndef MICROPY_SD_SPI_DRIVER_H
+#define MICROPY_SD_SPI_DRIVER_H
 /*
  * This file was modified from the driver for the dk-tm4c123g board included in the tiva driverlib
  * Original creato: ChaN, 2007
@@ -36,15 +37,9 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "mpconfigport.h"
+
 #include "inc/hw_memmap.h"
 #include "inc/hw_types.h"
-#include "driverlib/gpio.h"
-#include "driverlib/rom.h"
-#include "driverlib/rom_map.h"
-#include "driverlib/ssi.h"
-#include "driverlib/sysctl.h"
-#include "oofatfs/diskio.h"
 
 #if MICROPY_HW_HAS_SDCARD
 
@@ -80,11 +75,11 @@
                                  SDC_SSI_FSS)
 
 // asserts the CS pin to the card
-static
+
 void SELECT (void);
 
 // de-asserts the CS pin to the card
-static
+
 void DESELECT (void);
 
 /*--------------------------------------------------------------------------
@@ -93,23 +88,23 @@ void DESELECT (void);
 
 ---------------------------------------------------------------------------*/
 
-static volatile
+ volatile
 DSTATUS Stat = STA_NOINIT;    /* Disk status */
 
-static volatile
+ volatile
 BYTE Timer1, Timer2;    /* 100Hz decrement timer */
 
-static
-BYTE CardType;            /* b0:MMC, b1:SDC, b2:Block addressing */
+// 
+// BYTE CardType;            /* b0:MMC, b1:SDC, b2:Block addressing */
 
-static
+
 BYTE PowerFlag = 0;     /* indicates if "power" is on */
 
 /*-----------------------------------------------------------------------*/
 /* Transmit a byte to MMC via SPI  (Platform dependent)                  */
 /*-----------------------------------------------------------------------*/
 
-static
+
 void xmit_spi(BYTE dat);
 
 
@@ -117,25 +112,25 @@ void xmit_spi(BYTE dat);
 /* Receive a byte from MMC via SPI  (Platform dependent)                 */
 /*-----------------------------------------------------------------------*/
 
-static
+
 BYTE rcvr_spi (void);
 
 
-static
+
 void rcvr_spi_m (BYTE *dst);
 
 /*-----------------------------------------------------------------------*/
 /* Wait for card ready                                                   */
 /*-----------------------------------------------------------------------*/
 
-static
+
 BYTE wait_ready (void);
 
 /*-----------------------------------------------------------------------*/
 /* Send 80 or so clock transitions with CS and DI held high. This is     */
 /* required after card power up to get it into SPI mode                  */
 /*-----------------------------------------------------------------------*/
-static
+
 void send_initial_clock_train(void);
 
 /*-----------------------------------------------------------------------*/
@@ -144,17 +139,17 @@ void send_initial_clock_train(void);
 /* When the target system does not support socket power control, there   */
 /* is nothing to do in these functions and chk_power always returns 1.   */
 
-static
+
 void power_on (void);
 
 // set the SSI speed to the max setting
-static
+
 void set_max_speed(void);
 
-static
+
 void power_off (void);
 
-static
+
 int chk_power(void);
 
 
@@ -163,7 +158,7 @@ int chk_power(void);
 /* Receive a data packet from MMC                                        */
 /*-----------------------------------------------------------------------*/
 
-static
+
 BOOL rcvr_datablock (
     BYTE *buff,            /* Data buffer to store received data */
     UINT btr            /* Byte count (must be even number) */
@@ -176,7 +171,7 @@ BOOL rcvr_datablock (
 /*-----------------------------------------------------------------------*/
 
 #if _READONLY == 0
-static
+
 BOOL xmit_datablock (
     const BYTE *buff,    /* 512 byte data block to be transmitted */
     BYTE token            /* Data/Stop token */
@@ -189,7 +184,7 @@ BOOL xmit_datablock (
 /* Send a command packet to MMC                                          */
 /*-----------------------------------------------------------------------*/
 
-static
+
 BYTE send_cmd (
     BYTE cmd,        /* Command byte */
     DWORD arg        /* Argument */
@@ -210,7 +205,7 @@ BYTE send_cmd (
  *
  *-----------------------------------------------------------------------*/
 
-static
+
 BYTE send_cmd12 (void);
 
 /*--------------------------------------------------------------------------
@@ -295,4 +290,5 @@ void disk_timerproc (void);
 
 DWORD get_fattime (void);
 
+#endif
 #endif
