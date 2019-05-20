@@ -72,6 +72,7 @@
 
 // define to just leave everything as is 
 #define FLASH_IRQn INT_FLASH
+
 #if defined (ARMCM4)
   #include "ARMCM4.h"
 #elif defined (ARMCM4_FP)
@@ -79,6 +80,8 @@
 #else
   #error device not specified!
 #endif
+
+#include "inc/hw_nvic.h"
 
 #include "handlers.h"
 #include "pendsv.h"

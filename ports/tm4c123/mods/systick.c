@@ -39,7 +39,7 @@
 #include "pybthread.h"
 #include "driverlib/rom_map.h"
 
-uint32_t uwTick;
+mp_uint_t uwTick;
 
 // We provide our own version of HAL_Delay that calls __WFI while waiting,
 // and works when interrupts are disabled.  This function is intended to be

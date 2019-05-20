@@ -1550,14 +1550,20 @@ typedef struct
   @{
  */
 
-/* Memory mapping of Core Hardware */
+/* Memory mapping of Core Hardware some uncommented to prevent double defines! */
 #define SCS_BASE            (0xE000E000UL)                            /*!< System Control Space Base Address */
+#ifndef ITM_BASE
 #define ITM_BASE            (0xE0000000UL)                            /*!< ITM Base Address */
+#endif
+#ifndef DWT_BASE
 #define DWT_BASE            (0xE0001000UL)                            /*!< DWT Base Address */
+#endif
 #define TPI_BASE            (0xE0040000UL)                            /*!< TPI Base Address */
 #define CoreDebug_BASE      (0xE000EDF0UL)                            /*!< Core Debug Base Address */
 #define SysTick_BASE        (SCS_BASE +  0x0010UL)                    /*!< SysTick Base Address */
+#ifndef NVIC_BASE
 #define NVIC_BASE           (SCS_BASE +  0x0100UL)                    /*!< NVIC Base Address */
+#endif
 #define SCB_BASE            (SCS_BASE +  0x0D00UL)                    /*!< System Control Block Base Address */
 
 #define SCnSCB              ((SCnSCB_Type    *)     SCS_BASE      )   /*!< System control Register not in SCB */

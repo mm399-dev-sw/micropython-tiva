@@ -174,45 +174,47 @@ extern uint32_t _heap_end;
 //static char heap[2048];
 #endif
 
-static const char fresh_boot_py[] =
-"# boot.py -- run on boot-up\r\n"
-"# can run arbitrary Python, but best to keep it minimal\r\n"
-"\r\n"
-"import machine\r\n"
-"import pyb\r\n"
-"#pyb.main('main.py') # main script to run after this one\r\n"
-#if MICROPY_HW_ENABLE_USB
-"#pyb.usb_mode('VCP+MSC') # act as a serial and a storage device\r\n"
-"#pyb.usb_mode('VCP+HID') # act as a serial device and a mouse\r\n"
-#endif
-;
+// static const char fresh_boot_py[] =
+// "# boot.py -- run on boot-up\r\n"
+// "# can run arbitrary Python, but best to keep it minimal\r\n"
+// "\r\n"
+// "import machine\r\n"
+// "import pyb\r\n"
+// "#pyb.main('main.py') # main script to run after this one\r\n"
+// #if MICROPY_HW_ENABLE_USB
+// "#pyb.usb_mode('VCP+MSC') # act as a serial and a storage device\r\n"
+// "#pyb.usb_mode('VCP+HID') # act as a serial device and a mouse\r\n"
+// #endif
+// ;
 
-static const char fresh_main_py[] =
-"# main.py -- put your code here!\r\n"
-;
+// static const char fresh_main_py[] =
+// "# main.py -- put your code here!\r\n"
+// ;
 
-// TODO
-static const char fresh_pybcdc_inf[] =
-#include "genhdr/pybcdc_inf.h"
-;
+// // TODO
+// static const char fresh_pybcdc_inf[] =
+// #include "genhdr/pybcdc_inf.h"
+// ;
 
-static const char fresh_readme_txt[] =
-"This is a MicroPython board\r\n"
-"\r\n"
-"You can get started right away by writing your Python code in 'main.py'.\r\n"
-"\r\n"
-"For a serial prompt:\r\n"
-" - Windows: you need to go to 'Device manager', right click on the unknown device,\r\n"
-"   then update the driver software, using the 'pybcdc.inf' file found on this drive.\r\n"
-"   Then use a terminal program like Hyperterminal or putty.\r\n"
-" - Mac OS X: use the command: screen /dev/tty.usbmodem*\r\n"
-" - Linux: use the command: screen /dev/ttyACM0\r\n"
-"\r\n"
-"Please visit http://micropython.org/help/ for further help.\r\n"
-;
+// static const char fresh_readme_txt[] =
+// "This is a MicroPython board\r\n"
+// "\r\n"
+// "You can get started right away by writing your Python code in 'main.py'.\r\n"
+// "\r\n"
+// "For a serial prompt:\r\n"
+// " - Windows: you need to go to 'Device manager', right click on the unknown device,\r\n"
+// "   then update the driver software, using the 'pybcdc.inf' file found on this drive.\r\n"
+// "   Then use a terminal program like Hyperterminal or putty.\r\n"
+// " - Mac OS X: use the command: screen /dev/tty.usbmodem*\r\n"
+// " - Linux: use the command: screen /dev/ttyACM0\r\n"
+// "\r\n"
+// "Please visit http://micropython.org/help/ for further help.\r\n"
+// ;
 
 // avoid inlining to avoid stack usage within main()
 MP_NOINLINE STATIC bool init_flash_fs(uint reset_mode) {
+    return false; // no flash fs possible
+    #if 0
     // init the vfs object
     fs_user_mount_t *vfs_fat = &fs_user_mount_flash;
     vfs_fat->flags = 0;
@@ -308,6 +310,7 @@ MP_NOINLINE STATIC bool init_flash_fs(uint reset_mode) {
     }
 
     return true;
+    #endif
 }
 
 #if MICROPY_HW_HAS_SDCARD
@@ -573,7 +576,7 @@ soft_reset_exit:
     // soft reset
 
     printf("PYB: sync filesystems\n");
-    storage_flush();
+    // storage_flush();
 
     printf("PYB: soft reboot\n");
     // TODO timer_deinit();
@@ -624,18 +627,18 @@ soft_reset_exit:
 //    gc_dump_info();
 //}
 
-mp_lexer_t *mp_lexer_new_from_file(const char *filename) {
-   mp_raise_OSError(MP_ENOENT);
-}
+// mp_lexer_t *mp_lexer_new_from_file(const char *filename) {
+//    mp_raise_OSError(MP_ENOENT);
+// }
 
-mp_import_stat_t mp_import_stat(const char *path) { // @suppress("Type cannot be resolved")
-   return MP_IMPORT_STAT_NO_EXIST;
-}
+// mp_import_stat_t mp_import_stat(const char *path) { // @suppress("Type cannot be resolved")
+//    return MP_IMPORT_STAT_NO_EXIST;
+// }
 
-mp_obj_t mp_builtin_open(size_t n_args, const mp_obj_t *args, mp_map_t *kwargs) {
-   return mp_const_none;
-}
-MP_DEFINE_CONST_FUN_OBJ_KW(mp_builtin_open_obj, 1, mp_builtin_open);
+// mp_obj_t mp_builtin_open(size_t n_args, const mp_obj_t *args, mp_map_t *kwargs) {
+//    return mp_const_none;
+// }
+// MP_DEFINE_CONST_FUN_OBJ_KW(mp_builtin_open_obj, 1, mp_builtin_open);
 
 #if MICROPY_MIN_USE_CORTEX_CPU
 void _start(void) {

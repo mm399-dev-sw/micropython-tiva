@@ -26,6 +26,14 @@
 #ifndef MICROPY_INCLUDED_TM4C123_IRQ_H
 #define MICROPY_INCLUDED_TM4C123_IRQ_H
 
+#if defined (ARMCM4)
+  #include "ARMCM4.h"
+#elif defined (ARMCM4_FP)
+  #include "ARMCM4_FP.h"
+#else
+  #error device not specified!
+#endif
+
 #include "inc/hw_nvic.h"
 
 // Use this macro together with NVIC_SetPriority to indicate that an IRQn is non-negative,
@@ -55,7 +63,7 @@ static inline mp_uint_t query_irq(void) {
 
 // enable_irq and disable_irq are defined inline in mpconfigport.h
 
-#if __CORTEX_M >= 0x03
+// #if __CORTEX_M >= 0x03
 
 // irqs with a priority value greater or equal to "pri" will be disabled
 // "pri" should be between 1 and 7 inclusive
@@ -76,7 +84,7 @@ static inline void restore_irq_pri(uint32_t basepri) {
     __set_BASEPRI(basepri);
 }
 
-#endif
+// #endif
 
 MP_DECLARE_CONST_FUN_OBJ_0(pyb_wfi_obj);
 MP_DECLARE_CONST_FUN_OBJ_0(pyb_disable_irq_obj);
