@@ -741,6 +741,7 @@ uint32_t get_fattime (void)
 }
 
 void sdcard_init(void) {
+    sd_power_on();
     sd_disk_init(0);
 }
 
