@@ -42,7 +42,7 @@
 //#include "usrsw.h"
 #include "usb.h"
 #include "rtc.h"
-#include "storage.h"
+// #include "storage.h"
 #include "sdcard.h"
 #include "rng.h"
 //#include "accel.h"

@@ -73,7 +73,7 @@
 #define SDC_SSI_SYSCTL_PERIPH   SYSCTL_PERIPH_SSI2
 
 // GPIO for SSI pins
-#define SDC_GPIO_PORT_BASE      GPIO_PORTB_BASE
+#define SDC_GPIO_PORT_BASE      GPIO_PORTB_AHB_BASE
 #define SDC_GPIO_SYSCTL_PERIPH  SYSCTL_PERIPH_GPIOB
 #define SDC_SSI_CLK             GPIO_PIN_4
 #define SDC_SSI_TX              GPIO_PIN_7
@@ -185,6 +185,7 @@ void sd_power_on (void) {
      */
 
     /* Enable the peripherals used to drive the SDC on SSI */
+    // ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB);
     ROM_SysCtlPeripheralEnable(SDC_SSI_SYSCTL_PERIPH);
     ROM_SysCtlPeripheralEnable(SDC_GPIO_SYSCTL_PERIPH);
 
@@ -193,9 +194,13 @@ void sd_power_on (void) {
      * signal is directly driven to ensure that we can hold it low through a
      * complete transaction with the SD card.
      */
+    // ROM_GPIOPinTypeSSI(SDC_GPIO_PORT_BASE, SDC_SSI_TX | SDC_SSI_RX | SDC_SSI_CLK);
+    // ROM_GPIOPinTypeGPIOOutput(SDC_GPIO_PORT_BASE, SDC_SSI_FSS);
+    // ROM_GPIOPinTypeGPIOOutput(SDC_GPIO_PORT_BASE, MICROPY_HW_SDCARD_DETECT_PIN->pin_mask);
     ROM_GPIOPinTypeSSI(SDC_GPIO_PORT_BASE, SDC_SSI_TX | SDC_SSI_RX | SDC_SSI_CLK);
     ROM_GPIOPinTypeGPIOOutput(SDC_GPIO_PORT_BASE, SDC_SSI_FSS);
-    ROM_GPIOPinTypeGPIOOutput(SDC_GPIO_PORT_BASE, MICROPY_HW_SDCARD_DETECT_PIN->pin_mask);
+    GPIOPinTypeGPIOInput(SDC_GPIO_PORT_BASE, MICROPY_HW_SDCARD_DETECT_PIN->pin_mask);
+    GPIOPadConfigSet(SDC_GPIO_PORT_BASE, MICROPY_HW_SDCARD_DETECT_PIN->pin_mask, GPIO_STRENGTH_2MA, GPIO_PIN_TYPE_STD_WPU);
 
     /*
      * Set the SSI output pins to 4MA drive strength and engage the
@@ -399,9 +404,11 @@ DSTATUS sd_disk_init (
     mp_uint_t start;
 
     if (drv) return STA_NOINIT;            /* Supports only single drive */
-    if (Stat & STA_NODISK) return Stat;    /* No card in the socket */
 
     sd_power_on();                            /* Force socket power on */
+
+    if (!sdcard_is_present()) return Stat;    /* No card in the socket */
+ 
     sd_sel_spi_mode();            /* Ensure the card is in SPI mode */
 
     sd_assert_cs();                /* CS = L */
@@ -741,7 +748,7 @@ uint32_t get_fattime (void)
 }
 
 void sdcard_init(void) {
-    sd_power_on();
+    // sd_power_on();
     sd_disk_init(0);
 }
 
@@ -751,7 +758,13 @@ void sdcard_init(void) {
 // }
 
 bool sdcard_is_present(void) {
-    return mp_hal_pin_read(MICROPY_HW_SDCARD_DETECT_PIN) == MICROPY_HW_SDCARD_DETECT_PRESENT;
+    if(mp_hal_pin_read(MICROPY_HW_SDCARD_DETECT_PIN)) {
+        Stat &= ~STA_NODISK;
+        return true;
+    } else {
+        Stat |= STA_NODISK;
+        return false; 
+    }
 }
 
 bool sdcard_power_on(void) {
