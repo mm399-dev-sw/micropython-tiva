@@ -25,8 +25,8 @@ PROJECT_NAME = uPY_TM4C123
 
 # Location of the TivaWare library
 # Can be pointed to a newer version if desired
-#TIVAWARE_LIB = /mnt/c/ti/TivaWare
-TIVAWARE_LIB = /home/raphael/ti/tivaware
+TIVAWARE_LIB = /mnt/c/ti/TivaWare
+#TIVAWARE_LIB = /home/raphael/ti/tivaware
 
 # qstr definitions (must come before including py.mk)
 QSTR_DEFS = qstrdefsport.h $(BUILD)/pins_qstr.h
@@ -129,86 +129,6 @@ SRC_LIB = $(addprefix lib/,\
 	#oofatfs/ff.c 
 	#oofatfs/option/unicode.c 
 
-
-# ifeq ($(MICROPY_FLOAT_IMPL),double)
-# SRC_LIBM = $(addprefix lib/libm_dbl/,\
-# 	__cos.c \
-# 	__expo2.c \
-# 	__fpclassify.c \
-# 	__rem_pio2.c \
-# 	__rem_pio2_large.c \
-# 	__signbit.c \
-# 	__sin.c \
-# 	__tan.c \
-# 	acos.c \
-# 	acosh.c \
-# 	asin.c \
-# 	asinh.c \
-# 	atan.c \
-# 	atan2.c \
-# 	atanh.c \
-# 	ceil.c \
-# 	cos.c \
-# 	cosh.c \
-# 	erf.c \
-# 	exp.c \
-# 	expm1.c \
-# 	floor.c \
-# 	fmod.c \
-# 	frexp.c \
-# 	ldexp.c \
-# 	lgamma.c \
-# 	log.c \
-# 	log10.c \
-# 	log1p.c \
-# 	modf.c \
-# 	nearbyint.c \
-# 	pow.c \
-# 	rint.c \
-# 	scalbn.c \
-# 	sin.c \
-# 	sinh.c \
-# 	sqrt.c \
-# 	tan.c \
-# 	tanh.c \
-# 	tgamma.c \
-# 	trunc.c \
-# 	)
-# else
-# SRC_LIBM = $(addprefix lib/libm/,\
-# 	math.c \
-# 	thumb_vfp_sqrtf.c \
-# 	acoshf.c \
-# 	asinfacosf.c \
-# 	asinhf.c \
-# 	atan2f.c \
-# 	atanf.c \
-# 	atanhf.c \
-# 	ef_rem_pio2.c \
-# 	erf_lgamma.c \
-# 	fmodf.c \
-# 	kf_cos.c \
-# 	kf_rem_pio2.c \
-# 	kf_sin.c \
-# 	kf_tan.c \
-# 	log1pf.c \
-# 	nearbyintf.c \
-# 	sf_cos.c \
-# 	sf_erf.c \
-# 	sf_frexp.c \
-# 	sf_ldexp.c \
-# 	sf_modf.c \
-# 	sf_sin.c \
-# 	sf_tan.c \
-# 	wf_lgamma.c \
-# 	wf_tgamma.c \
-# 	)
-# endif
-
-# Additional sources
-# ADD_SRC_C = 
-# 	drivers/bus/softspi.c 
-
 # Module sources
 MODS_SRC_C = $(addprefix mods/,\
 	mphalport.c \
@@ -220,9 +140,13 @@ MODS_SRC_C = $(addprefix mods/,\
 	rtc.c \
 	systick.c \
 	handlers.c \
-	globals.c \
 	spi.c \
 	sdcard.c \
+	moduos.c \
+	pendsv.c \
+	pybthread.c \
+	modutime.c \
+	irq.c \
 )
 	# fatfs_port.c \
 	# irq.c \
@@ -249,8 +173,89 @@ CORE_SRC_C = \
 	
 ASM_SRC_S = \
 	gchelper.s 
+
+
+ifeq ($(MICROPY_FLOAT_IMPL),double)
+SRC_LIBM = $(addprefix lib/libm_dbl/,\
+	__cos.c \
+	__expo2.c \
+	__fpclassify.c \
+	__rem_pio2.c \
+	__rem_pio2_large.c \
+	__signbit.c \
+	__sin.c \
+	__tan.c \
+	acos.c \
+	acosh.c \
+	asin.c \
+	asinh.c \
+	atan.c \
+	atan2.c \
+	atanh.c \
+	ceil.c \
+	cos.c \
+	cosh.c \
+	erf.c \
+	exp.c \
+	expm1.c \
+	floor.c \
+	fmod.c \
+	frexp.c \
+	ldexp.c \
+	lgamma.c \
+	log.c \
+	log10.c \
+	log1p.c \
+	modf.c \
+	nearbyint.c \
+	pow.c \
+	rint.c \
+	scalbn.c \
+	sin.c \
+	sinh.c \
+	sqrt.c \
+	tan.c \
+	tanh.c \
+	tgamma.c \
+	trunc.c \
+	)
+else
+SRC_LIBM = $(addprefix lib/libm/,\
+	math.c \
+	thumb_vfp_sqrtf.c \
+	acoshf.c \
+	asinfacosf.c \
+	asinhf.c \
+	atan2f.c \
+	atanf.c \
+	atanhf.c \
+	ef_rem_pio2.c \
+	erf_lgamma.c \
+	fmodf.c \
+	kf_cos.c \
+	kf_rem_pio2.c \
+	kf_sin.c \
+	kf_tan.c \
+	log1pf.c \
+	nearbyintf.c \
+	sf_cos.c \
+	sf_erf.c \
+	sf_frexp.c \
+	sf_ldexp.c \
+	sf_modf.c \
+	sf_sin.c \
+	sf_tan.c \
+	wf_lgamma.c \
+	wf_tgamma.c \
+	)
+endif
+
+# Additional sources
+# ADD_SRC_C = 
+# 	drivers/bus/softspi.c 
 		
 SRC_C = $(CORE_SRC_C) $(MODS_SRC_C) $(GEN_PINS_SRC) $(SRC_LIB) $(SRC_LIBM) $(ADD_SRC_C)
+$(SRC_LIBM): COPT += -Os
 
 ASM_OBJ = $(addprefix $(BUILD)/, $(ASM_SRC_S:.s=.o))
 
@@ -261,17 +266,17 @@ OBJ = $(PY_O) $(ASM_OBJ) $(C_OBJ)
 # This file contains performance critical functions so turn up the optimisation
 # level.  It doesn't add much to the code size and improves performance a bit.
 # Don't use -O3 with this file because gcc tries to optimise memset in terms of itself.
-#$(BUILD)/lib/libc/string0.o: COPT += -O2
+$(BUILD)/lib/libc/string0.o: COPT += -O2
 
 # We put several files into the first 16K section with the ISRs.
 # If we compile these using -O0 then it won't fit. So if you really want these
 # to be compiled with -O0, then edit boards/common.ld (in the .isr_vector section)
 # and comment out the following lines.
-# $(BUILD)/$(FATFS_DIR)/ff.o: COPT += -Os
-# $(filter $(PY_BUILD)/../extmod/vfs_fat_%.o, $(PY_O)): COPT += -Os
-# $(PY_BUILD)/formatfloat.o: COPT += -Os
-# $(PY_BUILD)/parsenum.o: COPT += -Os
-# $(PY_BUILD)/mpprint.o: COPT += -Os
+$(BUILD)/$(FATFS_DIR)/ff.o: COPT += -Os
+$(filter $(PY_BUILD)/../extmod/vfs_fat_%.o, $(PY_O)): COPT += -Os
+$(PY_BUILD)/formatfloat.o: COPT += -Os
+$(PY_BUILD)/parsenum.o: COPT += -Os
+$(PY_BUILD)/mpprint.o: COPT += -Os
 
 
 all: $(OBJ) ${PROJECT_NAME}.axf ${PROJECT_NAME}
