@@ -43,6 +43,7 @@
 #include "driverlib/sysctl.h"
 #include "irq.h"
 #include "pybthread.h"
+#include "sdcard.h"
 //#include "rng.h"
 // #include "storage.h"
 #include "pin.h"
@@ -459,10 +460,12 @@ STATIC const mp_rom_map_elem_t machine_module_globals_table[] = {
 #ifdef MICROPY_INCLUDED_TM4C_MODS_WDT_H
     { MP_ROM_QSTR(MP_QSTR_WDT),                 MP_ROM_PTR(&pyb_wdt_type) },
 #endif
+#if MICROPY_HW_HAS_SDCARD
+    { MP_ROM_QSTR(MP_QSTR_SD),                  MP_ROM_PTR(&pyb_sdcard_type) },
+#endif
 #if 0
     { MP_ROM_QSTR(MP_QSTR_Timer),               MP_ROM_PTR(&pyb_timer_type) },
     { MP_ROM_QSTR(MP_QSTR_HeartBeat),           MP_ROM_PTR(&pyb_heartbeat_type) },
-    { MP_ROM_QSTR(MP_QSTR_SD),                  MP_ROM_PTR(&pyb_sd_type) },
 
     // class constants
     { MP_ROM_QSTR(MP_QSTR_IDLE),                MP_ROM_INT(PYB_PWR_MODE_ACTIVE) },

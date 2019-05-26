@@ -24,7 +24,7 @@ _flash_fs_end = ORIGIN(FLASH_FS) + LENGTH(FLASH_FS);
 _cache_start = ORIGIN(CACHE);
 _cache_end = ORIGIN(CACHE) + LENGTH(CACHE);*/
 
-_Min_Heap_Size = 0x4000;
+_Min_Heap_Size = 0x6000;
 _Min_Stack_Size = 0x0800;
 
 

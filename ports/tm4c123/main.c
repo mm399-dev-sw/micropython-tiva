@@ -412,7 +412,7 @@ int tm4c_main(int reset_mode) {
     rtc_init_start(false);
     #endif
     spi_init0();
-    disable_irq();
+    // disable_irq();
     // TODO 
 //     #if MICROPY_HW_ENABLE_HW_I2C
 //     i2c_init0();

@@ -34,6 +34,7 @@
 #include "py/mperrno.h"
 
 #include "inc/hw_memmap.h"
+#include "driverlib/pin_map.h"
 #include "driverlib/gpio.h"
 #include "driverlib/rom.h"
 #include "driverlib/rom_map.h"
@@ -110,7 +111,9 @@ uint8_t PowerFlag = 0;     /* indicates if "power" is on */
 /*-----------------------------------------------------------------------*/
 void sd_spi_send_byte(uint8_t dat) {
     uint32_t ui32RcvDat;
+    while(SSIBusy(SDC_SSI_BASE)){};
     ROM_SSIDataPut(SDC_SSI_BASE, dat); /* Write the data to the tx fifo */
+    while(SSIBusy(SDC_SSI_BASE)){};
     ROM_SSIDataGet(SDC_SSI_BASE, &ui32RcvDat); /* flush data read during the write */
 }
 
@@ -120,7 +123,9 @@ void sd_spi_send_byte(uint8_t dat) {
 /*-----------------------------------------------------------------------*/
 uint8_t sd_spi_recieve_byte (void) {
     uint32_t ui32RcvDat;
+    while(SSIBusy(SDC_SSI_BASE)){};
     ROM_SSIDataPut(SDC_SSI_BASE, 0xFF); /* write dummy data */
+    while(SSIBusy(SDC_SSI_BASE)){};
     ROM_SSIDataGet(SDC_SSI_BASE, &ui32RcvDat); /* read data frm rx fifo */
     return (uint8_t)ui32RcvDat;
 }
@@ -153,9 +158,10 @@ void sd_sel_spi_mode(void) {
     /* Ensure CS is held high. */
     sd_deassert_cs();
 
-    /* Switch the SSI TX line to a GPIO and drive it high too. */
-    ROM_GPIOPinTypeGPIOOutput(SDC_GPIO_PORT_BASE, SDC_SSI_TX);
-    ROM_GPIOPinWrite(SDC_GPIO_PORT_BASE, SDC_SSI_TX, SDC_SSI_TX);
+    // /* Switch the SSI TX line to a GPIO and drive it high too. */
+    // ROM_GPIOPinTypeGPIOOutput(SDC_GPIO_PORT_BASE, SDC_SSI_TX);
+    // ROM_GPIOPinWrite(SDC_GPIO_PORT_BASE, SDC_SSI_TX, SDC_SSI_TX);
+    while(SSIBusy(SDC_SSI_BASE)){};
 
     /* Send 10 bytes over the SSI. This causes the clock to wiggle the */
     /* required number of times. */
@@ -169,8 +175,9 @@ void sd_sel_spi_mode(void) {
         ROM_SSIDataGet(SDC_SSI_BASE, &ui32Dat);
     }
 
-    /* Revert to hardware control of the SSI TX line. */
-    ROM_GPIOPinTypeSSI(SDC_GPIO_PORT_BASE, SDC_SSI_TX);
+    // /* Revert to hardware control of the SSI TX line. */
+    // ROM_GPIOPinTypeSSI(SDC_GPIO_PORT_BASE, SDC_SSI_TX);
+    
 }
 
 /*-----------------------------------------------------------------------*/
@@ -194,6 +201,11 @@ void sd_power_on (void) {
      * signal is directly driven to ensure that we can hold it low through a
      * complete transaction with the SD card.
      */
+
+    GPIOPinConfigure(GPIO_PB4_SSI2CLK);
+    // GPIOPinConfigure(GPIO_PB5_SSI2FSS);
+    GPIOPinConfigure(GPIO_PB6_SSI2RX);
+    GPIOPinConfigure(GPIO_PB7_SSI2TX);
     // ROM_GPIOPinTypeSSI(SDC_GPIO_PORT_BASE, SDC_SSI_TX | SDC_SSI_RX | SDC_SSI_CLK);
     // ROM_GPIOPinTypeGPIOOutput(SDC_GPIO_PORT_BASE, SDC_SSI_FSS);
     // ROM_GPIOPinTypeGPIOOutput(SDC_GPIO_PORT_BASE, MICROPY_HW_SDCARD_DETECT_PIN->pin_mask);
@@ -206,19 +218,21 @@ void sd_power_on (void) {
      * Set the SSI output pins to 4MA drive strength and engage the
      * pull-up on the receive line.
      */
-    MAP_GPIOPadConfigSet(SDC_GPIO_PORT_BASE, SDC_SSI_RX, GPIO_STRENGTH_4MA,
+    MAP_GPIOPadConfigSet(SDC_GPIO_PORT_BASE, SDC_SSI_RX, GPIO_STRENGTH_2MA,
                          GPIO_PIN_TYPE_STD_WPU);
     MAP_GPIOPadConfigSet(SDC_GPIO_PORT_BASE, SDC_SSI_CLK | SDC_SSI_TX | SDC_SSI_FSS,
-                         GPIO_STRENGTH_4MA, GPIO_PIN_TYPE_STD);
+                         GPIO_STRENGTH_2MA, GPIO_PIN_TYPE_STD);
+    
 
     /* Configure the SSI0 port */
     ROM_SSIConfigSetExpClk(SDC_SSI_BASE, ROM_SysCtlClockGet(),
-                           SSI_FRF_MOTO_MODE_0, SSI_MODE_MASTER, 400000, 8);
+                           SSI_FRF_MOTO_MODE_0, SSI_MODE_MASTER, 200000, 8);
     ROM_SSIEnable(SDC_SSI_BASE);
 
     /* Set DI and CS high and apply more than 74 pulses to SCLK for the card */
     /* to be able to accept a native command. */
     sd_sel_spi_mode();
+    // sd_deassert_cs();
 
     PowerFlag = 1;
 }
@@ -231,15 +245,15 @@ void sd_spi_set_max_speed(void) {
     /* Disable the SSI */
     ROM_SSIDisable(SDC_SSI_BASE);
 
-    /* Set the maximum speed as half the system clock, with a max of 12.5 MHz. */
+    /* Set the maximum speed as half the system clock, with a max of 20 MHz. */
     i = ROM_SysCtlClockGet() / 2;
-    if(i > 12500000)
+    if(i > 12000000)
     {
-        i = 12500000;
+        i = 12000000;
     }
 
     /* Configure the SSI0 port to run at 12.5MHz */
-    ROM_SSIConfigSetExpClk(SDC_SSI_BASE, ROM_SysCtlClockGet(),
+    SSIConfigSetExpClk(SDC_SSI_BASE, ROM_SysCtlClockGet(),
                            SSI_FRF_MOTO_MODE_0, SSI_MODE_MASTER, i, 8);
 
     /* Enable the SSI */
@@ -338,6 +352,7 @@ uint8_t sd_spi_send_cmd (
     n = 0xff;
     if (cmd == CMD0) n = 0x95;            /* CRC for CMD0(0) */
     if (cmd == CMD8) n = 0x87;            /* CRC for CMD8(0x1AA) */
+    if (cmd == CMD41) n = 0x95;
     sd_spi_send_byte(n);
 
     /* Receive command response */
@@ -405,7 +420,7 @@ DSTATUS sd_disk_init (
 
     if (drv) return STA_NOINIT;            /* Supports only single drive */
 
-    sd_power_on();                            /* Force socket power on */
+    if(PowerFlag==0) sd_power_on();                            /* Force socket power on */
 
     if (!sdcard_is_present()) return Stat;    /* No card in the socket */
  
@@ -414,12 +429,18 @@ DSTATUS sd_disk_init (
     sd_assert_cs();                /* CS = L */
     ty = 0;
     if (sd_spi_send_cmd(CMD0, 0) == 1) {            /* Enter Idle state */
-        start = mp_hal_ticks_ms();                      /* Initialization timeout of 1000 msec */
+    sd_deassert_cs();
+    sd_wait_ready();
+    sd_assert_cs();
         if (sd_spi_send_cmd(CMD8, 0x1AA) == 1) {    /* SDC Ver2+ */
             for (n = 0; n < 4; n++) ocr[n] = sd_spi_recieve_byte();
             if (ocr[2] == 0x01 && ocr[3] == 0xAA) {    /* The card can work at vdd range of 2.7-3.6V */
+                start = mp_hal_ticks_ms();                      /* Initialization timeout of 1000 msec */
                 do {
-                    if (sd_spi_send_cmd(CMD55, 0) <= 1 && sd_spi_send_cmd(CMD41, 1UL << 30) == 0)    break;    /* ACMD41 with HCS bit */
+                    sd_wait_ready(); // Prevent command banging
+                    if (sd_spi_send_cmd(CMD55, 0) <= 1 && sd_spi_send_cmd(CMD41, 0x40000000) == 0) {
+                        break;
+                    }     /* ACMD41 with HCS bit */
                 } while ((mp_hal_ticks_ms() - start) < 1000);
                 if ((mp_hal_ticks_ms() - start) < 1000 && sd_spi_send_cmd(CMD58, 0) == 0) {    /* Check CCS bit */
                     for (n = 0; n < 4; n++) ocr[n] = sd_spi_recieve_byte();
@@ -428,6 +449,7 @@ DSTATUS sd_disk_init (
             }
         } else {                            /* SDC Ver1 or MMC */
             ty = (sd_spi_send_cmd(CMD55, 0) <= 1 && sd_spi_send_cmd(CMD41, 0) <= 1) ? 2 : 1;    /* SDC : MMC */
+            start = mp_hal_ticks_ms();                      /* Initialization timeout of 1000 msec */
             do {
                 if (ty == 2) {
                     if (sd_spi_send_cmd(CMD55, 0) <= 1 && sd_spi_send_cmd(CMD41, 0) == 0) break;    /* ACMD41 */
@@ -748,8 +770,8 @@ uint32_t get_fattime (void)
 }
 
 void sdcard_init(void) {
-    // sd_power_on();
-    sd_disk_init(0);
+    sd_power_on();
+    // sd_disk_init(0);
 }
 
 // void HAL_SD_MspDeInit(SD_HandleTypeDef *hsd) {
@@ -868,7 +890,7 @@ mp_uint_t sdcard_read_blocks(uint8_t *dest, uint32_t block_num, uint32_t num_blo
         dest = (uint8_t*)((uint32_t)dest & ~3);
         saved_word = *(uint32_t*)dest;
     }
-
+#if MICROPY_HW_DMA
     if (query_irq() == IRQ_STATE_ENABLED) {
         // we must disable USB irqs to prevent MSC contention with SD card
         uint32_t basepri = raise_irq_pri(IRQ_PRI_OTG_FS);
@@ -895,11 +917,14 @@ mp_uint_t sdcard_read_blocks(uint8_t *dest, uint32_t block_num, uint32_t num_blo
 
         restore_irq_pri(basepri);
     } else {
+#endif
         err = sd_disk_read(0, dest, block_num, num_blocks);
         if (err == RES_OK) {
             err = sdcard_wait_finished(60000);
         }
+#if MICROPY_HW_DMA
     }
+#endif
 
     if (orig_dest != NULL) {
         // move the read data to the non-aligned position, and restore the initial bytes
@@ -935,7 +960,7 @@ mp_uint_t sdcard_write_blocks(const uint8_t *src, uint32_t block_num, uint32_t n
         m_del(uint8_t, src_aligned, SDCARD_BLOCK_SIZE);
         return err;
     }
-
+#if MICROPY_HW_DMA
     if (query_irq() == IRQ_STATE_ENABLED) {
         // we must disable USB irqs to prevent MSC contention with SD card
         uint32_t basepri = raise_irq_pri(IRQ_PRI_OTG_FS);
@@ -960,12 +985,14 @@ mp_uint_t sdcard_write_blocks(const uint8_t *src, uint32_t block_num, uint32_t n
 
         restore_irq_pri(basepri);
     } else {
+#endif
         err = sd_disk_write(0,(uint8_t*)src, block_num, num_blocks);
         if (err == RES_OK) {
             err = sdcard_wait_finished(60000);
         }
+#if MICROPY_HW_DMA
     }
-
+#endif
     return err;
 }
 
