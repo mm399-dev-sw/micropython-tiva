@@ -67,11 +67,13 @@
 #include "inc/hw_types.h"
 #include "inc/hw_gpio.h"
 #include "inc/hw_ints.h"
+#include "inc/hw_uart.h"
 #include "inc/hw_nvic.h"
 #include "inc/hw_memmap.h"
 #include "inc/hw_hibernate.h"
 #include "driverlib/sysctl.h"
 #include "driverlib/systick.h"
+#include "driverlib/uart.h"
 #include "driverlib/pin_map.h"
 #include "driverlib/gpio.h"
 #include "driverlib/rom.h"
@@ -809,14 +811,21 @@ void tm4c123_init(void) {
     // BRD = IBRD + FRAC = UARTSysClk / (ClkDiv * BaudRate)
     // 520.8333 = 104  + 0.166 = 80MHz      / (16     * 9600    )
     // FBRD = (0.833333 * 64 + 0.5) ~ 53
-    UART0->CTL &= ~0x00000001;
-    UART0->IBRD = 0x00000208;
-    UART0->FBRD = 0x00000035;
-    UART0->LCRH = 0x00000070; // no stick parity, word length 8bit, FIFO enable, one STOP bit, odd parity, no parity check, no break
-    UART0->CC = 0x00000000;   // use SysClock
-    UART0->CTL = 0x00000300; // disable cts & rts, RXE, TXE, no loopback, 16x oversampling, TXRIS on IFLS match, no smart card, no low power, no SIR, UART enabled
-    UART0->CTL |= 0x00000001;
+    // UART0->CTL &= ~0x00000001;
+    // UART0->IBRD = 0x00000208;
+    // UART0->FBRD = 0x00000035;
+    // UART0->LCRH = 0x00000070; // no stick parity, word length 8bit, FIFO enable, one STOP bit, odd parity, no parity check, no break
+    // UART0->CC = 0x00000000;   // use SysClock
+    // UART0->CTL = 0x00000300; // disable cts & rts, RXE, TXE, no loopback, 16x oversampling, TXRIS on IFLS match, no smart card, no low power, no SIR, UART enabled
+    // UART0->CTL |= 0x00000001;
     // to change settings in active mode: page 918 of reference
+
+    UARTDisable(UART0_BASE);
+    UARTClockSourceSet(UART0_BASE, UART_CLOCK_SYSTEM);
+    UARTFlowControlSet(UART0_BASE, UART_FLOWCONTROL_NONE);
+    UARTFIFOEnable(UART0_BASE);
+    UARTConfigSetExpClk(UART0_BASE, SysCtlClockGet(), 115200, UART_CONFIG_WLEN_8 | UART_CONFIG_PAR_NONE | UART_CONFIG_STOP_ONE);
+    UARTEnable(UART0_BASE);
 
 
     //Setup of Systick to 1ms
