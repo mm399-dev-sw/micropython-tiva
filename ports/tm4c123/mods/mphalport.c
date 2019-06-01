@@ -154,7 +154,8 @@ bool mp_hal_pin_config_alt(mp_hal_pin_obj_t pin, uint8_t fn, uint8_t unit) {
             break;
     }
     if(!mp_hal_pin_config(pin, dir, type, strength)) return false;
-    mp_hal_pin_set_af(pin, af->idx);
+    // ADC does not need this config.
+    if(fn != PIN_FN_ADC) mp_hal_pin_set_af(pin, af->idx);
     return true;
 }   
 
