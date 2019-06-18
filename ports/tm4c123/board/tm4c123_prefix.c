@@ -39,6 +39,7 @@
 #include "pin.h"
 #include "mphalport.h"
 
+// The conf variable is not applicable for ADC function, therefore a dummy is defined here
 #define GPIO_ADC 0xFFFFFFFF
 
 #define AF_1(af_name, af_idx, af_fn, af_unit, af_type, af_short, pin_board_name) \
