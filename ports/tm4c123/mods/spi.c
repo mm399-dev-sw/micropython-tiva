@@ -360,14 +360,21 @@ STATIC bool spi_wait_flag_unset(machine_hard_spi_obj_t *self, uint32_t flag, uin
 mp_uint_t spi_tx_only(machine_hard_spi_obj_t *self, const uint8_t* data, size_t len, uint32_t word_timeout, int *errcode) {
     uint num_tx = 0;
     uint32_t dummy;
+    volatile uint32_t dat;
     while(num_tx < len) {
 
         if(!spi_tx_wait(self, word_timeout)) {
             *errcode = MP_ETIMEDOUT;
             return num_tx;
         }
-
-        SSIDataPutNonBlocking(self->spi_base, data[num_tx]);
+        // Reversing bit order of data
+        if(self->lsb_first) {
+            asm volatile("rbit %1,%0" : "=r" (dat) : "r" (data[num_tx]));
+            //nop here?
+            SSIDataPutNonBlocking(self->spi_base, dat);
+        } else {
+            SSIDataPutNonBlocking(self->spi_base, data[num_tx]);
+        }   
         SSIDataGetNonBlocking(self->spi_base, &dummy);
         num_tx++;
     }
@@ -409,6 +416,7 @@ mp_uint_t spi_rx_only(machine_hard_spi_obj_t *self, uint8_t* data, size_t len, u
 mp_uint_t spi_rx_tx(machine_hard_spi_obj_t *self, const uint8_t* data_tx, uint8_t* data_rx, size_t len, uint32_t word_timeout, int *errcode) {
     uint num_rtx = 0;
     uint32_t dumm;
+    volatile uin32_t dat;
     while(num_rtx < len) {
 
         if(!spi_rx_wait(self, word_timeout)) {
@@ -421,7 +429,14 @@ mp_uint_t spi_rx_tx(machine_hard_spi_obj_t *self, const uint8_t* data_tx, uint8_
             return num_rtx;
         }
 
-        SSIDataPutNonBlocking(self->spi_base, data_tx[num_rtx]);
+        // Reversing bit order of data
+        if(self->lsb_first) {
+            asm volatile("rbit %1,%0" : "=r" (dat) : "r" (data[num_tx]));
+            //nop here?
+            SSIDataPutNonBlocking(self->spi_base, dat);
+        } else {
+            SSIDataPutNonBlocking(self->spi_base, data[num_rtx]);
+        }   
         SSIDataGetNonBlocking(self->spi_base, &dumm);
         data_rx[num_rtx] = dumm;
     }
@@ -503,23 +518,23 @@ STATIC void machine_hard_spi_print(const mp_print_t *print, mp_obj_t self_in, mp
 }
 
 STATIC mp_obj_t machine_hard_spi_init_helper(mp_obj_t* self_in, size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
-    enum { ARG_mode, ARG_id, ARG_baudrate,/* ARG_prescaler, ARG_polarity, ARG_phase,*/ ARG_bits, ARG_fss, ARG_protocol, ARG_dma, /*ARG_firstbit,*/ ARG_sck, ARG_mosi, ARG_miso };
+    enum { ARG_mode, ARG_id, ARG_baudrate,/* ARG_prescaler,*/ ARG_polarity, ARG_phase, ARG_bits, ARG_fss, ARG_protocol, ARG_dma, ARG_firstbit, ARG_sck, ARG_mosi, ARG_miso };
     static const mp_arg_t allowed_args[] = {
         { MP_QSTR_mode,     MP_ARG_REQUIRED | MP_ARG_INT, {.u_int = SSI_MODE_MASTER} }, // Default as master
         { MP_QSTR_id,       MP_ARG_OBJ, {.u_obj = MP_OBJ_NEW_SMALL_INT(-1)} },
         { MP_QSTR_baudrate, MP_ARG_INT, {.u_int = 500000} },
         //{ MP_QSTR_prescaler, MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = 0xFF} },       // max prescaler
-        // { MP_QSTR_polarity, MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = 0} }, // idle low          
-        // { MP_QSTR_phase,    MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = 0} }, // first clock edge
+        { MP_QSTR_polarity, MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = 0} }, // for api compat         
+        { MP_QSTR_phase,    MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = 0} }, // for api compat
         //{ MP_QSTR_dir,      MP_ARG_KW_ONLY | MP_ARG_INT,  {.u_int = SSI_CR1_DIR} },
-        { MP_QSTR_bits,     MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = 8} }, 
+        { MP_QSTR_bits,     MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = 8} }, // word length
         { MP_QSTR_fss,   MP_ARG_KW_ONLY | MP_ARG_BOOL, {.u_bool = false}}, // chip select mode (software or hardware)
-        { MP_QSTR_protocol,      MP_ARG_KW_ONLY | MP_ARG_INT,  {.u_int = SSI_FRF_MOTO_MODE_0} }, // SSI in SPI mode
-        { MP_QSTR_dma,      MP_ARG_KW_ONLY | MP_ARG_BOOL, {.u_int = 0}}, // no dma
-        //{ MP_QSTR_firstbit, MP_ARG_KW_ONLY | MP_ARG_INT,  {.u_int = SPI_FIRSTBIT_MSB} },
+        { MP_QSTR_protocol,      MP_ARG_KW_ONLY | MP_ARG_INT,  {.u_int = -1} }, // SSI frame format
+        { MP_QSTR_dma,      MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = 0}}, // no dma
+        { MP_QSTR_firstbit, MP_ARG_KW_ONLY | MP_ARG_INT,  {.u_int = 0} }, // for api compat, no hardware support
         //{ MP_QSTR_ti,       MP_ARG_KW_ONLY | MP_ARG_BOOL, {.u_bool = false} },
         //{ MP_QSTR_crc,      MP_ARG_KW_ONLY | MP_ARG_OBJ,  {.u_obj = mp_const_none} },
-        { MP_QSTR_sck,      MP_ARG_KW_ONLY | MP_ARG_OBJ, {.u_obj = MP_OBJ_NULL} },
+        { MP_QSTR_sck,      MP_ARG_KW_ONLY | MP_ARG_OBJ, {.u_obj = MP_OBJ_NULL} }, // api compat, only fixed values, not implemented
         { MP_QSTR_mosi,     MP_ARG_KW_ONLY | MP_ARG_OBJ, {.u_obj = MP_OBJ_NULL} },
         { MP_QSTR_miso,     MP_ARG_KW_ONLY | MP_ARG_OBJ, {.u_obj = MP_OBJ_NULL} },
     };
@@ -551,6 +566,8 @@ STATIC mp_obj_t machine_hard_spi_init_helper(mp_obj_t* self_in, size_t n_args, c
     // }
     // uint8_t prescale = args[ARG_prescaler].u_int;
 
+    self->lsb_first = (bool) (args[ARG_firstbit].u_int & 0x1);
+
     if(!self->mode) {
         if(args[ARG_baudrate].u_int >= 25000000) {
             nlr_raise(mp_obj_new_exception_msg(&mp_type_ValueError, "baudrate too high, max 25 Mbaud as master"));
@@ -562,18 +579,33 @@ STATIC mp_obj_t machine_hard_spi_init_helper(mp_obj_t* self_in, size_t n_args, c
     }
     self->baudrate = args[ARG_baudrate].u_int;
 
-    if(!(args[ARG_protocol].u_int == SSI_FRF_MOTO_MODE_0 || args[ARG_protocol].u_int == SSI_FRF_MOTO_MODE_1  ||
-         args[ARG_protocol].u_int == SSI_FRF_MOTO_MODE_2 || args[ARG_protocol].u_int == SSI_FRF_MOTO_MODE_3  ||
-         args[ARG_protocol].u_int == SSI_FRF_TI || args[ARG_protocol].u_int == SSI_FRF_NMW)) {
-        nlr_raise(mp_obj_new_exception_msg(&mp_type_ValueError, "protocol not supported, please use SPI0..3, TI or MICROWIRE!"));
+    uint8_t phase = (uint8_t)args[ARG_phase].u_int & 0xFF;
+    uint8_t polarity = (uint8_t)args[ARG_polarity].u_int & 0xFF;
+    uint32_t protocol = args[ARG_protocol].u_int;
+
+    // support both polarity/phase and protocol but only one at a time, protocol takes priority
+    if(polarity < 0  || polarity > 1) {
+        nlr_raise(mp_obj_new_exception_msg(&mp_type_ValueError, "polarity not correct; IDLE_LOW or IDLE_HIGH"));
     }
-    self->protocol = args[ARG_protocol].u_int;
+    if(phase < 0 || phase > 1) {
+        nlr_raise(mp_obj_new_exception_msg(&mp_type_ValueError, "phase not correct; FIRST_EDGE or SECOND_EDGE"));
+    }
+    if(protocol != -1){
+        if(!(protocol == SSI_FRF_MOTO_MODE_0 || protocol == SSI_FRF_MOTO_MODE_1  ||
+            protocol == SSI_FRF_MOTO_MODE_2 || protocol == SSI_FRF_MOTO_MODE_3  ||
+            protocol == SSI_FRF_TI || protocol == SSI_FRF_NMW)) {
+            nlr_raise(mp_obj_new_exception_msg(&mp_type_ValueError, "protocol not supported, please use SPI0..3, TI or MICROWIRE!"));
+        }
+        self->protocol = protocol;
+    } else {
+        self->protocol = ((phase & 0x1) << 1) | ((polarity & 0x1) << 1);
+    }
 
 //    if(args[ARG_fss].u_int != 0 || args[ARG_fss].u_int != 1) {
 //        nlr_raise(mp_obj_new_exception_msg(&mp_type_ValueError, "fss only accepts CS_HARD(0) or CS_SOFT(1)"));
 //    }
     // Automatic or Manually assert chipselect? Only applicable in SPI mode
-    if(self->protocol == SSI_CR0_FRF_MOTO) {
+    if(!(self->protocol & 0xF0)) {
         self->soft_fss = args[ARG_fss].u_bool;
     } else {
         self->soft_fss = false;
@@ -705,8 +737,8 @@ STATIC const mp_rom_map_elem_t machine_hard_spi_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_MASTER), MP_ROM_INT(SSI_MODE_MASTER) },
     { MP_ROM_QSTR(MP_QSTR_SLAVE),  MP_ROM_INT(SSI_MODE_SLAVE) },
     { MP_ROM_QSTR(MP_QSTR_SLAVE_OD),  MP_ROM_INT(SSI_MODE_SLAVE_OD) },
-    // { MP_ROM_QSTR(MP_QSTR_MSB),    MP_ROM_INT(SPI_FIRSTBIT_MSB) },
-    // { MP_ROM_QSTR(MP_QSTR_LSB),    MP_ROM_INT(SPI_FIRSTBIT_LSB) },
+    { MP_ROM_QSTR(MP_QSTR_MSB),    MP_ROM_INT(0) },
+    { MP_ROM_QSTR(MP_QSTR_LSB),    MP_ROM_INT(1) },
     { MP_ROM_QSTR(MP_QSTR_SPI0),    MP_ROM_INT(SSI_FRF_MOTO_MODE_0)},
     { MP_ROM_QSTR(MP_QSTR_SPI1),    MP_ROM_INT(SSI_FRF_MOTO_MODE_1)},
     { MP_ROM_QSTR(MP_QSTR_SPI2),    MP_ROM_INT(SSI_FRF_MOTO_MODE_2)},

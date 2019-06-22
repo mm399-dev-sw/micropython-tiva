@@ -80,6 +80,7 @@ typedef struct _machine_hard_spi_obj_t {
     uint8_t mode : 1;
     uint32_t baudrate;
     uint8_t bits;
+    bool lsb_first : 1;
     // uint8_t polarity : 1;
     // uint8_t phase : 1;
     uint32_t protocol;
