@@ -344,7 +344,7 @@ STATIC mp_obj_t pin_debug(size_t n_args, const mp_obj_t *args) {
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(pin_debug_fun_obj, 1, 2, pin_debug);
 STATIC MP_DEFINE_CONST_CLASSMETHOD_OBJ(pin_debug_obj, MP_ROM_PTR(&pin_debug_fun_obj));
 
-// init(dir, pull=None, af=-1, *, value, alt)
+// init(mode, pull=None, af=-1, *, value, alt)
 STATIC mp_obj_t pin_obj_init_helper(const pin_obj_t *self, size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
     enum {ARG_mode = 0, ARG_pull, ARG_drive, ARG_af, ARG_value, ARG_alt};
     static const mp_arg_t allowed_args[] = {
@@ -360,22 +360,22 @@ STATIC mp_obj_t pin_obj_init_helper(const pin_obj_t *self, size_t n_args, const 
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
     mp_arg_parse_all(n_args, pos_args, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
 
-    // get pull dir
-    uint type = GPIO_PIN_TYPE_STD;
+    // get pull mode
+    uint pull = GPIO_PIN_TYPE_STD;
     if (args[ARG_pull].u_obj != mp_const_none) {
-        type = mp_obj_get_int(args[1].u_obj);
+        pull = mp_obj_get_int(args[ARG_pull].u_obj);
     }
-    if (!IS_GPIO_TYPE(type)) {
-        nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_ValueError, "invalid pin type: %d", type));
+    if (!IS_GPIO_TYPE(pull)) {
+        nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_ValueError, "invalid pin pull: %d", pull));
     }
 
-    // get io dir; if OD, pull is overwritten! for api compat
-    uint32_t dir = args[ARG_mode].u_int;
-    if(dir == GPIO_PIN_TYPE_OD) {
-        dir = GPIO_DIR_MODE_OUT;
-        type = GPIO_PIN_TYPE_OD;
-    } else if (!IS_GPIO_DIR(dir)) {
-        nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_ValueError, "invalid pin direction: %d", dir));
+    // get io mode; if OD, pull is overwritten! for api compat
+    uint32_t mode = args[ARG_mode].u_int;
+    if(mode == GPIO_PIN_TYPE_OD) {
+        mode = GPIO_DIR_MODE_OUT;
+        pull = GPIO_PIN_TYPE_OD;
+    } else if (!IS_GPIO_DIR(mode)) {
+        nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_ValueError, "invalid pin direction: %d", mode));
     }
 
     uint drive = GPIO_STRENGTH_2MA;
@@ -391,7 +391,7 @@ STATIC mp_obj_t pin_obj_init_helper(const pin_obj_t *self, size_t n_args, const 
     if (af == -1) {
         af = args[ARG_af].u_int;
     }
-    if ((dir == GPIO_DIR_MODE_HW) && !IS_GPIO_AF(af)) {
+    if ((mode == GPIO_DIR_MODE_HW) && !IS_GPIO_AF(af)) {
         nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_ValueError, "invalid pin af: %d", af));
     }
 
@@ -402,7 +402,7 @@ STATIC mp_obj_t pin_obj_init_helper(const pin_obj_t *self, size_t n_args, const 
 //    if (args[4].u_obj != MP_OBJ_NULL) {
 //        mp_hal_pin_write(self, mp_obj_is_true(args[3].u_obj));
 //    }
-    mp_hal_pin_config(self, dir, type, drive);
+    mp_hal_pin_config(self, mode, pull, drive);
     mp_hal_pin_set_af(self, af);
 
     if (args[4].u_obj != MP_OBJ_NULL) {
