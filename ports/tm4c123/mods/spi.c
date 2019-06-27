@@ -370,6 +370,7 @@ mp_uint_t spi_tx_only(machine_hard_spi_obj_t *self, const uint8_t* data, size_t 
         // Reversing bit order of data
         if(self->lsb_first) {
             asm volatile("rbit %1,%0" : "=r" (dat) : "r" (data[num_tx]));
+            dat >>= (32 - self->bits);
             //nop here?
             SSIDataPutNonBlocking(self->spi_base, dat);
         } else {
@@ -432,6 +433,7 @@ mp_uint_t spi_rx_tx(machine_hard_spi_obj_t *self, const uint8_t* data_tx, uint8_
         // Reversing bit order of data
         if(self->lsb_first) {
             asm volatile("rbit %1,%0" : "=r" (dat) : "r" (data[num_tx]));
+            dat >>= (32 - self->bits);
             //nop here?
             SSIDataPutNonBlocking(self->spi_base, dat);
         } else {
