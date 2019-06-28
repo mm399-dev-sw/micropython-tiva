@@ -929,6 +929,8 @@ STATIC const mp_rom_map_elem_t machine_uart_locals_dict_table[] = {
     // class constants
     { MP_ROM_QSTR(MP_QSTR_RTS), MP_ROM_INT(UART_FLOWCONTROL_RX) },
     { MP_ROM_QSTR(MP_QSTR_CTS), MP_ROM_INT(UART_FLOWCONTROL_TX) },
+    { MP_ROM_QSTR(MP_QSTR_ODD), MP_ROM_INT(1) },
+    { MP_ROM_QSTR(MP_QSTR_EVEN), MP_ROM_INT(0) },
 };
 
 STATIC MP_DEFINE_CONST_DICT(machine_uart_locals_dict, machine_uart_locals_dict_table);
