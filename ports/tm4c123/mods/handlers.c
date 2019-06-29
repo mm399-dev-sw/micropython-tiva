@@ -72,6 +72,7 @@
 
 // define to just leave everything as is 
 #define FLASH_IRQn INT_FLASH
+
 #if defined (ARMCM4)
   #include "ARMCM4.h"
 #elif defined (ARMCM4_FP)
@@ -79,6 +80,8 @@
 #else
   #error device not specified!
 #endif
+
+#include "inc/hw_nvic.h"
 
 #include "handlers.h"
 #include "pendsv.h"
@@ -289,7 +292,7 @@ void DebugMon_Handler(void) {
   * @retval None
   */
 void PendSV_Handler(void) {
-    pendsv_isr_handler();
+    // pendsv_isr_handler();
 }
 
 /**
@@ -467,7 +470,7 @@ void FLASH_IRQHandler(void) {
     }
     */
     // This call the storage IRQ handler, to check if the flash cache needs flushing
-    storage_irq_handler();
+    // storage_irq_handler();
     IRQ_EXIT(FLASH_IRQn);
 }
 #ifdef MOREINTS

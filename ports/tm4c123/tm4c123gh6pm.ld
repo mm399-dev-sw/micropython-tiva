@@ -1,34 +1,30 @@
 /******************************************************************************
- *
- * Default Linker script for the Texas Instruments TM4C123GH6PM
- *
- * This is derived from revision 15071 of the TivaWare Library.
+
  * Source: https://e2e.ti.com/support/microcontrollers/other/f/908/p/479812/2164975
- * Modified with the CMSIS linker script
- *
+
  *****************************************************************************/
 
 MEMORY
 {
-    /* FLASH (RX) : ORIGIN = 0x00000000, LENGTH = 256K */
-	FLASH (RX) : ORIGIN = 0x00000000, LENGTH = 232K
-	FLASH_FS (WX) : ORIGIN = 0x0003A000, LENGTH = 24K
-	/* SRAM  (WX) : ORIGIN = 0x20000000, LENGTH = 32K */
-    SRAM  (WX) : ORIGIN = 0x20000000, LENGTH = 24K
-	CACHE (WX) : ORIGIN = 0x20006000, LENGTH = 8K
+    FLASH (RX) : ORIGIN = 0x00000000, LENGTH = 256K 
+	/* FLASH (RX) : ORIGIN = 0x00000000, LENGTH = 232K
+	FLASH_FS (WX) : ORIGIN = 0x0003A000, LENGTH = 24K */
+	SRAM  (WX) : ORIGIN = 0x20000000, LENGTH = 32K 
+    /*SRAM  (WX) : ORIGIN = 0x20000000, LENGTH = 24K
+	CACHE (WX) : ORIGIN = 0x20006000, LENGTH = 8K */
 }
 
 /* SRAM extents for the garbage collector */
 _ram_start = ORIGIN(SRAM);
 _ram_end = ORIGIN(SRAM) + LENGTH(SRAM);
 
-_flash_fs_start = ORIGIN(FLASH_FS);
+/*_flash_fs_start = ORIGIN(FLASH_FS);
 _flash_fs_end = ORIGIN(FLASH_FS) + LENGTH(FLASH_FS);
 
 _cache_start = ORIGIN(CACHE);
-_cache_end = ORIGIN(CACHE) + LENGTH(CACHE);
+_cache_end = ORIGIN(CACHE) + LENGTH(CACHE);*/
 
-_Min_Heap_Size = 0x4000;
+_Min_Heap_Size = 0x6000;
 _Min_Stack_Size = 0x0800;
 
 

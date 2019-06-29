@@ -27,11 +27,12 @@
 #ifndef MICROPY_INCLUDED_TM4C_MPHALPORT_H
 #define MICROPY_INCLUDED_TM4C_MPHALPORT_H
 #define MICROPY_MPHALPORT_H "mods/mphalport.h"
+#include "lib/utils/interrupt_char.h"
 
 
 //extern const unsigned char mp_hal_status_to_errno_table[4];
 
-extern void mp_hal_set_interrupt_char(int c); // -1 to disable
+//extern void mp_hal_set_interrupt_char(int c); // -1 to disable
 
 void mp_hal_ticks_cpu_enable(void);
 
@@ -213,9 +214,9 @@ enum {
 #define mp_hal_pin_obj_t const pin_obj_t*
 #define mp_hal_get_pin_obj(o)   pin_find(o)
 #define mp_hal_pin_name(p)      ((p)->name)
-#define mp_hal_pin_input(p)     mp_hal_pin_config((p)->gpio, (p)->pin_mask, MP_HAL_PIN_MODE_INPUT, MP_HAL_PIN_PULL_NONE, MP_HAL_PIN_STRENGTH_LOW)
-#define mp_hal_pin_output(p)    mp_hal_pin_config((p)->gpio, (p)->pin_mask, MP_HAL_PIN_MODE_OUTPUT, MP_HAL_PIN_PULL_NONE, MP_HAL_PIN_STRENGTH_LOW)
-#define mp_hal_pin_open_drain(p) mp_hal_pin_config((p)->gpio, (p)->pin_mask, MP_HAL_PIN_MODE_OUTPUT, MP_HAL_PIN_MODE_OPEN_DRAIN, MP_HAL_PIN_STRENGTH_LOW)
+#define mp_hal_pin_input(p)     mp_hal_pin_config((p), MP_HAL_PIN_MODE_INPUT, MP_HAL_PIN_PULL_NONE, MP_HAL_PIN_STRENGTH_LOW)
+#define mp_hal_pin_output(p)    mp_hal_pin_config((p), MP_HAL_PIN_MODE_OUTPUT, MP_HAL_PIN_PULL_NONE, MP_HAL_PIN_STRENGTH_LOW)
+#define mp_hal_pin_open_drain(p) mp_hal_pin_config((p), MP_HAL_PIN_MODE_OUTPUT, MP_HAL_PIN_MODE_OPEN_DRAIN, MP_HAL_PIN_STRENGTH_LOW)
 
 #define mp_hal_pin_high(p)      MAP_GPIOPinWrite((p)->gpio, (p)->pin_mask, (p)->pin_mask)
 #define mp_hal_pin_low(p)       MAP_GPIOPinWrite((p)->gpio, (p)->pin_mask,  0)
@@ -227,6 +228,7 @@ enum {
 
 #define mp_hal_pin_get_af(p)    (((p)->regs->PCTL >> ((p)->pin_num * 4)) & 0xF)
 #define mp_hal_pin_get_dir(p)   (MAP_GPIODirModeGet((p)->gpio, (p)->pin_mask))
+
 //#define mp_hal_pin_get_type(p)  ()
 //#define mp_hal_pin_get_drive(p)
 
@@ -237,12 +239,13 @@ enum {
 //#define mp_hal_ticks_us         (mp_hal_ticks_cpu / (MAP_SysCtlClockGet()*3000000))
 
 
-
-
+void mp_hal_unlock_special_pin(mp_hal_pin_obj_t pin);
+bool mp_hal_pin_needs_unlocking(mp_hal_pin_obj_t pin);
 void mp_hal_gpio_clock_enable(const uint32_t port);
-void mp_hal_pin_config(mp_hal_pin_obj_t pin_obj, uint32_t dir, uint32_t type, uint32_t drive);
-bool mp_hal_pin_config_alt(mp_hal_pin_obj_t pin_obj, uint32_t dir, uint32_t type, uint8_t fn, uint8_t unit);
+bool mp_hal_pin_config(mp_hal_pin_obj_t pin_obj, uint32_t dir, uint32_t type, uint32_t drive);
+bool mp_hal_pin_config_alt(mp_hal_pin_obj_t pin_obj, uint8_t fn, uint8_t unit);
 void mp_hal_pin_set_af(mp_hal_pin_obj_t pin_obj, uint8_t af_id);
+NORETURN void mp_hal_raise(int status);
 uint32_t HAL_GetTick();
 
 #endif // MICROPY_INCLUDED_TM4C_HAL_PINS_H

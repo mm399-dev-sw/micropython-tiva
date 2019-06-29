@@ -3,7 +3,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 Damien P. George
+ * Copyright (c) 2013, 2014 Damien P. George
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,8 +23,21 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+#ifndef MICROPY_INCLUDED_STM32_LED_H
+#define MICROPY_INCLUDED_STM32_LED_H
 
-// In this File we declare all the globals, that would normally be declared in the STMCube lib and cannot be worked around
-#include <stdint.h>
-#include <stdbool.h>
-//uint32_t uwTick = 0;
+typedef enum {
+    PYB_LED_RED = 1,
+    PYB_LED_GREEN = 2,
+    PYB_LED_YELLOW = 3,
+    PYB_LED_BLUE = 4,
+} pyb_led_t;
+
+void led_init(void);
+void led_state(pyb_led_t led, int state);
+void led_toggle(pyb_led_t led);
+void led_debug(int value, int delay);
+
+extern const mp_obj_type_t pyb_led_type;
+
+#endif // MICROPY_INCLUDED_STM32_LED_H

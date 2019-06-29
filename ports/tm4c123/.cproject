@@ -26,7 +26,7 @@
 								</outputEntries>
 							</builder>
 							<tool id="cdt.managedbuild.tool.gnu.cross.c.compiler.1205696932" name="Cross GCC Compiler" superClass="cdt.managedbuild.tool.gnu.cross.c.compiler">
-								<option id="gnu.c.compiler.option.include.paths.1310175372" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
+								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.c.compiler.option.include.paths.1310175372" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/micropython/build/genhdr}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/micropython/build}&quot;"/>
 									<listOptionValue builtIn="false" value="../../../py"/>
@@ -40,7 +40,7 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/micropython/cmsis/device/Include}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/micropython/cmsis/device/Source/GCC}&quot;"/>
 								</option>
-								<option id="gnu.c.compiler.option.preprocessor.def.symbols.1581719304" name="Defined symbols (-D)" superClass="gnu.c.compiler.option.preprocessor.def.symbols" useByScannerDiscovery="false" valueType="definedSymbols">
+								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.c.compiler.option.preprocessor.def.symbols.1581719304" name="Defined symbols (-D)" superClass="gnu.c.compiler.option.preprocessor.def.symbols" useByScannerDiscovery="false" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="PART_TM4C123GHPM"/>
 									<listOptionValue builtIn="false" value="MICROPY_PIN_DEFS_PORT_H=&quot;pin_defs_tm4c123.h&quot;"/>
 									<listOptionValue builtIn="false" value="mp_uint_t=uint"/>
@@ -52,11 +52,11 @@
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.cross.c.linker.1826754469" name="Cross GCC Linker" superClass="cdt.managedbuild.tool.gnu.cross.c.linker"/>
 							<tool id="cdt.managedbuild.tool.gnu.cross.cpp.linker.299844243" name="Cross G++ Linker" superClass="cdt.managedbuild.tool.gnu.cross.cpp.linker">
-								<option id="gnu.cpp.link.option.paths.1350400128" name="Library search path (-L)" superClass="gnu.cpp.link.option.paths" valueType="libPaths">
+								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.cpp.link.option.paths.1350400128" name="Library search path (-L)" superClass="gnu.cpp.link.option.paths" valueType="libPaths">
 									<listOptionValue builtIn="false" value="&quot;C:\ti\TivaWare&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;C:\ti\TivaWare\driverlib&quot;"/>
 								</option>
-								<option id="gnu.cpp.link.option.libs.1584512025" name="Libraries (-l)" superClass="gnu.cpp.link.option.libs" valueType="libs">
+								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.cpp.link.option.libs.1584512025" name="Libraries (-l)" superClass="gnu.cpp.link.option.libs" valueType="libs">
 									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="&quot;C:\ti\TivaWare\driverlib\gcc\libdriver.a&quot;"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.linker.input.1417876333" superClass="cdt.managedbuild.tool.gnu.cpp.linker.input">

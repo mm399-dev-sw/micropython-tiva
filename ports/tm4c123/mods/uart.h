@@ -23,8 +23,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#ifndef MICROPY_INCLUDED_STM32_UART_H
-#define MICROPY_INCLUDED_STM32_UART_H
+#ifndef MICROPY_INCLUDED_TM4C_UART_H
+#define MICROPY_INCLUDED_TM4C_UART_H
 
 typedef struct {
     volatile uint32_t DR; // Data Register 0x00
@@ -51,27 +51,27 @@ typedef struct {
 } periph_uart_t;
 
 typedef enum {
-    PYB_UART_NONE = -1,
-    PYB_UART_0 = 0,
-    PYB_UART_1 = 1,
-    PYB_UART_2 = 2,
-    PYB_UART_3 = 3,
-    PYB_UART_4 = 4,
-    PYB_UART_5 = 5,
-    PYB_UART_6 = 6,
-    PYB_UART_7 = 7,
-} pyb_uart_t;
+    UART_NONE = -1,
+    UART_0 = 0,
+    UART_1 = 1,
+    UART_2 = 2,
+    UART_3 = 3,
+    UART_4 = 4,
+    UART_5 = 5,
+    UART_6 = 6,
+    UART_7 = 7,
+} machine_uart_t;
 
-typedef struct _pyb_uart_obj_t pyb_uart_obj_t;
-extern const mp_obj_type_t pyb_uart_type;
+typedef struct _machine_uart_obj_t machine_uart_obj_t;
+extern const mp_obj_type_t machine_uart_type;
 
 void uart_init0(void);
 void uart_deinit(void);
 void uart_irq_handler(mp_uint_t uart_id);
 
-void uart_attach_to_repl(pyb_uart_obj_t *self, bool attached);
-mp_uint_t uart_rx_any(pyb_uart_obj_t *uart_obj);
-int uart_rx_char(pyb_uart_obj_t *uart_obj);
-void uart_tx_strn(pyb_uart_obj_t *uart_obj, const char *str, uint len);
+void uart_attach_to_repl(machine_uart_obj_t *self, bool attached);
+mp_uint_t uart_rx_any(machine_uart_obj_t *uart_obj);
+int uart_rx_char(machine_uart_obj_t *uart_obj);
+void uart_tx_strn(machine_uart_obj_t *uart_obj, const char *str, uint len);
 
-#endif // MICROPY_INCLUDED_STM32_UART_H
+#endif // MICROPY_INCLUDED_TM4C_UART_H

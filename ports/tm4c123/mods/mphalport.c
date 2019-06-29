@@ -5,8 +5,24 @@
 #include "py/mperrno.h"
 #include "py/mphal.h"
 #include "extmod/misc.h"
+#include "driverlib/pin_map.h"
+#include "inc/hw_gpio.h"
+#include "inc/hw_memmap.h"
 //#include "usb.h"
 #include "uart.h"
+
+// prevent clash between driverlib and CMSIS
+#ifdef NVIC_BASE
+#undef NVIC_BASE
+#endif
+
+#ifdef DWT_BASE
+#undef DWT_BASE
+#endif
+
+#ifdef ITM_BASE
+#undef ITM_BASE
+#endif
 
 #if defined (ARMCM4)
   #include "ARMCM4.h"
@@ -24,9 +40,9 @@
 //    [HAL_TIMEOUT] = MP_ETIMEDOUT,
 //};
 
-//NORETURN void mp_hal_raise(HAL_StatusTypeDef status) {
-//    mp_raise_OSError(mp_hal_status_to_errno_table[status]);
-//}
+NORETURN void mp_hal_raise(int status) {
+   mp_raise_OSError(status);
+}
 
 void mp_hal_ticks_cpu_enable(void) {
    if (!(DWT->CTRL & DWT_CTRL_CYCCNTENA_Msk)) {
@@ -61,28 +77,87 @@ void mp_hal_gpio_clock_enable(const uint32_t periph) {
     while(!MAP_SysCtlPeripheralReady(periph)){};
 }
 
-void mp_hal_pin_config(mp_hal_pin_obj_t pin_obj, uint32_t dir, uint32_t type, uint32_t drive) {
+void mp_hal_unlock_special_pin(mp_hal_pin_obj_t pin) {
+    pin->regs->LOCK = GPIO_LOCK_KEY;
+    pin->regs->CR |= pin->pin_mask;
+}
+
+bool mp_hal_pin_needs_unlocking(mp_hal_pin_obj_t pin) { 
+    return !(bool)(pin->regs->CR & pin->pin_mask);
+}
+
+bool mp_hal_pin_config(mp_hal_pin_obj_t pin_obj, uint32_t dir, uint32_t type, uint32_t drive) {
     mp_hal_gpio_clock_enable(pin_obj->periph);
+
+    if(mp_hal_pin_needs_unlocking(pin_obj)) {
+        nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_RuntimeError, "Pin \"%s\" needs to be unlocked first", qstr_str(pin_obj->name)));
+        return false;
+    }
 
     MAP_GPIODirModeSet(pin_obj->gpio, pin_obj->pin_mask, dir);
     MAP_GPIOPadConfigSet(pin_obj->gpio, pin_obj->pin_mask, drive, type);
+    return true;
 }
 
 void mp_hal_pin_set_af(mp_hal_pin_obj_t pin_obj, uint8_t af_id) {
     if (af_id == 0xFF) return;
-    MAP_GPIODirModeSet(pin_obj->gpio, pin_obj->pin_mask, GPIO_DIR_MODE_HW);
-    MAP_GPIOPadConfigSet(pin_obj->gpio, pin_obj->pin_mask, GPIO_STRENGTH_2MA, GPIO_PIN_TYPE_STD);
-    MAP_GPIOPinConfigure((pin_obj->af_list)[af_id].conf);
+    mp_hal_gpio_clock_enable(pin_obj->periph);
+    GPIOPinConfigure(pin_find_af_by_index(pin_obj,af_id)->conf);
 }
 
-bool mp_hal_pin_config_alt(mp_hal_pin_obj_t pin, uint32_t mode, uint32_t pull, uint8_t fn, uint8_t unit) {
+bool mp_hal_pin_config_alt(mp_hal_pin_obj_t pin, uint8_t fn, uint8_t unit) {
     const pin_af_obj_t *af = pin_find_af(pin, fn, unit);
+    // does af exist?
     if (af == NULL) {
         return false;
     }
-    mp_hal_pin_config(pin, mode, pull, af->idx);
+    // default settings:
+    uint32_t strength = GPIO_STRENGTH_2MA;
+    uint32_t type = GPIO_PIN_TYPE_STD;
+    uint32_t dir = GPIO_DIR_MODE_HW;
+    
+    switch(fn) {
+        case PIN_FN_ADC:
+            type = GPIO_PIN_TYPE_ANALOG;
+            dir = GPIO_DIR_MODE_IN;
+            break;
+        case PIN_FN_COMP:
+            if(af->type != AF_COMP_OUT) { // AF COMP NEG/POS
+                type = GPIO_PIN_TYPE_ANALOG;
+                dir = GPIO_DIR_MODE_IN;
+            }
+            break;
+        case PIN_FN_I2C:
+            if(af->type == AF_I2C_SDA) {
+                type = GPIO_PIN_TYPE_OD;
+            }
+            break;
+        case PIN_FN_CAN:
+            strength = GPIO_STRENGTH_8MA;
+            break;
+        case PIN_FN_QEI:
+            type = GPIO_PIN_TYPE_STD_WPU;
+            break;
+        case PIN_FN_USB:
+            if(!(af->type == AF_USB_EPEN || af->type == AF_USB_PFLT)) { 
+                type = GPIO_PIN_TYPE_ANALOG;
+                dir = GPIO_DIR_MODE_IN;
+            }
+        break;
+        case PIN_FN_UART:
+        case PIN_FN_SSI:
+        case PIN_FN_MTRL:
+        case PIN_FN_TIM:
+        case PIN_FN_WTIM:
+        case PIN_FN_TR:
+        default:
+            break;
+    }
+    if(!mp_hal_pin_config(pin, dir, type, strength)) return false;
+    // ADC does not need this config.
+    if(fn != PIN_FN_ADC) mp_hal_pin_set_af(pin, af->idx);
     return true;
-}
+}   
 
 uint32_t HAL_GetTick() {
     extern uint32_t uwTick;
@@ -107,13 +182,13 @@ MP_WEAK int mp_hal_stdin_rx_chr(void) {
            return c;
        }
        #endif
-       if (MP_STATE_PORT(pyb_stdio_uart) != NULL && uart_rx_any(MP_STATE_PORT(pyb_stdio_uart))) {
-           return uart_rx_char(MP_STATE_PORT(pyb_stdio_uart));
+       if (MP_STATE_PORT(machine_stdio_uart) != NULL && uart_rx_any(MP_STATE_PORT(machine_stdio_uart))) {
+           return uart_rx_char(MP_STATE_PORT(machine_stdio_uart));
        }
-       int dupterm_c = mp_uos_dupterm_rx_chr();
-       if (dupterm_c >= 0) {
-           return dupterm_c;
-       }
+    //    int dupterm_c = mp_uos_dupterm_rx_chr();
+    //    if (dupterm_c >= 0) {
+    //        return dupterm_c;
+    //    }
        MICROPY_EVENT_POLL_HOOK
    }
 }
@@ -123,8 +198,8 @@ void mp_hal_stdout_tx_str(const char *str) {
 }
 
 MP_WEAK void mp_hal_stdout_tx_strn(const char *str, size_t len) {
-   if (MP_STATE_PORT(pyb_stdio_uart) != NULL) {
-       uart_tx_strn(MP_STATE_PORT(pyb_stdio_uart), str, len);
+   if (MP_STATE_PORT(machine_stdio_uart) != NULL) {
+       uart_tx_strn(MP_STATE_PORT(machine_stdio_uart), str, len);
    }
 #if 0 && defined(USE_HOST_MODE) && MICROPY_HW_HAS_LCD
    lcd_print_strn(str, len);

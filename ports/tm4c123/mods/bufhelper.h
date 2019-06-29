@@ -3,7 +3,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 Damien P. George
+ * Copyright (c) 2013, 2014 Damien P. George
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,8 +23,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+#ifndef MICROPY_INCLUDED_STM32_BUFHELPER_H
+#define MICROPY_INCLUDED_STM32_BUFHELPER_H
 
-// In this File we declare all the globals, that would normally be declared in the STMCube lib and cannot be worked around
-#include <stdint.h>
-#include <stdbool.h>
-//uint32_t uwTick = 0;
+void pyb_buf_get_for_send(mp_obj_t o, mp_buffer_info_t *bufinfo, byte *tmp_data);
+mp_obj_t pyb_buf_get_for_recv(mp_obj_t o, vstr_t *vstr);
+
+#endif // MICROPY_INCLUDED_STM32_BUFHELPER_H

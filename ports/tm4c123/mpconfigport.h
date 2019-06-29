@@ -32,7 +32,8 @@
 #define MICROPY_HELPER_LEXER_UNIX   (0)
 #define MICROPY_ENABLE_SOURCE_LINE  (0)
 #define MICROPY_ENABLE_DOC_STRING   (0)
-#define MICROPY_ERROR_REPORTING     (MICROPY_ERROR_REPORTING_TERSE)
+#define MICROPY_STREAMS_NON_BLOCK   (1)
+//#define MICROPY_ERROR_REPORTING     (MICROPY_ERROR_REPORTING_TERSE)
 #define MICROPY_BUILTIN_METHOD_CHECK_SELF_ARG (0)
 #define MICROPY_PY_ASYNC_AWAIT      (0)
 #define MICROPY_PY_BUILTINS_BYTEARRAY (1)
@@ -46,7 +47,7 @@
 #define MICROPY_PY_BUILTINS_PROPERTY (0)
 #define MICROPY_PY_BUILTINS_MIN_MAX (0)
 #define MICROPY_PY___FILE__         (0)
-#define MICROPY_PY_GC               (1) // 0
+#define MICROPY_PY_GC               (0) // 0
 #define MICROPY_PY_ARRAY            (1)
 #define MICROPY_PY_ATTRTUPLE        (1)
 #define MICROPY_PY_COLLECTIONS      (1)
@@ -60,17 +61,34 @@
 #define MICROPY_READER_VFS          (1)
 #define MICROPY_MODULE_FROZEN_MPY   (0) //was 1
 #define MICROPY_CPYTHON_COMPAT      (0)
-#define MICROPY_LONGINT_IMPL        (MICROPY_LONGINT_IMPL_NONE)
-#define MICROPY_FLOAT_IMPL          (MICROPY_FLOAT_IMPL_NONE)
+// #define MICROPY_LONGINT_IMPL        (MICROPY_LONGINT_IMPL_NONE)
+// #define MICROPY_FLOAT_IMPL          (MICROPY_FLOAT_IMPL_NONE)
 #define MICROPY_PY_THREAD           (0)
 #define MICROPY_PY_OS_DUPTERM       (1)
-#define MICROPY_PY_MACHINE          (1)
+#define MICROPY_PY_MACHINE          (0)
 #define MICROPY_KBD_EXCEPTION       (1)
+
+// extended modules
+#define MICROPY_PY_UCTYPES          (1)
+// #define MICROPY_PY_UZLIB            (1)
+// #define MICROPY_PY_UJSON            (1)
+// #define MICROPY_PY_URE              (1)
+#define MICROPY_PY_UHEAPQ           (1)
+#define MICROPY_PY_UHASHLIB         (1)
+#define MICROPY_PY_UBINASCII        (1)
+// #define MICROPY_PY_URANDOM          (1)
+// #define MICROPY_PY_URANDOM_EXTRA_FUNCS (1)
+// #define MICROPY_PY_USELECT          (1)
+// #define MICROPY_PY_UTIMEQ           (1)
+// #define MICROPY_PY_UTIME_MP_HAL     (1)
 
 // optimisations
 #define MICROPY_OPT_COMPUTED_GOTO   (1)
 #define MICROPY_OPT_CACHE_MAP_LOOKUP_IN_BYTECODE (0)
 #define MICROPY_OPT_MPZ_BITWISE     (1)
+
+// sd card
+#define MICROPY_HW_HAS_SDCARD       (1)
 
 // fatfs configuration used in ffconf.h
 #define MICROPY_FATFS_ENABLE_LFN       (1)
@@ -154,6 +172,7 @@ static inline mp_uint_t disable_irq(void) {
 #endif
 
 extern const struct _mp_obj_module_t machine_module;
+extern const struct _mp_obj_module_t pyb_module;
 extern const struct _mp_obj_module_t mp_module_uos;
 //extern const struct _mp_obj_module_t pin_module;
 
@@ -181,7 +200,8 @@ extern const struct _mp_obj_module_t mp_module_uos;
 
 #define MICROPY_PORT_BUILTIN_MODULES \
         { MP_ROM_QSTR(MP_QSTR_umachine), MP_ROM_PTR(&machine_module) }, \
-        { MP_ROM_QSTR(MP_QSTR_uos), MP_ROM_PTR(&mp_module_uos) }, \
+        { MP_ROM_QSTR(MP_QSTR_pyb), MP_ROM_PTR(&pyb_module) }, \
+       { MP_ROM_QSTR(MP_QSTR_uos), MP_ROM_PTR(&mp_module_uos) }, 
 
 #define MICROPY_PORT_CONSTANTS \
     { MP_ROM_QSTR(MP_QSTR_umachine), MP_ROM_PTR(&machine_module) }, \
@@ -206,8 +226,9 @@ extern const struct _mp_obj_module_t mp_module_uos;
     \
     mp_obj_t test_callback_obj; \
     /* stdio is repeated on this UART object if it's not null */ \
-    struct _pyb_uart_obj_t *pyb_stdio_uart; \
+    struct _machine_uart_obj_t *machine_stdio_uart; \
     \
     /* pointers to all UART objects (if they have been created) */ \
-    struct _pyb_uart_obj_t *pyb_uart_obj_all[MICROPY_HW_MAX_UART]; \
+    struct _machine_uart_obj_t *machine_uart_obj_all[MICROPY_HW_MAX_UART]; \
+    struct _machine_hard_spi_obj_t *machine_spi_obj_all[MICROPY_HW_MAX_SPI];\
 

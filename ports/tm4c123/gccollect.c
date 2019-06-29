@@ -64,7 +64,7 @@ void gc_collect(void) {
     // end the GC
     gc_collect_end();
 
-    #if 1
+    #if 0
     // print GC info
 //    uint32_t ticks = mp_hal_ticks_us() - start;
     gc_info_t info;

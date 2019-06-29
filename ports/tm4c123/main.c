@@ -19,6 +19,7 @@
 #include "py/mphal.h"
 #include "py/compile.h"
 #include "py/parse.h"
+#include "py/mperrno.h"
 #include "lib/mp-readline/readline.h"
 #include "lib/utils/pyexec.h"
 #include "lib/oofatfs/ff.h"
@@ -32,7 +33,7 @@
 #include "gccollect.h"
 #include "modmachine.h"
 //#include "i2c.h"
-//#include "spi.h"
+#include "spi.h"
 #include "uart.h"
 #include "timer.h"
 //#include "led.h"
@@ -41,8 +42,8 @@
 //#include "usrsw.h"
 #include "usb.h"
 #include "rtc.h"
-#include "storage.h"
-//#include "sdcard.h"
+// #include "storage.h"
+#include "sdcard.h"
 #include "rng.h"
 //#include "accel.h"
 //#include "servo.h"
@@ -66,11 +67,13 @@
 #include "inc/hw_types.h"
 #include "inc/hw_gpio.h"
 #include "inc/hw_ints.h"
+#include "inc/hw_uart.h"
 #include "inc/hw_nvic.h"
 #include "inc/hw_memmap.h"
 #include "inc/hw_hibernate.h"
 #include "driverlib/sysctl.h"
 #include "driverlib/systick.h"
+#include "driverlib/uart.h"
 #include "driverlib/pin_map.h"
 #include "driverlib/gpio.h"
 #include "driverlib/rom.h"
@@ -173,45 +176,47 @@ extern uint32_t _heap_end;
 //static char heap[2048];
 #endif
 
-static const char fresh_boot_py[] =
-"# boot.py -- run on boot-up\r\n"
-"# can run arbitrary Python, but best to keep it minimal\r\n"
-"\r\n"
-"import machine\r\n"
-"import pyb\r\n"
-"#pyb.main('main.py') # main script to run after this one\r\n"
-#if MICROPY_HW_ENABLE_USB
-"#pyb.usb_mode('VCP+MSC') # act as a serial and a storage device\r\n"
-"#pyb.usb_mode('VCP+HID') # act as a serial device and a mouse\r\n"
-#endif
-;
+// static const char fresh_boot_py[] =
+// "# boot.py -- run on boot-up\r\n"
+// "# can run arbitrary Python, but best to keep it minimal\r\n"
+// "\r\n"
+// "import machine\r\n"
+// "import pyb\r\n"
+// "#pyb.main('main.py') # main script to run after this one\r\n"
+// #if MICROPY_HW_ENABLE_USB
+// "#pyb.usb_mode('VCP+MSC') # act as a serial and a storage device\r\n"
+// "#pyb.usb_mode('VCP+HID') # act as a serial device and a mouse\r\n"
+// #endif
+// ;
 
-static const char fresh_main_py[] =
-"# main.py -- put your code here!\r\n"
-;
+// static const char fresh_main_py[] =
+// "# main.py -- put your code here!\r\n"
+// ;
 
-// TODO
-static const char fresh_pybcdc_inf[] =
-#include "genhdr/pybcdc_inf.h"
-;
+// // TODO
+// static const char fresh_pybcdc_inf[] =
+// #include "genhdr/pybcdc_inf.h"
+// ;
 
-static const char fresh_readme_txt[] =
-"This is a MicroPython board\r\n"
-"\r\n"
-"You can get started right away by writing your Python code in 'main.py'.\r\n"
-"\r\n"
-"For a serial prompt:\r\n"
-" - Windows: you need to go to 'Device manager', right click on the unknown device,\r\n"
-"   then update the driver software, using the 'pybcdc.inf' file found on this drive.\r\n"
-"   Then use a terminal program like Hyperterminal or putty.\r\n"
-" - Mac OS X: use the command: screen /dev/tty.usbmodem*\r\n"
-" - Linux: use the command: screen /dev/ttyACM0\r\n"
-"\r\n"
-"Please visit http://micropython.org/help/ for further help.\r\n"
-;
+// static const char fresh_readme_txt[] =
+// "This is a MicroPython board\r\n"
+// "\r\n"
+// "You can get started right away by writing your Python code in 'main.py'.\r\n"
+// "\r\n"
+// "For a serial prompt:\r\n"
+// " - Windows: you need to go to 'Device manager', right click on the unknown device,\r\n"
+// "   then update the driver software, using the 'pybcdc.inf' file found on this drive.\r\n"
+// "   Then use a terminal program like Hyperterminal or putty.\r\n"
+// " - Mac OS X: use the command: screen /dev/tty.usbmodem*\r\n"
+// " - Linux: use the command: screen /dev/ttyACM0\r\n"
+// "\r\n"
+// "Please visit http://micropython.org/help/ for further help.\r\n"
+// ;
 
 // avoid inlining to avoid stack usage within main()
 MP_NOINLINE STATIC bool init_flash_fs(uint reset_mode) {
+    return false; // no flash fs possible
+    #if 0
     // init the vfs object
     fs_user_mount_t *vfs_fat = &fs_user_mount_flash;
     vfs_fat->flags = 0;
@@ -307,6 +312,7 @@ MP_NOINLINE STATIC bool init_flash_fs(uint reset_mode) {
     }
 
     return true;
+    #endif
 }
 
 #if MICROPY_HW_HAS_SDCARD
@@ -398,7 +404,7 @@ int tm4c_main(int reset_mode) {
     #if MICROPY_PY_THREAD
     pyb_thread_init(&pyb_thread_main);
     #endif
-    pendsv_init();
+    // pendsv_init();
     //TODO led_init();
     #if MICROPY_HW_HAS_SWITCH
     switch_init0();
@@ -407,14 +413,16 @@ int tm4c_main(int reset_mode) {
     #if MICROPY_HW_ENABLE_RTC
     rtc_init_start(false);
     #endif
-    // TODO spi_init0();
-    #if MICROPY_HW_ENABLE_HW_I2C
-    i2c_init0();
-    #endif
+    spi_init0();
+    // disable_irq();
+    // TODO 
+//     #if MICROPY_HW_ENABLE_HW_I2C
+//     i2c_init0();
+//     #endif
     #if MICROPY_HW_HAS_SDCARD
     sdcard_init();
     #endif
-    storage_init();
+//     storage_init();
 
 soft_reset:
 
@@ -451,9 +459,9 @@ soft_reset:
 
     //TODO Missing Repl Config
 
-    #if MICROPY_HW_ENABLE_USB
-    pyb_usb_init0();
-    #endif
+//     #if MICROPY_HW_ENABLE_USB
+//     pyb_usb_init0();
+//     #endif
 
     // Initialise the local flash filesystem.
     // Create it if needed, mount in on /flash, and set it as current dir.
@@ -470,12 +478,12 @@ soft_reset:
     }
 #endif
 
-    #if MICROPY_HW_ENABLE_USB
-    // if the SD card isn't used as the USB MSC medium then use the internal flash
-    if (pyb_usb_storage_medium == PYB_USB_STORAGE_MEDIUM_NONE) {
-        pyb_usb_storage_medium = PYB_USB_STORAGE_MEDIUM_FLASH;
-    }
-    #endif
+//     #if MICROPY_HW_ENABLE_USB
+//     // if the SD card isn't used as the USB MSC medium then use the internal flash
+//     if (pyb_usb_storage_medium == PYB_USB_STORAGE_MEDIUM_NONE) {
+//         pyb_usb_storage_medium = PYB_USB_STORAGE_MEDIUM_FLASH;
+//     }
+//     #endif
 
     // set sys.path based on mounted filesystems (/sd is first so it can override /flash)
     if (mounted_sdcard) {
@@ -506,28 +514,28 @@ soft_reset:
         }
     }
 
-    // turn boot-up LEDs off
-#if !defined(MICROPY_HW_LED2)
-    // If there is only one LED on the board then it's used to signal boot-up
-    // and so we turn it off here.  Otherwise LED(1) is used to indicate dirty
-    // flash cache and so we shouldn't change its state.
-    led_state(1, 0);
-#endif
-    led_state(2, 0);
-    led_state(3, 0);
-    led_state(4, 0);
+//     // turn boot-up LEDs off
+// #if !defined(MICROPY_HW_LED2)
+//     // If there is only one LED on the board then it's used to signal boot-up
+//     // and so we turn it off here.  Otherwise LED(1) is used to indicate dirty
+//     // flash cache and so we shouldn't change its state.
+//     led_state(1, 0);
+// #endif
+//     led_state(2, 0);
+//     led_state(3, 0);
+//     led_state(4, 0);
 
-    // Now we initialise sub-systems that need configuration from boot.py,
-    // or whose initialisation can be safely deferred until after running
-    // boot.py.
+//     // Now we initialise sub-systems that need configuration from boot.py,
+//     // or whose initialisation can be safely deferred until after running
+//     // boot.py.
 
-    #if MICROPY_HW_ENABLE_USB
-    // init USB device to default setting if it was not already configured
-    if (!(pyb_usb_flags & PYB_USB_FLAG_USB_MODE_CALLED)) {
-        pyb_usb_dev_init(USBD_VID, USBD_PID_CDC_MSC, USBD_MODE_CDC_MSC, NULL);
-    }
-    #endif
-// At this point everything is fully configured and initialised.
+//     #if MICROPY_HW_ENABLE_USB
+//     // init USB device to default setting if it was not already configured
+//     if (!(pyb_usb_flags & PYB_USB_FLAG_USB_MODE_CALLED)) {
+//         pyb_usb_dev_init(USBD_VID, USBD_PID_CDC_MSC, USBD_MODE_CDC_MSC, NULL);
+//     }
+//     #endif
+// // At this point everything is fully configured and initialised.
 
     // Run the main script from the current directory.
     if ((reset_mode == 1 || reset_mode == 3) && pyexec_mode_kind == PYEXEC_MODE_FRIENDLY_REPL) {
@@ -551,6 +559,7 @@ soft_reset:
 
     // Main script is finished, so now go into REPL mode.
     // The REPL mode can change, or it can request a soft reset.
+    pyexec_mode_kind = PYEXEC_MODE_FRIENDLY_REPL;
     for (;;) {
         if (pyexec_mode_kind == PYEXEC_MODE_RAW_REPL) {
             if (pyexec_raw_repl() != 0) {
@@ -562,13 +571,14 @@ soft_reset:
             }
         }
     }
+    return 0;
 
 soft_reset_exit:
 
     // soft reset
 
     printf("PYB: sync filesystems\n");
-    storage_flush();
+    // storage_flush();
 
     printf("PYB: soft reboot\n");
     // TODO timer_deinit();
@@ -619,18 +629,18 @@ soft_reset_exit:
 //    gc_dump_info();
 //}
 
-//mp_lexer_t *mp_lexer_new_from_file(const char *filename) {
+// mp_lexer_t *mp_lexer_new_from_file(const char *filename) {
 //    mp_raise_OSError(MP_ENOENT);
-//}
+// }
 
-//mp_import_stat_t mp_import_stat(const char *path) { // @suppress("Type cannot be resolved")
+// mp_import_stat_t mp_import_stat(const char *path) { // @suppress("Type cannot be resolved")
 //    return MP_IMPORT_STAT_NO_EXIST;
-//}
+// }
 
-//mp_obj_t mp_builtin_open(size_t n_args, const mp_obj_t *args, mp_map_t *kwargs) {
+// mp_obj_t mp_builtin_open(size_t n_args, const mp_obj_t *args, mp_map_t *kwargs) {
 //    return mp_const_none;
-//}
-//MP_DEFINE_CONST_FUN_OBJ_KW(mp_builtin_open_obj, 1, mp_builtin_open);
+// }
+// MP_DEFINE_CONST_FUN_OBJ_KW(mp_builtin_open_obj, 1, mp_builtin_open);
 
 #if MICROPY_MIN_USE_CORTEX_CPU
 void _start(void) {
@@ -749,21 +759,21 @@ void tm4c123_init(void) {
     // basic MCU config
 
     // // set system clock to 80MHz
-    // SYSCTL->RCC |= (uint32_t)0x00000800;   // set BYPASS bit
-    // SYSCTL->RCC2 |= (uint32_t)0xC0000800;  // set BYPASS2 bit, DIV400 and USERCC2
-    // SYSCTL->RCC &= (uint32_t)0xFFBFFFFF;   // clear USESYSDIV bit
-    // SYSCTL->RCC = (SYSCTL->RCC & (uint32_t)0xFFFFF83F) | (uint32_t)0x00000B70;    // XTAL to 16 MHz
-    // SYSCTL->MISC &= 0xFFFFFFBF;            // clear PLLLRIS bit
-    // SYSCTL->RCC2 &= (uint32_t)0xFFFFDFFF;  // clear PWRDN2 Bit to enable PLL
-    // SYSCTL->RCC2 = (SYSCTL->RCC2 & (uint32_t)0xE03FFFFF) | (uint32_t)0x01000000;  // Set SYSDIV2 to 0x2 for 80MHz
-    // SYSCTL->RCC |= (uint32_t)0x00400000;   // set USESYSDIV bit
-    // while(!(SYSCTL->RIS & 0x00000040)){};  // wait for Pll to lock, PLLLRIS bit
-    // SYSCTL->RCC2 &= 0xFFFFF7FF;            // clear BYPASS2 bit, clears BYPASS as well
-    // // write final configuration
-    // SYSCTL->RCC = (uint32_t)(0x07C00550);  // 0b0000 0 1111 1 0 0 000 000 0 0 0 10101 01 000 0
-    // SYSCTL->RCC2 = (uint32_t)(0xC1000000); // 0b 1100 0001 0000 0000 0000 0000 0000 0000
+    SYSCTL->RCC |= (uint32_t)0x00000800;   // set BYPASS bit
+    SYSCTL->RCC2 |= (uint32_t)0xC0000800;  // set BYPASS2 bit, DIV400 and USERCC2
+    SYSCTL->RCC &= (uint32_t)0xFFBFFFFF;   // clear USESYSDIV bit
+    SYSCTL->RCC = (SYSCTL->RCC & (uint32_t)0xFFFFF83F) | (uint32_t)0x00000B70;    // XTAL to 16 MHz
+    SYSCTL->MISC &= 0xFFFFFFBF;            // clear PLLLRIS bit
+    SYSCTL->RCC2 &= (uint32_t)0xFFFFDFFF;  // clear PWRDN2 Bit to enable PLL
+    SYSCTL->RCC2 = (SYSCTL->RCC2 & (uint32_t)0xE03FFFFF) | (uint32_t)0x01000000;  // Set SYSDIV2 to 0x2 for 80MHz
+    SYSCTL->RCC |= (uint32_t)0x00400000;   // set USESYSDIV bit
+    while(!(SYSCTL->RIS & 0x00000040)){};  // wait for Pll to lock, PLLLRIS bit
+    SYSCTL->RCC2 &= 0xFFFFF7FF;            // clear BYPASS2 bit, clears BYPASS as well
+    // write final configuration
+    SYSCTL->RCC = (uint32_t)(0x07C00550);  // 0b0000 0 1111 1 0 0 000 000 0 0 0 10101 01 000 0
+    SYSCTL->RCC2 = (uint32_t)(0xC1000000); // 0b 1100 0001 0000 0000 0000 0000 0000 0000
 
-    SystemInit();
+    //SystemInit();
     // enable high performance GPIO BUS Ctl
     SYSCTL->GPIOHBCTL = 0x0000003F;
 
@@ -801,22 +811,33 @@ void tm4c123_init(void) {
     // BRD = IBRD + FRAC = UARTSysClk / (ClkDiv * BaudRate)
     // 520.8333 = 104  + 0.166 = 80MHz      / (16     * 9600    )
     // FBRD = (0.833333 * 64 + 0.5) ~ 53
-    UART0->CTL &= ~0x00000001;
-    UART0->IBRD = 0x00000208;
-    UART0->FBRD = 0x00000035;
-    UART0->LCRH = 0x00000060; // no stick parity, word length 8bit, FIFO enable, one STOP bit, odd parity, no parity check, no break
-    UART0->CC = 0x00000000;   // use SysClock
-    UART0->CTL = 0x00000300; // disable cts & rts, RXE, TXE, no loopback, 16x oversampling, TXRIS on IFLS match, no smart card, no low power, no SIR, UART enabled
-    UART0->CTL |= 0x00000001;
+    // UART0->CTL &= ~0x00000001;
+    // UART0->IBRD = 0x00000208;
+    // UART0->FBRD = 0x00000035;
+    // UART0->LCRH = 0x00000070; // no stick parity, word length 8bit, FIFO enable, one STOP bit, odd parity, no parity check, no break
+    // UART0->CC = 0x00000000;   // use SysClock
+    // UART0->CTL = 0x00000300; // disable cts & rts, RXE, TXE, no loopback, 16x oversampling, TXRIS on IFLS match, no smart card, no low power, no SIR, UART enabled
+    // UART0->CTL |= 0x00000001;
     // to change settings in active mode: page 918 of reference
+
+    UARTDisable(UART0_BASE);
+    UARTClockSourceSet(UART0_BASE, UART_CLOCK_SYSTEM);
+    UARTFlowControlSet(UART0_BASE, UART_FLOWCONTROL_NONE);
+    UARTFIFOEnable(UART0_BASE);
+    UARTConfigSetExpClk(UART0_BASE, SysCtlClockGet(), 115200, UART_CONFIG_WLEN_8 | UART_CONFIG_PAR_NONE | UART_CONFIG_STOP_ONE);
+    UARTEnable(UART0_BASE);
 
 
     //Setup of Systick to 1ms
     //Already registered in int vector
 //    SysTickIntDisable();
 //    SysTickIntRegister(SysTick_Handler);
+
+    ROM_FPUEnable();
+    ROM_FPULazyStackingEnable();
+    
     SysTickIntEnable();
-    SysTickPeriodSet(SysCtlClockGet()/1000);
+    SysTickPeriodSet(SysCtlClockGet()/SYS_TICK_DIVIDER);
     SysTickEnable();
 }
 

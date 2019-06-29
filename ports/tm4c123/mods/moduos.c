@@ -60,8 +60,8 @@ STATIC const qstr os_uname_info_fields[] = {
     MP_QSTR_sysname, MP_QSTR_nodename,
     MP_QSTR_release, MP_QSTR_version, MP_QSTR_machine
 };
-STATIC const MP_DEFINE_STR_OBJ(os_uname_info_sysname_obj, "pyboard");
-STATIC const MP_DEFINE_STR_OBJ(os_uname_info_nodename_obj, "pyboard");
+STATIC const MP_DEFINE_STR_OBJ(os_uname_info_sysname_obj, "Tiva_Launchpad");
+STATIC const MP_DEFINE_STR_OBJ(os_uname_info_nodename_obj, "Tiva_Launchpad");
 STATIC const MP_DEFINE_STR_OBJ(os_uname_info_release_obj, MICROPY_VERSION_STRING);
 STATIC const MP_DEFINE_STR_OBJ(os_uname_info_version_obj, MICROPY_GIT_TAG " on " MICROPY_BUILD_DATE);
 STATIC const MP_DEFINE_STR_OBJ(os_uname_info_machine_obj, MICROPY_HW_BOARD_NAME " with " MICROPY_HW_MCU_NAME);
@@ -110,10 +110,10 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_1(os_urandom_obj, os_urandom);
 
 STATIC mp_obj_t uos_dupterm(size_t n_args, const mp_obj_t *args) {
     mp_obj_t prev_obj = mp_uos_dupterm_obj.fun.var(n_args, args);
-    if (mp_obj_get_type(prev_obj) == &pyb_uart_type) {
+    if (mp_obj_get_type(prev_obj) == &machine_uart_type) {
         uart_attach_to_repl(MP_OBJ_TO_PTR(prev_obj), false);
     }
-    if (mp_obj_get_type(args[0]) == &pyb_uart_type) {
+    if (mp_obj_get_type(args[0]) == &machine_uart_type) {
         uart_attach_to_repl(MP_OBJ_TO_PTR(args[0]), true);
     }
     return prev_obj;

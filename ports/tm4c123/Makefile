@@ -3,6 +3,14 @@
 
 DEBUG = 1
 
+# Location of the TivaWare library
+# Can be pointed to a newer version if desired
+#TIVAWARE_LIB = /mnt/c/ti/TivaWare
+TIVAWARE_LIB = /home/raphael/ti/tivaware
+
+# Name of the Project (and the resulting binary file)
+PROJECT_NAME = uPY_TM4C123
+
 # Include variabes for Python and Compiler
 include ../../py/mkenv.mk
 
@@ -19,19 +27,15 @@ OPENOCD_PATH = openocd
 OPENOCD_BOARD_CFG = openocd/ek-tm4c123gxl.cfg
 OPENOCD_PROG_CFG = openocd/tiva_flash.cfg
 
-
-# Name of the Project (and the resulting binary file)
-PROJECT_NAME = uPY_TM4C123
-
-# Location of the TivaWare library
-# Can be pointed to a newer version if desired
-TIVAWARE_LIB = /mnt/c/ti/TivaWare
-#TIVAWARE_LIB = /home/raphael/ti/tivaware
-
 # qstr definitions (must come before including py.mk)
 QSTR_DEFS = qstrdefsport.h $(BUILD)/pins_qstr.h
 QSTR_GLOBAL_DEPENDENCIES = board/mpconfigboard.h
-#MICROPY_FLOAT_IMPL=none
+
+# Implementation of floating point lib, single for TivaBoard
+MICROPY_FLOAT_IMPL=none#single
+
+# Implementation of arbitrary long integers
+LONGINT_IMPL=none#mpz
 
 # include py core make definitions
 include $(TOP)/py/py.mk
@@ -71,17 +75,44 @@ INC += -I$(USBDEV_DIR)/core/inc -I$(USBDEV_DIR)/class/inc
 DFU = $(TOP)/tools/dfu.py
 PYDFU = $(TOP)/tools/pydfu.py
 FATFS_DIR=lib/oofatfs
-CFLAGS_CORTEX_M4 = -mthumb -mtune=cortex-m4 -mabi=aapcs-linux -mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mfloat-abi=hard 
-CFLAGS = $(INC) -Wall -Werror -std=gnu99 -nostdlib $(CFLAGS_CORTEX_M4) $(COPT)
-#Preprocessor Flags
-CFLAGS += -DPART_$(PART) -c -D$(PART) -DARMCM4_FP -DTARGET_IS_TM4C123_RB1 -DMICROPY_PIN_DEFS_PORT_H=\"mods/pin_defs_tm4c123.h\" #-DMICROPY_MPHALPORT_H=\"mphalport.h\"
-CFLAGS += -DFFCONF_H=\"lib/oofatfs/ffconf.h\"
-# ifeq ($(MICROPY_FLOAT_IMPL),double)
-# CFLAGS += -DMICROPY_FLOAT_IMPL=MICROPY_FLOAT_IMPL_DOUBLE
-# else
-# CFLAGS += -DMICROPY_FLOAT_IMPL=MICROPY_FLOAT_IMPL_FLOAT
-# CFLAGS += -fsingle-precision-constant -Wdouble-promotion
-# endif
+
+# Architecture
+CFLAGS_CORTEX_M4 = -mthumb -mtune=cortex-m4 -mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mabi=aapcs-linux
+# Warnings
+CFLAGS = $(INC) -Wall -Werror -Wpointer-arith
+# Compiler
+CFLAGS += -std=gnu99 -nostdlib $(CFLAGS_CORTEX_M4) $(COPT) -fshort-enums -c #-fno-short-enums
+
+#
+# Preprocessor Flags
+#
+CFLAGS += $(addprefix -D, \
+		PART_$(PART) \
+		$(PART) \
+		ARMCM4_FP \
+		TARGET_IS_TM4C123_RB1 \
+		MICROPY_PIN_DEFS_PORT_H=\"mods/pin_defs_tm4c123.h\" \
+		FFCONF_H=\"lib/oofatfs/ffconf.h\" \
+		)
+# CFLAGS += -DPART_$(PART) -c -D$(PART) -DARMCM4_FP -DTARGET_IS_TM4C123_RB1 -DMICROPY_PIN_DEFS_PORT_H=\"mods/pin_defs_tm4c123.h\" #-DMICROPY_MPHALPORT_H=\"mphalport.h\"
+# CFLAGS += -DFFCONF_H=\"lib/oofatfs/ffconf.h\"
+# Arbitrary Interger Implementation
+ifeq ($(LONGINT_IMPL), mpz)
+CFLAGS += -DMICROPY_LONGINT_IMPL=MICROPY_LONGINT_IMPL_MPZ
+else
+CFLAGS += -DMICROPY_LONGINT_IMPL=MICROPY_LONGINT_IMPL_NONE
+endif
+
+# Floating point implementation
+ifeq ($(MICROPY_FLOAT_IMPL),double)
+CFLAGS += -DMICROPY_FLOAT_IMPL=MICROPY_FLOAT_IMPL_DOUBLE
+else ifeq ($(MICROPY_FLOAT_IMPL),single)
+CFLAGS += -DMICROPY_FLOAT_IMPL=MICROPY_FLOAT_IMPL_FLOAT
+CFLAGS += -fsingle-precision-constant -Wdouble-promotion
+else 
+CFLAGE += -DMICROPY_FLOAT_IMPL=MICROPY_FLOAT_IMPL_NONE
+endif
+
 LDFLAGS = -nostdlib -T $(LINKER_FILE) -Map=$@.map --cref --gc-sections
 
 # Tune for Debugging or Optimization
@@ -94,123 +125,56 @@ endif
 
 # Libraries
 LIBS = $(TIVAWARE_LIB)/driverlib/gcc/libdriver.a
-LICGCC := ${shell $(CC) $(CFLAGS) -print-libgcc-file-name}
-LIBC := ${shell ${CC} ${CFLAGS} -print-file-name=libc.a}
-LIBM := ${shell ${CC} ${CFLAGS} -print-file-name=libm.a}
+LIBGCC := ${shell $(CC) $(CFLAGS) --print-libgcc-file-name}
+LIBC := ${shell ${CC} ${CFLAGS} --print-file-name=libc.a}
+LIBM := ${shell ${CC} ${CFLAGS} --print-file-name=libm.a}
 
+#
 # Sources	
+#
 
-#lib
+# lib
 SRC_LIB = $(addprefix lib/,\
 	libc/string0.c \
-	oofatfs/ff.c \
-	oofatfs/option/unicode.c \
 	mp-readline/readline.c \
 	netutils/netutils.c \
 	timeutils/timeutils.c \
-	utils/pyexec.c \
 	utils/interrupt_char.c \
+	utils/pyexec.c \
 	utils/sys_stdio_mphal.c \
+	oofatfs/ff.c \
+	oofatfs/option/unicode.c \
 	)
-
-
-# ifeq ($(MICROPY_FLOAT_IMPL),double)
-# SRC_LIBM = $(addprefix lib/libm_dbl/,\
-# 	__cos.c \
-# 	__expo2.c \
-# 	__fpclassify.c \
-# 	__rem_pio2.c \
-# 	__rem_pio2_large.c \
-# 	__signbit.c \
-# 	__sin.c \
-# 	__tan.c \
-# 	acos.c \
-# 	acosh.c \
-# 	asin.c \
-# 	asinh.c \
-# 	atan.c \
-# 	atan2.c \
-# 	atanh.c \
-# 	ceil.c \
-# 	cos.c \
-# 	cosh.c \
-# 	erf.c \
-# 	exp.c \
-# 	expm1.c \
-# 	floor.c \
-# 	fmod.c \
-# 	frexp.c \
-# 	ldexp.c \
-# 	lgamma.c \
-# 	log.c \
-# 	log10.c \
-# 	log1p.c \
-# 	modf.c \
-# 	nearbyint.c \
-# 	pow.c \
-# 	rint.c \
-# 	scalbn.c \
-# 	sin.c \
-# 	sinh.c \
-# 	sqrt.c \
-# 	tan.c \
-# 	tanh.c \
-# 	tgamma.c \
-# 	trunc.c \
-# 	)
-# else
-# SRC_LIBM = $(addprefix lib/libm/,\
-# 	math.c \
-# 	thumb_vfp_sqrtf.c \
-# 	acoshf.c \
-# 	asinfacosf.c \
-# 	asinhf.c \
-# 	atan2f.c \
-# 	atanf.c \
-# 	atanhf.c \
-# 	ef_rem_pio2.c \
-# 	erf_lgamma.c \
-# 	fmodf.c \
-# 	kf_cos.c \
-# 	kf_rem_pio2.c \
-# 	kf_sin.c \
-# 	kf_tan.c \
-# 	log1pf.c \
-# 	nearbyintf.c \
-# 	sf_cos.c \
-# 	sf_erf.c \
-# 	sf_frexp.c \
-# 	sf_ldexp.c \
-# 	sf_modf.c \
-# 	sf_sin.c \
-# 	sf_tan.c \
-# 	wf_lgamma.c \
-# 	wf_tgamma.c \
-# 	)
-# endif
-
 
 # Module sources
 MODS_SRC_C = $(addprefix mods/,\
 	mphalport.c \
 	pin.c \
 	pin_named_pins.c \
+	modmachine.c \
+	modpyb.c \
 	uart.c \
 	rtc.c \
-	fatfs_port.c \
-	irq.c \
-	modmachine.c \
-	modutime.c \
 	systick.c \
-	moduos.c \
-	globals.c \
-	pybthread.c \
-	pendsv.c \
-	flashbdev.c \
-	storage.c \
 	handlers.c \
-	flash.c \
-	)
+	spi.c \
+	sdcard.c \
+	moduos.c \
+	pendsv.c \
+	pybthread.c \
+	modutime.c \
+	irq.c \
+)
+	# fatfs_port.c \
+	# irq.c \
+	# modutime.c \	
+	# moduos.c \
+	# pybthread.c \
+	# pendsv.c \
+	# flashbdev.c \
+	# storage.c \
+	# flash.c \
+	# )
 	#	extint.c see forum
 
 # QSTR sources
@@ -226,8 +190,89 @@ CORE_SRC_C = \
 	
 ASM_SRC_S = \
 	gchelper.s 
+
+# LIBM
+ifeq ($(MICROPY_FLOAT_IMPL),double)
+SRC_LIBM = $(addprefix lib/libm_dbl/,\
+	__cos.c \
+	__expo2.c \
+	__fpclassify.c \
+	__rem_pio2.c \
+	__rem_pio2_large.c \
+	__signbit.c \
+	__sin.c \
+	__tan.c \
+	acos.c \
+	acosh.c \
+	asin.c \
+	asinh.c \
+	atan.c \
+	atan2.c \
+	atanh.c \
+	ceil.c \
+	cos.c \
+	cosh.c \
+	erf.c \
+	exp.c \
+	expm1.c \
+	floor.c \
+	fmod.c \
+	frexp.c \
+	ldexp.c \
+	lgamma.c \
+	log.c \
+	log10.c \
+	log1p.c \
+	modf.c \
+	nearbyint.c \
+	pow.c \
+	rint.c \
+	scalbn.c \
+	sin.c \
+	sinh.c \
+	sqrt.c \
+	tan.c \
+	tanh.c \
+	tgamma.c \
+	trunc.c \
+	)
+else
+SRC_LIBM = $(addprefix lib/libm/,\
+	math.c \
+	thumb_vfp_sqrtf.c \
+	acoshf.c \
+	asinfacosf.c \
+	asinhf.c \
+	atan2f.c \
+	atanf.c \
+	atanhf.c \
+	ef_rem_pio2.c \
+	erf_lgamma.c \
+	fmodf.c \
+	kf_cos.c \
+	kf_rem_pio2.c \
+	kf_sin.c \
+	kf_tan.c \
+	log1pf.c \
+	nearbyintf.c \
+	sf_cos.c \
+	sf_erf.c \
+	sf_frexp.c \
+	sf_ldexp.c \
+	sf_modf.c \
+	sf_sin.c \
+	sf_tan.c \
+	wf_lgamma.c \
+	wf_tgamma.c \
+	)
+endif
+
+# Additional sources
+# ADD_SRC_C = 
+# 	drivers/bus/softspi.c 
 		
-SRC_C = $(CORE_SRC_C) $(MODS_SRC_C) $(GEN_PINS_SRC) $(SRC_LIB) $(SRC_LIBM) 
+SRC_C = $(CORE_SRC_C) $(MODS_SRC_C) $(GEN_PINS_SRC) $(SRC_LIB) $(SRC_LIBM) $(ADD_SRC_C)
+$(SRC_LIBM): COPT += -Os
 
 ASM_OBJ = $(addprefix $(BUILD)/, $(ASM_SRC_S:.s=.o))
 
@@ -238,21 +283,22 @@ OBJ = $(PY_O) $(ASM_OBJ) $(C_OBJ)
 # This file contains performance critical functions so turn up the optimisation
 # level.  It doesn't add much to the code size and improves performance a bit.
 # Don't use -O3 with this file because gcc tries to optimise memset in terms of itself.
-#$(BUILD)/lib/libc/string0.o: COPT += -O2
+$(BUILD)/lib/libc/string0.o: COPT += -O2
 
 # We put several files into the first 16K section with the ISRs.
 # If we compile these using -O0 then it won't fit. So if you really want these
 # to be compiled with -O0, then edit boards/common.ld (in the .isr_vector section)
 # and comment out the following lines.
-# $(BUILD)/$(FATFS_DIR)/ff.o: COPT += -Os
-# $(filter $(PY_BUILD)/../extmod/vfs_fat_%.o, $(PY_O)): COPT += -Os
-# $(PY_BUILD)/formatfloat.o: COPT += -Os
-# $(PY_BUILD)/parsenum.o: COPT += -Os
-# $(PY_BUILD)/mpprint.o: COPT += -Os
+$(BUILD)/$(FATFS_DIR)/ff.o: COPT += -Os
+$(filter $(PY_BUILD)/../extmod/vfs_fat_%.o, $(PY_O)): COPT += -Os
+$(PY_BUILD)/formatfloat.o: COPT += -Os
+$(PY_BUILD)/parsenum.o: COPT += -Os
+$(PY_BUILD)/mpprint.o: COPT += -Os
 
 
 all: $(OBJ) ${PROJECT_NAME}.axf ${PROJECT_NAME}
 
+# Build frozencode
 $(BUILD)/_frozen_mpy.c: frozentest.mpy $(BUILD)/genhdr/qstrdefs.generated.h
 	$(ECHO) "MISC freezing bytecode"
 	$(Q)$(TOP)/tools/mpy-tool.py -f -q $(BUILD)/genhdr/qstrdefs.preprocessed.h -mlongint-impl=none $< > $@
@@ -301,14 +347,22 @@ $(GEN_PINS_SRC) $(GEN_PINS_HDR) $(GEN_PINS_QSTR): $(BOARD_PINS) $(MAKE_PINS) $(A
 $(BUILD)/pins.o: $(BUILD)/pins.c
 	$(call compile_c)	
 
+# Build axf and elf
 ${PROJECT_NAME}.axf: $(OBJ)
+	@echo
+	@echo Used these C-Flags: $(CFLAGS)
+	#$(CC) $(CFLAGS) -E build/pins.c	-o build/pins.e
 	@echo
 	@echo Making driverlib
 	$(MAKE) -C ${TIVAWARE_LIB}/driverlib/
 	@echo
 	@echo Linking...
-	$(LD) -T $(LINKER_FILE) $(LFLAGS) -o ${PROJECT_NAME}.axf $(OBJ) $(LIBS)  $(LIBM) $(LIBC) $(LIBGCC)
+	@echo AXF:
+	$(LD) -T $(LINKER_FILE) $(LFLAGS) -o ${PROJECT_NAME}.axf $(OBJ) $(LIBS) $(LIBM) $(LIBC) $(LIBGCC)
+	@echo ELF:
+	$(LD) -T $(LINKER_FILE) $(LFLAGS) -o ${PROJECT_NAME}.elf $(OBJ) $(LIBS) $(LIBM) $(LIBC) $(LIBGCC)
 
+# Build binary
 ${PROJECT_NAME}: ${PROJECT_NAME}.axf
 	@echo
 	@echo Copying...
@@ -337,7 +391,8 @@ $(GEN_CDCINF_FILE): $(CDCINF_TEMPLATE) $(INSERT_USB_IDS) $(USB_IDS_FILE) | $(HEA
 	$(ECHO) "GEN $@"
 	$(Q)$(PYTHON) $(INSERT_USB_IDS) $(USB_IDS_FILE) $< > $@
 
-CLEAN_EXTRA += *.axf *.bin *.lst #$(TIVAWARE_LIB)/driverlib/gcc/* 
+# Remove executable files
+CLEAN_EXTRA += *.axf *.bin *.lst *.elf #$(TIVAWARE_LIB)/driverlib/gcc/* 
 
 include $(TOP)/py/mkrules.mk
 

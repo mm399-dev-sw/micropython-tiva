@@ -39,9 +39,11 @@
 #include "pin.h"
 #include "mphalport.h"
 
+// The conf variable is not applicable for ADC function, therefore a dummy is defined here
 #define GPIO_ADC 0xFFFFFFFF
 
-#define AF_1(af_name, af_idx, af_fn, af_unit, af_type, af_short, pin_board_name) \
+// For AFs with multiple Units
+#define AF_ML(af_name, af_idx, af_fn, af_unit, af_type, af_short, pin_board_name) \
 { \
     .name = MP_QSTR_ ## af_name, \
     .idx = (af_idx), \
@@ -51,7 +53,8 @@
     .conf = GPIO_ ## pin_board_name ## _ ## af_short ## af_type, \
 }
 
-#define AF_2(af_name, af_idx, af_fn, af_unit, af_type, pin_board_name) \
+// For AFs with only one Unit (not numbered)
+#define AF_SL(af_name, af_idx, af_fn, af_unit, af_type, pin_board_name) \
 { \
     .name = MP_QSTR_ ## af_name, \
     .idx = (af_idx), \
@@ -61,6 +64,7 @@
     .conf = GPIO_ ## pin_board_name ## _ ## af_type, \
 }
 
+// For analog AFs (no conf)
 #define AF_AN(af_name, af_idx, af_fn, af_unit, af_type) \
 { \
     .name = MP_QSTR_ ## af_name, \
@@ -69,9 +73,7 @@
     .unit = (af_unit), \
     .type = AF_ ## af_fn ## _ ## af_type, \
     .conf = GPIO_ADC, \
-}
-
-
+} 
 
 #define PIN(p_pin_name, p_port, p_port_pin, p_pin_num, p_af_list, p_def_af, p_num_afs) \
 { \
@@ -93,4 +95,3 @@
     .irq_trigger    = 0, \
     .irq_flags      = 0, \
 }
-
