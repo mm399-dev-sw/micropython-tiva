@@ -417,7 +417,7 @@ mp_uint_t spi_rx_only(machine_hard_spi_obj_t *self, uint8_t* data, size_t len, u
 mp_uint_t spi_rx_tx(machine_hard_spi_obj_t *self, const uint8_t* data_tx, uint8_t* data_rx, size_t len, uint32_t word_timeout, int *errcode) {
     uint num_rtx = 0;
     uint32_t dumm;
-    volatile uin32_t dat;
+    volatile uint32_t dat;
     while(num_rtx < len) {
 
         if(!spi_rx_wait(self, word_timeout)) {
@@ -432,12 +432,12 @@ mp_uint_t spi_rx_tx(machine_hard_spi_obj_t *self, const uint8_t* data_tx, uint8_
 
         // Reversing bit order of data
         if(self->lsb_first) {
-            asm volatile("rbit %1,%0" : "=r" (dat) : "r" (data[num_tx]));
+            asm volatile("rbit %1,%0" : "=r" (dat) : "r" (data_tx[num_rtx]));
             dat >>= (32 - self->bits);
             //nop here?
             SSIDataPutNonBlocking(self->spi_base, dat);
         } else {
-            SSIDataPutNonBlocking(self->spi_base, data[num_rtx]);
+            SSIDataPutNonBlocking(self->spi_base, data_tx[num_rtx]);
         }   
         SSIDataGetNonBlocking(self->spi_base, &dumm);
         data_rx[num_rtx] = dumm;
