@@ -1,12 +1,12 @@
 # Makefile for Micropython Tiva Lauchpad (TM4C123GH6PM) Port
 # by Raphael Kriegl
 
-DEBUG = 1
+DEBUG = 0
 
 # Location of the TivaWare library
 # Can be pointed to a newer version if desired
-#TIVAWARE_LIB = /mnt/c/ti/TivaWare
-TIVAWARE_LIB = /home/raphael/ti/tivaware
+TIVAWARE_LIB = /mnt/c/ti/TivaWare
+#TIVAWARE_LIB = /home/raphael/ti/tivaware
 
 # Name of the Project (and the resulting binary file)
 PROJECT_NAME = uPY_TM4C123
@@ -48,7 +48,6 @@ CROSS = 1
 OD = $(CROSS_COMPILE)objdump
 
 ODFLAGS = -S
-LFLAGS = --gc-sections
 CPFLAGS = -O binary
 
 LINKER_FILE = tm4c123gh6pm.ld
@@ -81,7 +80,7 @@ CFLAGS_CORTEX_M4 = -mthumb -mtune=cortex-m4 -mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -m
 # Warnings
 CFLAGS = $(INC) -Wall -Werror -Wpointer-arith
 # Compiler
-CFLAGS += -std=gnu99 -nostdlib $(CFLAGS_CORTEX_M4) $(COPT) -fshort-enums -c #-fno-short-enums
+CFLAGS += -std=gnu99 -nostdlib $(CFLAGS_CORTEX_M4) $(COPT) -fshort-enums -fdata-sections -ffunction-sections #-fno-short-enums
 
 #
 # Preprocessor Flags
@@ -113,15 +112,14 @@ else
 CFLAGE += -DMICROPY_FLOAT_IMPL=MICROPY_FLOAT_IMPL_NONE
 endif
 
-LDFLAGS = -nostdlib -T $(LINKER_FILE) -Map=$@.map --cref --gc-sections
-
 # Tune for Debugging or Optimization
 ifeq ($(DEBUG), 1)
 CFLAGS += -O0 -ggdb -DDEBUG
 else
-CFLAGS += -Os -DNDEBUG
-CFLAGS += -fdata-sections -ffunction-sections
+CFLAGS += -flto -fuse-linker-plugin -Os -DNDEBUG
 endif
+
+LDFLAGS = -Wl,-nostdlib,-T,$(LINKER_FILE),-Map=$@.map,--cref,--gc-sections $(CFLAGS)
 
 # Libraries
 LIBS = $(TIVAWARE_LIB)/driverlib/gcc/libdriver.a
@@ -350,17 +348,17 @@ $(BUILD)/pins.o: $(BUILD)/pins.c
 # Build axf and elf
 ${PROJECT_NAME}.axf: $(OBJ)
 	@echo
-	@echo Used these C-Flags: $(CFLAGS)
-	#$(CC) $(CFLAGS) -E build/pins.c	-o build/pins.e
-	@echo
+	#@echo Used these C-Flags: $(CFLAGS)
+	#$(CC) $(CFLAGS) -E build/pins.c -o build/pins.e
+	#@echo
 	@echo Making driverlib
 	$(MAKE) -C ${TIVAWARE_LIB}/driverlib/
 	@echo
 	@echo Linking...
 	@echo AXF:
-	$(LD) -T $(LINKER_FILE) $(LFLAGS) -o ${PROJECT_NAME}.axf $(OBJ) $(LIBS) $(LIBM) $(LIBC) $(LIBGCC)
+	$(CC) $(LDFLAGS) -o ${PROJECT_NAME}.axf $(OBJ) $(LIBS) $(LIBM) $(LIBC) $(LIBGCC)
 	@echo ELF:
-	$(LD) -T $(LINKER_FILE) $(LFLAGS) -o ${PROJECT_NAME}.elf $(OBJ) $(LIBS) $(LIBM) $(LIBC) $(LIBGCC)
+	$(CC) $(LDFLAGS) -o ${PROJECT_NAME}.elf $(OBJ) $(LIBS) $(LIBM) $(LIBC) $(LIBGCC)
 
 # Build binary
 ${PROJECT_NAME}: ${PROJECT_NAME}.axf
