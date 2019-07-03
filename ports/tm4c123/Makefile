@@ -1,7 +1,8 @@
 # Makefile for Micropython Tiva Lauchpad (TM4C123GH6PM) Port
 # by Raphael Kriegl
 
-DEBUG = 0
+DEBUG = 1 # change requires full rebuild
+LINK_TIME_OPT = 1 # Only when DEBUG = 0, change requires full rebuild
 
 # Location of the TivaWare library
 # Can be pointed to a newer version if desired
@@ -116,7 +117,10 @@ endif
 ifeq ($(DEBUG), 1)
 CFLAGS += -O0 -ggdb -DDEBUG
 else
-CFLAGS += -flto -fuse-linker-plugin -Os -DNDEBUG
+ifeq ($(LINK_TIME_OPT), 1)
+CFLAGS += -flto -fuse-linker-plugin
+endif
+CFLAGS += -Os -DNDEBUG
 endif
 
 LDFLAGS = -Wl,-nostdlib,-T,$(LINKER_FILE),-Map=$@.map,--cref,--gc-sections $(CFLAGS)
@@ -390,7 +394,7 @@ $(GEN_CDCINF_FILE): $(CDCINF_TEMPLATE) $(INSERT_USB_IDS) $(USB_IDS_FILE) | $(HEA
 	$(Q)$(PYTHON) $(INSERT_USB_IDS) $(USB_IDS_FILE) $< > $@
 
 # Remove executable files
-CLEAN_EXTRA += *.axf *.bin *.lst *.elf #$(TIVAWARE_LIB)/driverlib/gcc/* 
+CLEAN_EXTRA += *.axf *.bin *.lst *.elf *.axf.map #$(TIVAWARE_LIB)/driverlib/gcc/* 
 
 include $(TOP)/py/mkrules.mk
 
