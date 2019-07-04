@@ -163,6 +163,10 @@ STATIC bool uart_exists(int uart_id) {
         return false;
     }
     switch (uart_id) {
+        #if defined(MICROPY_HW_UART0_TX) && defined(MICROPY_HW_UART0_RX)
+        case UART_0: return true;
+        #endif
+
         #if defined(MICROPY_HW_UART1_TX) && defined(MICROPY_HW_UART1_RX)
         case UART_1: return true;
         #endif
