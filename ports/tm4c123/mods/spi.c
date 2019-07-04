@@ -402,6 +402,12 @@ mp_uint_t spi_rx_only(machine_hard_spi_obj_t *self, uint8_t* data, size_t len, u
 
         SSIDataPutNonBlocking(self->spi_base, dummy);
         num_rx += SSIDataGetNonBlocking(self->spi_base, &dumm);
+        // Reversing bit order of data
+        if(self->lsb_first) {
+            asm volatile("rbit %1,%0" : "=r" (dumm) : "r" (dumm));
+            dumm >>= (32 - self->bits);
+            //nop here?
+        }
         data[num_rx] = dumm;
     }
 
@@ -440,6 +446,11 @@ mp_uint_t spi_rx_tx(machine_hard_spi_obj_t *self, const uint8_t* data_tx, uint8_
             SSIDataPutNonBlocking(self->spi_base, data_tx[num_rtx]);
         }   
         SSIDataGetNonBlocking(self->spi_base, &dumm);
+        if(self->lsb_first) {
+            asm volatile("rbit %1,%0" : "=r" (dumm) : "r" (dumm));
+            dumm >>= (32 - self->bits);
+            //nop here?
+        }
         data_rx[num_rtx] = dumm;
     }
 
