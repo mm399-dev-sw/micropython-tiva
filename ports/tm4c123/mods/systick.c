@@ -28,13 +28,7 @@
 #include "py/runtime.h"
 #include "py/mphal.h"
 #include "irq.h"
-#if defined (ARMCM4)
-  #include "ARMCM4.h"
-#elif defined (ARMCM4_FP)
-  #include "ARMCM4_FP.h"
-#else
-  #error device not specified!
-#endif
+#include CMSIS_HEADER
 #include "systick.h"
 #include "pybthread.h"
 #include "driverlib/rom_map.h"

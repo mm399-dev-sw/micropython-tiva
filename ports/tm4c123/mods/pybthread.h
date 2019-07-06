@@ -26,13 +26,7 @@
 #ifndef MICROPY_INCLUDED_STM32_PYBTHREAD_H
 #define MICROPY_INCLUDED_STM32_PYBTHREAD_H
 
-#if defined (ARMCM4)
-  #include "ARMCM4.h"
-#elif defined (ARMCM4_FP)
-  #include "ARMCM4_FP.h"
-#else
-  #error device not specified!
-#endif
+#include CMSIS_HEADER
 
 typedef struct _pyb_thread_t {
     void *sp;

@@ -26,13 +26,7 @@
 #ifndef MICROPY_INCLUDED_TM4C123_IRQ_H
 #define MICROPY_INCLUDED_TM4C123_IRQ_H
 
-#if defined (ARMCM4)
-  #include "ARMCM4.h"
-#elif defined (ARMCM4_FP)
-  #include "ARMCM4_FP.h"
-#else
-  #error device not specified!
-#endif
+#include CMSIS_HEADER
 
 #include "inc/hw_nvic.h"
 

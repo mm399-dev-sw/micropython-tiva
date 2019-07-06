@@ -90,6 +90,7 @@ CFLAGS += $(addprefix -D, \
 		PART_$(PART) \
 		$(PART) \
 		ARMCM4_FP \
+		CMSIS_HEADER=\"ARMCM4_FP.h\" \
 		TARGET_IS_TM4C123_RB1 \
 		MICROPY_PIN_DEFS_PORT_H=\"mods/pin_defs_tm4c123.h\" \
 		FFCONF_H=\"lib/oofatfs/ffconf.h\" \

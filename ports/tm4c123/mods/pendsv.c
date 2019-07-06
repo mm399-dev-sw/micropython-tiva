@@ -28,13 +28,7 @@
 
 #include "py/runtime.h"
 #include "lib/utils/interrupt_char.h"
-#if defined (ARMCM4)
-  #include "ARMCM4.h"
-#elif defined (ARMCM4_FP)
-  #include "ARMCM4_FP.h"
-#else
-  #error device not specified!
-#endif
+#include CMSIS_HEADER
 #include "driverlib/interrupt.h"
 #include "pendsv.h"
 #include "irq.h"

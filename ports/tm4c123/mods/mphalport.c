@@ -24,13 +24,7 @@
 #undef ITM_BASE
 #endif
 
-#if defined (ARMCM4)
-  #include "ARMCM4.h"
-#elif defined (ARMCM4_FP)
-  #include "ARMCM4_FP.h"
-#else
-  #error device not specified!
-#endif
+#include CMSIS_HEADER
 
 // this table converts from HAL_StatusTypeDef to POSIX errno
 //const byte mp_hal_status_to_errno_table[4] = {

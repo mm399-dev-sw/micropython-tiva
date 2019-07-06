@@ -35,13 +35,7 @@
 // define to just leave everything as is 
 #define FLASH_IRQn INT_FLASH
 
-#if defined (ARMCM4)
-  #include "ARMCM4.h"
-#elif defined (ARMCM4_FP)
-  #include "ARMCM4_FP.h"
-#else
-  #error device not specified!
-#endif
+#include CMSIS_HEADER
 
 //TODO #include "led.h"
 #include "storage.h"
