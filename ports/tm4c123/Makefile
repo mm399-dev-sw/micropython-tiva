@@ -166,6 +166,7 @@ MODS_SRC_C = $(addprefix mods/,\
 	pybthread.c \
 	modutime.c \
 	irq.c \
+	mpthreadport.c \
 )
 	# fatfs_port.c \
 	# irq.c \
