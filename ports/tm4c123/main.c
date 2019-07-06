@@ -162,7 +162,8 @@ void do_str(const char *src, mp_parse_input_kind_t input_kind) {
 #endif
 
 //extern uint32_t pui32Stack[128];
-extern uint32_t __StackTop;
+extern uint32_t _estack;
+extern uint32_t _stack;
 extern uint32_t _heap_start;
 extern uint32_t _heap_end;
 //static char *stack_top;
@@ -427,8 +428,8 @@ soft_reset:
 //    int stack_dummy;
     mp_stack_ctrl_init();
 
-    mp_stack_set_top(&__StackTop);
-    mp_stack_set_limit((char*)&_estack - (char*)&_heap_end - 1024);
+    mp_stack_set_top(&_estack);
+    mp_stack_set_limit((char*)&_estack - (char*)&_stack - 1024);
 
     #if MICROPY_ENABLE_GC
     gc_init(&_heap_start, &_heap_end);

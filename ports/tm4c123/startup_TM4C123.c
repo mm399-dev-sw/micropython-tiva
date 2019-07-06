@@ -46,7 +46,7 @@ extern uint32_t __zero_table_start__;
 extern uint32_t __zero_table_end__;
 extern uint32_t __bss_start__;
 extern uint32_t __bss_end__;
-extern uint32_t __StackTop;
+extern uint32_t __estack;
 
 
 /*----------------------------------------------------------------------------
@@ -118,7 +118,7 @@ void Interrupt9_Handler     (void) __attribute__ ((weak, alias("Default_Handler"
  *----------------------------------------------------------------------------*/
 extern const pFunc g_pfnVectors[240];
        const pFunc g_pfnVectors[240] __attribute__ ((section(".vectors"))) = {
-  (pFunc)(&__StackTop),                     /*     Initial Stack Pointer */
+  (pFunc)(&__estack),                     /*     Initial Stack Pointer */
   Reset_Handler,                            /*     Reset Handler */
   NMI_Handler,                              /* -14 NMI Handler */
   HardFault_Handler,                        /* -13 Hard Fault Handler */

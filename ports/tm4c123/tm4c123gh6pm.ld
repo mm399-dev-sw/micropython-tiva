@@ -121,9 +121,16 @@ SECTIONS {
         __stack = .;
         . = . + _Stacksize;
         KEEP(*(.stack))
-        __StackTop = . ;
         PROVIDE (_estack = .);
+        __estack = .;
     } > SRAM
+
+    /DISCARD/ :
+    {
+        libc.a ( * )
+        libm.a ( * )
+        libgcc.a ( * )
+    }
 
 	ASSERT(_Min_Heap_Size <= _Heapsize, "Could not allocate enough space for heap")
 	ASSERT(_Min_Stack_Size <= _Stacksize, "Could not allocate enough space for stack")
