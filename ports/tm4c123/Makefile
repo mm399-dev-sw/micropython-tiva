@@ -1,8 +1,8 @@
 # Makefile for Micropython Tiva Lauchpad (TM4C123GH6PM) Port
 # by Raphael Kriegl
 
-DEBUG = 1 # change requires full rebuild
-LINK_TIME_OPT = 1 # Only when DEBUG = 0, change requires full rebuild
+DEBUG ?= 1 # change requires full rebuild
+LINK_TIME_OPT = 1 # Only when not combiling for DEBUG, change requires full rebuild
 
 # Location of the TivaWare library
 # Can be pointed to a newer version if desired
@@ -33,10 +33,10 @@ QSTR_DEFS = qstrdefsport.h $(BUILD)/pins_qstr.h
 QSTR_GLOBAL_DEPENDENCIES = board/mpconfigboard.h
 
 # Implementation of floating point lib, single for TivaBoard
-MICROPY_FLOAT_IMPL=none#single
+MICROPY_FLOAT_IMPL=single
 
 # Implementation of arbitrary long integers
-LONGINT_IMPL=none#mpz
+LONGINT_IMPL=mpz
 
 # include py core make definitions
 include $(TOP)/py/py.mk
@@ -105,9 +105,7 @@ CFLAGS += -DMICROPY_LONGINT_IMPL=MICROPY_LONGINT_IMPL_NONE
 endif
 
 # Floating point implementation
-ifeq ($(MICROPY_FLOAT_IMPL),double)
-CFLAGS += -DMICROPY_FLOAT_IMPL=MICROPY_FLOAT_IMPL_DOUBLE
-else ifeq ($(MICROPY_FLOAT_IMPL),single)
+ifeq ($(MICROPY_FLOAT_IMPL), single)
 CFLAGS += -DMICROPY_FLOAT_IMPL=MICROPY_FLOAT_IMPL_FLOAT
 CFLAGS += -fsingle-precision-constant -Wdouble-promotion
 else 
@@ -116,15 +114,17 @@ endif
 
 # Tune for Debugging or Optimization
 ifeq ($(DEBUG), 1)
-CFLAGS += -O0 -ggdb -DDEBUG
+CFLAGS += -ggdb -DDEBUG -g -DPENDSV_DEBUG
+COPT += -O0 
 else
+COPT += -Os -DNDEBUG
+# Flags for Link Time Optimization
 ifeq ($(LINK_TIME_OPT), 1)
 CFLAGS += -flto -fuse-linker-plugin
 endif
-CFLAGS += -Os -DNDEBUG
 endif
 
-LDFLAGS = -Wl,-nostdlib,-T,$(LINKER_FILE),-Map=$@.map,--cref,--gc-sections $(CFLAGS)
+LDFLAGS = -Wl,-nostdlib,-T,$(LINKER_FILE),-Map=$(@:.axf=.map),--cref,--gc-sections $(CFLAGS)
 
 # Libraries
 LIBS = $(TIVAWARE_LIB)/driverlib/gcc/libdriver.a
@@ -196,87 +196,17 @@ ASM_SRC_S = \
 	gchelper.s 
 
 # LIBM
-ifeq ($(MICROPY_FLOAT_IMPL),double)
-SRC_LIBM = $(addprefix lib/libm_dbl/,\
-	__cos.c \
-	__expo2.c \
-	__fpclassify.c \
-	__rem_pio2.c \
-	__rem_pio2_large.c \
-	__signbit.c \
-	__sin.c \
-	__tan.c \
-	acos.c \
-	acosh.c \
-	asin.c \
-	asinh.c \
-	atan.c \
-	atan2.c \
-	atanh.c \
-	ceil.c \
-	cos.c \
-	cosh.c \
-	erf.c \
-	exp.c \
-	expm1.c \
-	floor.c \
-	fmod.c \
-	frexp.c \
-	ldexp.c \
-	lgamma.c \
-	log.c \
-	log10.c \
-	log1p.c \
-	modf.c \
-	nearbyint.c \
-	pow.c \
-	rint.c \
-	scalbn.c \
-	sin.c \
-	sinh.c \
-	sqrt.c \
-	tan.c \
-	tanh.c \
-	tgamma.c \
-	trunc.c \
-	)
-else
-SRC_LIBM = $(addprefix lib/libm/,\
-	math.c \
-	thumb_vfp_sqrtf.c \
-	acoshf.c \
-	asinfacosf.c \
-	asinhf.c \
-	atan2f.c \
-	atanf.c \
-	atanhf.c \
-	ef_rem_pio2.c \
-	erf_lgamma.c \
-	fmodf.c \
-	kf_cos.c \
-	kf_rem_pio2.c \
-	kf_sin.c \
-	kf_tan.c \
-	log1pf.c \
-	nearbyintf.c \
-	sf_cos.c \
-	sf_erf.c \
-	sf_frexp.c \
-	sf_ldexp.c \
-	sf_modf.c \
-	sf_sin.c \
-	sf_tan.c \
-	wf_lgamma.c \
-	wf_tgamma.c \
-	)
+ifeq ($(MICROPY_FLOAT_IMPL),single)
+SRC_LIBF = $(addprefix lib/libm/, math.c thumb_vfp_sqrtf.c acoshf.c asinfacosf.c asinhf.c atan2f.c atanf.c atanhf.c ef_rem_pio2.c erf_lgamma.c fmodf.c kf_cos.c kf_rem_pio2.c kf_sin.c kf_tan.c log1pf.c nearbyintf.c sf_cos.c sf_erf.c sf_frexp.c sf_ldexp.c sf_modf.c sf_sin.c sf_tan.c wf_lgamma.c wf_tgamma.c )
 endif
 
 # Additional sources
 # ADD_SRC_C = 
 # 	drivers/bus/softspi.c 
 		
-SRC_C = $(CORE_SRC_C) $(MODS_SRC_C) $(GEN_PINS_SRC) $(SRC_LIB) $(SRC_LIBM) $(ADD_SRC_C)
-$(SRC_LIBM): COPT += -Os
+SRC_C = $(CORE_SRC_C) $(MODS_SRC_C) $(GEN_PINS_SRC) $(SRC_LIB) $(SRC_LIBF) $(ADD_SRC_C)
+# Always compile floating point lib with Optimizations to save space
+$(SRC_LIBF:.c=.o): COPT += -Os
 
 ASM_OBJ = $(addprefix $(BUILD)/, $(ASM_SRC_S:.s=.o))
 
@@ -354,9 +284,9 @@ $(BUILD)/pins.o: $(BUILD)/pins.c
 # Build axf and elf
 ${PROJECT_NAME}.axf: $(OBJ)
 	@echo
-	#@echo Used these C-Flags: $(CFLAGS)
-	#$(CC) $(CFLAGS) -E build/pins.c -o build/pins.e
-	#@echo
+	@echo Used these C-Flags: $(CFLAGS)
+# $(CC) $(CFLAGS) -E build/pins.c -o build/pins.e
+# @echo
 	@echo Making driverlib
 	$(MAKE) -C ${TIVAWARE_LIB}/driverlib/
 	@echo
@@ -374,6 +304,26 @@ ${PROJECT_NAME}: ${PROJECT_NAME}.axf
 	@echo
 	@echo Creating list file...
 	$(OD) $(ODFLAGS) ${PROJECT_NAME}.axf > ${PROJECT_NAME}.lst
+
+.PHONY: info
+info:
+	@echo +---------------------------------------------------
+	@echo + Info
+	@echo +---------------------------------------------------
+	@echo + DEBUG = $(DEBUG)
+	@echo +---------------------------------------------------
+	@echo + Size = $(word 7, $(shell $(CROSS_COMPILE)size -Bd $(PROJECT_NAME).axf)) + $(word 8, $(shell $(CROSS_COMPILE)size -Bd $(PROJECT_NAME).axf)) kiB
+#	@echo + $(shell SIZE = $($(CROSS_COMPILE)size -Bd $(PROJECT_NAME).axf); echo $(($${SIZE[7]}) + $${SIZE[8]}))
+#	@echo + Size = $(shell $(($${FILESIZE[7]}) + $${FILESIZE[8]}))
+	@echo +---------------------------------------------------
+	@echo + OPT-Flags: $(COPT)
+	@echo +---------------------------------------------------
+
+.PHONY: new
+new: clean all
+
+.PHONY: all
+all: ${PROJECT_NAME} info
 
 CMSIS_DIR = ./cmsis
 
@@ -396,7 +346,7 @@ $(GEN_CDCINF_FILE): $(CDCINF_TEMPLATE) $(INSERT_USB_IDS) $(USB_IDS_FILE) | $(HEA
 	$(Q)$(PYTHON) $(INSERT_USB_IDS) $(USB_IDS_FILE) $< > $@
 
 # Remove executable files
-CLEAN_EXTRA += *.axf *.bin *.lst *.elf *.axf.map #$(TIVAWARE_LIB)/driverlib/gcc/* 
+CLEAN_EXTRA += *.axf *.bin *.lst *.elf *.map #$(TIVAWARE_LIB)/driverlib/gcc/* 
 
 include $(TOP)/py/mkrules.mk
 
