@@ -114,7 +114,7 @@ endif
 
 # Tune for Debugging or Optimization
 ifeq ($(DEBUG), 1)
-CFLAGS += -ggdb -DDEBUG -g -DPENDSV_DEBUG
+CFLAGS += -ggdb -DDEBUG -DPENDSV_DEBUG
 COPT += -O0 
 else
 COPT += -Os -DNDEBUG
@@ -206,7 +206,7 @@ endif
 		
 SRC_C = $(CORE_SRC_C) $(MODS_SRC_C) $(GEN_PINS_SRC) $(SRC_LIB) $(SRC_LIBF) $(ADD_SRC_C)
 # Always compile floating point lib with Optimizations to save space
-$(SRC_LIBF:.c=.o): COPT += -Os
+$(addprefix $(BUILD)/, $(SRC_LIBF:.c=.o)): COPT += -Os
 
 ASM_OBJ = $(addprefix $(BUILD)/, $(ASM_SRC_S:.s=.o))
 
@@ -230,7 +230,7 @@ $(PY_BUILD)/parsenum.o: COPT += -Os
 $(PY_BUILD)/mpprint.o: COPT += -Os
 
 
-all: $(OBJ) ${PROJECT_NAME}.axf ${PROJECT_NAME}
+#all: $(OBJ) ${PROJECT_NAME}.axf ${PROJECT_NAME}
 
 # Build frozencode
 $(BUILD)/_frozen_mpy.c: frozentest.mpy $(BUILD)/genhdr/qstrdefs.generated.h
@@ -283,41 +283,43 @@ $(BUILD)/pins.o: $(BUILD)/pins.c
 
 # Build axf and elf
 ${PROJECT_NAME}.axf: $(OBJ)
-	@echo
-	@echo Used these C-Flags: $(CFLAGS)
+	$(ECHO)
+	$(ECHO) Used these C-Flags: $(CFLAGS)
 # $(CC) $(CFLAGS) -E build/pins.c -o build/pins.e
-# @echo
-	@echo Making driverlib
-	$(MAKE) -C ${TIVAWARE_LIB}/driverlib/
-	@echo
-	@echo Linking...
-	@echo AXF:
-	$(CC) $(LDFLAGS) -o ${PROJECT_NAME}.axf $(OBJ) $(LIBS) $(LIBM) $(LIBC) $(LIBGCC)
-	@echo ELF:
-	$(CC) $(LDFLAGS) -o ${PROJECT_NAME}.elf $(OBJ) $(LIBS) $(LIBM) $(LIBC) $(LIBGCC)
+# $(ECHO)
+	$(ECHO) Making driverlib
+	$(Q)$(MAKE) -C ${TIVAWARE_LIB}/driverlib/
+	$(ECHO)
+	$(ECHO) Linking...
+	$(ECHO) " >" ${PROJECT_NAME}.axf
+	$(Q)$(CC) $(LDFLAGS) -o ${PROJECT_NAME}.axf $(OBJ) $(LIBS) $(LIBM) $(LIBC) $(LIBGCC)
+	$(ECHO) " >" ${PROJECT_NAME}.elf
+	$(Q)$(CC) $(LDFLAGS) -o ${PROJECT_NAME}.elf $(OBJ) $(LIBS) $(LIBM) $(LIBC) $(LIBGCC)
 
 # Build binary
 ${PROJECT_NAME}: ${PROJECT_NAME}.axf
-	@echo
-	@echo Copying...
-	$(OBJCOPY) $(CPFLAGS) ${PROJECT_NAME}.axf ${PROJECT_NAME}.bin
-	@echo
-	@echo Creating list file...
-	$(OD) $(ODFLAGS) ${PROJECT_NAME}.axf > ${PROJECT_NAME}.lst
+	$(ECHO)
+	$(ECHO) -n Copying...
+	$(Q)$(OBJCOPY) $(CPFLAGS) ${PROJECT_NAME}.axf ${PROJECT_NAME}.bin
+	$(ECHO) " >" ${PROJECT_NAME}.bin
+	$(ECHO) -n Creating list file...
+	$(Q)$(OD) $(ODFLAGS) ${PROJECT_NAME}.axf > ${PROJECT_NAME}.lst
+	$(ECHO) " >" ${PROJECT_NAME}.lst
+	$(ECHO)
 
 .PHONY: info
 info:
-	@echo +---------------------------------------------------
-	@echo + Info
-	@echo +---------------------------------------------------
-	@echo + DEBUG = $(DEBUG)
-	@echo +---------------------------------------------------
-	@echo + Size = $(word 7, $(shell $(CROSS_COMPILE)size -Bd $(PROJECT_NAME).axf)) + $(word 8, $(shell $(CROSS_COMPILE)size -Bd $(PROJECT_NAME).axf)) kiB
-#	@echo + $(shell SIZE = $($(CROSS_COMPILE)size -Bd $(PROJECT_NAME).axf); echo $(($${SIZE[7]}) + $${SIZE[8]}))
-#	@echo + Size = $(shell $(($${FILESIZE[7]}) + $${FILESIZE[8]}))
-	@echo +---------------------------------------------------
-	@echo + OPT-Flags: $(COPT)
-	@echo +---------------------------------------------------
+	$(ECHO) +---------------------------------------------------
+	$(ECHO) + Info
+	$(ECHO) +---------------------------------------------------
+	$(ECHO) + DEBUG = $(DEBUG)
+	$(ECHO) +---------------------------------------------------
+	$(ECHO) + Size = $(word 7, $(shell $(CROSS_COMPILE)size -Bd $(PROJECT_NAME).axf)) + $(word 8, $(shell $(CROSS_COMPILE)size -Bd $(PROJECT_NAME).axf)) kiB
+#	$(ECHO) + $(shell SIZE = $($(CROSS_COMPILE)size -Bd $(PROJECT_NAME).axf); echo $(($${SIZE[7]}) + $${SIZE[8]}))
+#	$(ECHO) + Size = $(shell $(($${FILESIZE[7]}) + $${FILESIZE[8]}))
+	$(ECHO) +---------------------------------------------------
+	$(ECHO) + OPT-Flags: $(COPT)
+	$(ECHO) +---------------------------------------------------
 
 .PHONY: new
 new: clean all
