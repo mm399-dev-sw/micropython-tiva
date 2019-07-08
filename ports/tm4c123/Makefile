@@ -1,8 +1,10 @@
 # Makefile for Micropython Tiva Lauchpad (TM4C123GH6PM) Port
 # by Raphael Kriegl
 
-DEBUG ?= 1 # change requires full rebuild
-LINK_TIME_OPT = 1 # Only when not combiling for DEBUG, change requires full rebuild
+# Enables Debugging firendly settings, change requires full rebuild
+DEBUG ?= 1
+# Enables Link Time Optimization, only when not combiling for DEBUG, change requires full rebuild
+LINK_TIME_OPT = 1
 
 # Location of the TivaWare library
 # Can be pointed to a newer version if desired
