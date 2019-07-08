@@ -51,6 +51,7 @@
     .unit = (af_unit), \
     .type = AF_ ## af_fn ## _ ## af_type, \
     .conf = GPIO_ ## pin_board_name ## _ ## af_short ## af_type, \
+    .periph = SYSCTL_PERIPH_ ## af_fn ## af_unit \
 }
 
 // For AFs with only one Unit (not numbered)

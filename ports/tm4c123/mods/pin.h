@@ -85,6 +85,7 @@ typedef struct {
   uint8_t unit;
   uint32_t type;
   uint32_t conf;   // stores the parameter needed for GPIOPinConfigure
+  uint32_t periph; // peripheral address of af
 } pin_af_obj_t;
 
 typedef struct {
