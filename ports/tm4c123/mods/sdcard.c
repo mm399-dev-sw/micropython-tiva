@@ -70,13 +70,12 @@
 #define CMD58    (0x40+58)    /* READ_OCR */
 
 // SSI port
-#define SDC_SSI_BASE            SSI2_BASE
-#define SDC_SSI_SYSCTL_PERIPH   SYSCTL_PERIPH_SSI2
-
+#define SDC_SSI_BASE            SSI ## MICROPY_HW_SDSPI ## _BASE
+#define SDC_SSI_SYSCTL_PERIPH   SYSCTL_PERIPH_SSI ## MICROPY_HW_SDSPI
 // GPIO for SSI pins
 #define SDC_GPIO_PORT_BASE      GPIO_PORTB_AHB_BASE
 #define SDC_GPIO_SYSCTL_PERIPH  SYSCTL_PERIPH_GPIOB
-#define SDC_SSI_CLK             GPIO_PIN_4
+#define SDC_SSI_CLK             MICROPY_HW_SPI2_SCK
 #define SDC_SSI_TX              GPIO_PIN_7
 #define SDC_SSI_RX              GPIO_PIN_6
 #define SDC_SSI_FSS             GPIO_PIN_5
