@@ -332,33 +332,7 @@ void Reset_Handler(void) {
 
 
 
-/* This part of work usually is done in C library startup code.
- * Otherwise, define this macro to enable it in this startup.
- *
- * There are two schemes too.
- * One can clear multiple BSS sections. Another can only clear one section.
- * The former is more size expensive than the latter.
- *
- * Define macro __STARTUP_CLEAR_BSS_MULTIPLE to choose the former.
- * Otherwise define macro __STARTUP_CLEAR_BSS to choose the later.
- */
-#ifdef __STARTUP_CLEAR_BSS_MULTIPLE
-/* Multiple sections scheme.
- *
- * Between symbol address __copy_table_start__ and __copy_table_end__,
- * there are array of tuples specifying:
- *   offset 0: Start of a BSS section
- *   offset 4: Size of this BSS section. Must be multiply of 4
- */
-  pTable = &__zero_table_start__;
 
-  for (; pTable < &__zero_table_end__; pTable = pTable + 2) {
-    pDest = (uint32_t*)*(pTable + 0);
-    for (; pDest < (uint32_t*)(*(pTable + 0) + *(pTable + 1)) ; ) {
-      *pDest++ = 0;
-    }
-  }
-#elif defined (__STARTUP_CLEAR_BSS)
 /* Single BSS section scheme.
  *
  * The BSS section is specified by following symbols
@@ -372,7 +346,6 @@ void Reset_Handler(void) {
   for ( ; pDest < &__bss_end__ ; ) {
     *pDest++ = 0UL;
   }
-#endif /* __STARTUP_CLEAR_BSS_MULTIPLE || __STARTUP_CLEAR_BSS */
 
   // Enable the floating-point unit.  This must be done here to handle the
   // case where main() uses floating-point and the function prologue saves
