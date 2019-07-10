@@ -1,6 +1,10 @@
 # Makefile for Micropython Tiva Lauchpad (TM4C123GH6PM) Port
 # by Raphael Kriegl
 
+########################################################
+# User Variables
+########################################################
+
 # Enables Debugging firendly settings, change requires full rebuild
 DEBUG ?= 1
 # Enables Link Time Optimization, only when not combiling for DEBUG, change requires full rebuild
@@ -14,14 +18,6 @@ TIVAWARE_LIB = /mnt/c/ti/TivaWare
 # Name of the Project (and the resulting binary file)
 PROJECT_NAME = uPY_TM4C123
 
-# Include variabes for Python and Compiler
-include ../../py/mkenv.mk
-
-#
-# Defines the part type that this project uses.
-#
-PART=TM4C123GH6PM
-
 # OpenOCD paths
 #OPENOCD_PATH = /usr/local/share/openocd
 OPENOCD_PATH = openocd
@@ -29,6 +25,16 @@ OPENOCD_PATH = openocd
 #OPENOCD_BOARD_CFG = $(OPENOCD_PATH)/scripts/board/ek-tm4c123gxl.cfg
 OPENOCD_BOARD_CFG = openocd/ek-tm4c123gxl.cfg
 OPENOCD_PROG_CFG = openocd/tiva_flash.cfg
+
+########################################################
+# Internal Variables
+########################################################
+
+# Include variabes for Python and Compiler
+include ../../py/mkenv.mk
+
+# Defines the part type that this project uses.
+PART=TM4C123GH6PM
 
 # qstr definitions (must come before including py.mk)
 QSTR_DEFS = qstrdefsport.h $(BUILD)/pins_qstr.h
@@ -47,15 +53,6 @@ include $(TOP)/py/py.mk
 CROSS_COMPILE = arm-none-eabi-
 # Cross compilation flag
 CROSS = 1
-
-OD = $(CROSS_COMPILE)objdump
-
-ODFLAGS = -S
-CPFLAGS = -O binary
-
-LINKER_FILE = tm4c123gh6pm.ld
-STARTUP_FILE = startup_TM4C123.c
-SYSTEM_FILE = misc/system_TM4C123.c
 
 USBDEV_DIR=usbdev
 
@@ -78,16 +75,20 @@ DFU = $(TOP)/tools/dfu.py
 PYDFU = $(TOP)/tools/pydfu.py
 FATFS_DIR=lib/oofatfs
 
+########################################################
+# Compiler
+########################################################
+
 # Architecture
 CFLAGS_CORTEX_M4 = -mthumb -mtune=cortex-m4 -mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mabi=aapcs-linux
+
 # Warnings
 CFLAGS = $(INC) -Wall -Werror -Wpointer-arith
-# Compiler
+
+# Misc flags
 CFLAGS += -std=gnu99 -nostdlib $(CFLAGS_CORTEX_M4) $(COPT) -fshort-enums -fdata-sections -ffunction-sections #-fno-short-enums
 
-#
 # Preprocessor Flags
-#
 CFLAGS += $(addprefix -D, \
 		PART_$(PART) \
 		$(PART) \
@@ -97,6 +98,7 @@ CFLAGS += $(addprefix -D, \
 		MICROPY_PIN_DEFS_PORT_H=\"mods/pin_defs_tm4c123.h\" \
 		FFCONF_H=\"lib/oofatfs/ffconf.h\" \
 		)
+
 # CFLAGS += -DPART_$(PART) -c -D$(PART) -DARMCM4_FP -DTARGET_IS_TM4C123_RB1 -DMICROPY_PIN_DEFS_PORT_H=\"mods/pin_defs_tm4c123.h\" #-DMICROPY_MPHALPORT_H=\"mphalport.h\"
 # CFLAGS += -DFFCONF_H=\"lib/oofatfs/ffconf.h\"
 # Arbitrary Interger Implementation
@@ -126,6 +128,14 @@ CFLAGS += -flto -fuse-linker-plugin
 endif
 endif
 
+########################################################
+# Linker                                               #
+########################################################
+
+LINKER_FILE = tm4c123gh6pm.ld
+
+# use gcc as linker frontend for additional funtionality
+LD = $(CC)
 LDFLAGS = -Wl,-nostdlib,-T,$(LINKER_FILE),-Map=$(@:.axf=.map),--cref,--gc-sections $(CFLAGS)
 
 # Libraries
@@ -134,9 +144,21 @@ LIBGCC := ${shell $(CC) $(CFLAGS) --print-libgcc-file-name}
 LIBC := ${shell ${CC} ${CFLAGS} --print-file-name=libc.a}
 LIBM := ${shell ${CC} ${CFLAGS} --print-file-name=libm.a}
 
-#
+########################################################
+# Binutils
+########################################################
+
+OD = $(CROSS_COMPILE)objdump
+
+ODFLAGS = -S
+CPFLAGS = -O binary
+
+########################################################
 # Sources	
-#
+########################################################
+
+STARTUP_FILE = startup_TM4C123.c
+SYSTEM_FILE = misc/system_TM4C123.c
 
 # lib
 SRC_LIB = $(addprefix lib/,\
@@ -207,14 +229,19 @@ endif
 # 	drivers/bus/softspi.c 
 		
 SRC_C = $(CORE_SRC_C) $(MODS_SRC_C) $(GEN_PINS_SRC) $(SRC_LIB) $(SRC_LIBF) $(ADD_SRC_C)
-# Always compile floating point lib with Optimizations to save space
-$(addprefix $(BUILD)/, $(SRC_LIBF:.c=.o)): COPT += -Os
 
 ASM_OBJ = $(addprefix $(BUILD)/, $(ASM_SRC_S:.s=.o))
 
 C_OBJ = $(addprefix $(BUILD)/, $(SRC_C:.c=.o))
 
 OBJ = $(PY_O) $(ASM_OBJ) $(C_OBJ) 
+
+########################################################
+# Optimization
+########################################################
+
+# Always compile floating point lib with Optimizations to save space
+$(addprefix $(BUILD)/, $(SRC_LIBF:.c=.o)): COPT += -Os
 
 # This file contains performance critical functions so turn up the optimisation
 # level.  It doesn't add much to the code size and improves performance a bit.
@@ -231,8 +258,59 @@ $(PY_BUILD)/formatfloat.o: COPT += -Os
 $(PY_BUILD)/parsenum.o: COPT += -Os
 $(PY_BUILD)/mpprint.o: COPT += -Os
 
+########################################################
+# Build Targets
+########################################################
 
-#all: $(OBJ) ${PROJECT_NAME}.axf ${PROJECT_NAME}
+# Build axf and elf
+${PROJECT_NAME}.axf: $(OBJ)
+	$(ECHO)
+	$(ECHO) Used these C-Flags: $(CFLAGS)
+# $(CC) $(CFLAGS) -E build/pins.c -o build/pins.e
+# $(ECHO)
+	$(ECHO) Making driverlib
+	$(Q)$(MAKE) -C ${TIVAWARE_LIB}/driverlib/
+	$(ECHO)
+	$(ECHO) Linking...
+	$(ECHO) " >" ${PROJECT_NAME}.axf
+	$(Q)$(LD) $(LDFLAGS) -o ${PROJECT_NAME}.axf $(OBJ) $(LIBS) $(LIBM) $(LIBC) $(LIBGCC)
+	$(ECHO) " >" ${PROJECT_NAME}.elf
+	$(Q)$(LD) $(LDFLAGS) -o ${PROJECT_NAME}.elf $(OBJ) $(LIBS) $(LIBM) $(LIBC) $(LIBGCC)
+
+# Build binary
+${PROJECT_NAME}: ${PROJECT_NAME}.axf
+	$(ECHO)
+	$(ECHO) -n Copying...
+	$(Q)$(OBJCOPY) $(CPFLAGS) ${PROJECT_NAME}.axf ${PROJECT_NAME}.bin
+	$(ECHO) " >" ${PROJECT_NAME}.bin
+	$(ECHO) -n Creating list file...
+	$(Q)$(OD) $(ODFLAGS) ${PROJECT_NAME}.axf > ${PROJECT_NAME}.lst
+	$(ECHO) " >" ${PROJECT_NAME}.lst
+	$(ECHO)
+
+.PHONY: info
+info:
+	$(ECHO) +---------------------------------------------------
+	$(ECHO) + Info
+	$(ECHO) +---------------------------------------------------
+	$(ECHO) + DEBUG = $(DEBUG)
+	$(ECHO) +---------------------------------------------------
+	$(ECHO) + Size = $(word 7, $(shell $(CROSS_COMPILE)size -Bd $(PROJECT_NAME).axf)) + $(word 8, $(shell $(CROSS_COMPILE)size -Bd $(PROJECT_NAME).axf)) kiB
+#	$(ECHO) + $(shell SIZE = $($(CROSS_COMPILE)size -Bd $(PROJECT_NAME).axf); echo $(($${SIZE[7]}) + $${SIZE[8]}))
+#	$(ECHO) + Size = $(shell $(($${FILESIZE[7]}) + $${FILESIZE[8]}))
+	$(ECHO) +---------------------------------------------------
+	$(ECHO) + OPT-Flags: $(COPT)
+	$(ECHO) +---------------------------------------------------
+
+.PHONY: new
+new: clean all
+
+.PHONY: all
+all: ${PROJECT_NAME} info
+
+########################################################
+# Preprocessing
+########################################################
 
 # Build frozencode
 $(BUILD)/_frozen_mpy.c: frozentest.mpy $(BUILD)/genhdr/qstrdefs.generated.h
@@ -283,52 +361,6 @@ $(GEN_PINS_SRC) $(GEN_PINS_HDR) $(GEN_PINS_QSTR): $(BOARD_PINS) $(MAKE_PINS) $(A
 $(BUILD)/pins.o: $(BUILD)/pins.c
 	$(call compile_c)	
 
-# Build axf and elf
-${PROJECT_NAME}.axf: $(OBJ)
-	$(ECHO)
-	$(ECHO) Used these C-Flags: $(CFLAGS)
-# $(CC) $(CFLAGS) -E build/pins.c -o build/pins.e
-# $(ECHO)
-	$(ECHO) Making driverlib
-	$(Q)$(MAKE) -C ${TIVAWARE_LIB}/driverlib/
-	$(ECHO)
-	$(ECHO) Linking...
-	$(ECHO) " >" ${PROJECT_NAME}.axf
-	$(Q)$(CC) $(LDFLAGS) -o ${PROJECT_NAME}.axf $(OBJ) $(LIBS) $(LIBM) $(LIBC) $(LIBGCC)
-	$(ECHO) " >" ${PROJECT_NAME}.elf
-	$(Q)$(CC) $(LDFLAGS) -o ${PROJECT_NAME}.elf $(OBJ) $(LIBS) $(LIBM) $(LIBC) $(LIBGCC)
-
-# Build binary
-${PROJECT_NAME}: ${PROJECT_NAME}.axf
-	$(ECHO)
-	$(ECHO) -n Copying...
-	$(Q)$(OBJCOPY) $(CPFLAGS) ${PROJECT_NAME}.axf ${PROJECT_NAME}.bin
-	$(ECHO) " >" ${PROJECT_NAME}.bin
-	$(ECHO) -n Creating list file...
-	$(Q)$(OD) $(ODFLAGS) ${PROJECT_NAME}.axf > ${PROJECT_NAME}.lst
-	$(ECHO) " >" ${PROJECT_NAME}.lst
-	$(ECHO)
-
-.PHONY: info
-info:
-	$(ECHO) +---------------------------------------------------
-	$(ECHO) + Info
-	$(ECHO) +---------------------------------------------------
-	$(ECHO) + DEBUG = $(DEBUG)
-	$(ECHO) +---------------------------------------------------
-	$(ECHO) + Size = $(word 7, $(shell $(CROSS_COMPILE)size -Bd $(PROJECT_NAME).axf)) + $(word 8, $(shell $(CROSS_COMPILE)size -Bd $(PROJECT_NAME).axf)) kiB
-#	$(ECHO) + $(shell SIZE = $($(CROSS_COMPILE)size -Bd $(PROJECT_NAME).axf); echo $(($${SIZE[7]}) + $${SIZE[8]}))
-#	$(ECHO) + Size = $(shell $(($${FILESIZE[7]}) + $${FILESIZE[8]}))
-	$(ECHO) +---------------------------------------------------
-	$(ECHO) + OPT-Flags: $(COPT)
-	$(ECHO) +---------------------------------------------------
-
-.PHONY: new
-new: clean all
-
-.PHONY: all
-all: ${PROJECT_NAME} info
-
 CMSIS_DIR = ./cmsis
 
 GEN_STMCONST_HDR = $(HEADER_BUILD)/modstm_const.h
@@ -348,6 +380,10 @@ $(GEN_CDCINF_HEADER): $(GEN_CDCINF_FILE) $(FILE2H) | $(HEADER_BUILD)
 $(GEN_CDCINF_FILE): $(CDCINF_TEMPLATE) $(INSERT_USB_IDS) $(USB_IDS_FILE) | $(HEADER_BUILD)
 	$(ECHO) "GEN $@"
 	$(Q)$(PYTHON) $(INSERT_USB_IDS) $(USB_IDS_FILE) $< > $@
+
+########################################################
+# Cleanup
+########################################################
 
 # Remove executable files
 CLEAN_EXTRA += *.axf *.bin *.lst *.elf *.map #$(TIVAWARE_LIB)/driverlib/gcc/* 
