@@ -114,7 +114,7 @@ const pin_obj_t *pin_find(mp_obj_t user_obj) {
     const pin_obj_t *pin_obj;
 
     // If a pin was provided, then use it
-    if (MP_OBJ_IS_TYPE(user_obj, &pin_mod)) {
+    if (MP_OBJ_IS_TYPE(user_obj, &pin_type)) {
         pin_obj = MP_OBJ_TO_PTR(user_obj);
         if (pin_class_debug) {
             printf("Pin map passed pin ");
@@ -128,7 +128,7 @@ const pin_obj_t *pin_find(mp_obj_t user_obj) {
     if (MP_STATE_PORT(pin_class_mapper) != mp_const_none) {
         mp_obj_t o = mp_call_function_1(MP_STATE_PORT(pin_class_mapper), user_obj);
         if (o != mp_const_none) {
-            if (!MP_OBJ_IS_TYPE(o, &pin_mod)) {
+            if (!MP_OBJ_IS_TYPE(o, &pin_type)) {
                 mp_raise_ValueError("Pin.mapper didn't return a Pin object");
             }
             if (pin_class_debug) {
@@ -518,27 +518,26 @@ STATIC mp_obj_t pin_gpio(mp_obj_t self_in) {
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(pin_gpio_obj, pin_gpio);
 
-/// \method dir()
+/// \method mode/dir()
 /// Returns the currently configured mode of the pin. The integer returned
 /// will match one of the allowed constants for the mode argument to the init
 /// function.
-STATIC mp_obj_t pin_dir(mp_obj_t self_in) {
+STATIC mp_obj_t pin_mode(mp_obj_t self_in) {
     return MP_OBJ_NEW_SMALL_INT(mp_hal_pin_get_dir((pin_obj_t*)MP_OBJ_TO_PTR(self_in)));
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_1(pin_dir_obj, pin_dir);
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(pin_mode_obj, pin_mode);
 
-/// \method pull()
+/// \method pull/type()
 /// Returns the currently configured pull of the pin. The integer returned
 /// will match one of the allowed constants for the pull argument to the init
 /// function.
-STATIC mp_obj_t pin_type(mp_obj_t self_in) {
+STATIC mp_obj_t pin_pull(mp_obj_t self_in) {
     uint32_t type;
     pin_obj_t* self = MP_OBJ_TO_PTR(self_in);
     MAP_GPIOPadConfigGet(self->gpio, self->pin_mask, NULL, &type);
-
     return MP_OBJ_NEW_SMALL_INT(type);
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_1(pin_type_obj, pin_type);
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(pin_pull_obj, pin_pull);
 
 /// \method af()
 /// Returns the currently configured alternate-function of the pin. The
@@ -550,7 +549,7 @@ STATIC mp_obj_t pin_af(mp_obj_t self_in) {
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(pin_af_obj, pin_af);
 
 /// \classmethod unlock(str pin1, str pin2,..)
-/// Sets the Commit Flag on the corresponting GPIO enable
+/// Sets the Commit Flag on the corresponding GPIO to enable
 /// re-assingment of the supplied pin
 STATIC mp_obj_t pin_unlock(size_t n_args, const mp_obj_t *args) {
     if (n_args > 1) {
@@ -583,9 +582,12 @@ STATIC const mp_rom_map_elem_t pin_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_port),    MP_ROM_PTR(&pin_port_obj) },
     { MP_ROM_QSTR(MP_QSTR_pin),     MP_ROM_PTR(&pin_pin_obj) },
     { MP_ROM_QSTR(MP_QSTR_gpio),    MP_ROM_PTR(&pin_gpio_obj) },
-    { MP_ROM_QSTR(MP_QSTR_dir),    MP_ROM_PTR(&pin_dir_obj) },
-    { MP_ROM_QSTR(MP_QSTR_type),    MP_ROM_PTR(&pin_type_obj) },
+    { MP_ROM_QSTR(MP_QSTR_mode),    MP_ROM_PTR(&pin_mode_obj) },
+    { MP_ROM_QSTR(MP_QSTR_pull),    MP_ROM_PTR(&pin_pull_obj) },
     { MP_ROM_QSTR(MP_QSTR_af),      MP_ROM_PTR(&pin_af_obj) },
+    // additional names for tiva compliance
+    { MP_ROM_QSTR(MP_QSTR_dir),     MP_ROM_PTR(&pin_mode_obj) },
+    { MP_ROM_QSTR(MP_QSTR_type),    MP_ROM_PTR(&pin_pull_obj) },
 
     // class methods
     { MP_ROM_QSTR(MP_QSTR_mapper),  MP_ROM_PTR(&pin_mapper_obj) },
@@ -618,7 +620,7 @@ STATIC const mp_rom_map_elem_t pin_locals_dict_table[] = {
 
 STATIC MP_DEFINE_CONST_DICT(pin_locals_dict, pin_locals_dict_table);
 
-const mp_obj_type_t pin_mod = {
+const mp_obj_type_t pin_type = {
     { &mp_type_type },
     .name = MP_QSTR_Pin,
     .print = pin_print,
@@ -628,7 +630,7 @@ const mp_obj_type_t pin_mod = {
 };
 //
 //const mp_obj_module_t pin_module = {
-//    .base = { &pin_mod },
+//    .base = { &pin_type },
 //    .globals = (mp_obj_dict_t*)&pin_locals_dict,
 //};
 

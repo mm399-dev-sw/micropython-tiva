@@ -107,7 +107,7 @@ typedef struct {
     uint32_t            irq_flags;
 } pin_obj_t;
 
-extern const mp_obj_type_t pin_mod;
+extern const mp_obj_type_t pin_type;
 extern const mp_obj_type_t pin_af_type;
 
 #include "genhdr/pins.h"
