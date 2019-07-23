@@ -89,7 +89,7 @@ CFLAGS_CORTEX_M4 = -mthumb -mtune=cortex-m4 -mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -m
 CFLAGS = $(INC) -Wall -Werror -Wpointer-arith
 
 # Misc flags
-CFLAGS += -std=gnu99 -nostdlib $(CFLAGS_CORTEX_M4) $(COPT) -fshort-enums -fdata-sections -ffunction-sections #-fno-short-enums
+CFLAGS += -std=gnu99 -nostdlib $(CFLAGS_CORTEX_M4) $(COPT) -fshort-enums -fdata-sections -ffunction-sections 
 
 # Preprocessor Flags
 CFLAGS += $(addprefix -D, \
@@ -102,8 +102,8 @@ CFLAGS += $(addprefix -D, \
 		FFCONF_H=\"lib/oofatfs/ffconf.h\" \
 		)
 
-# CFLAGS += -DPART_$(PART) -c -D$(PART) -DARMCM4_FP -DTARGET_IS_TM4C123_RB1 -DMICROPY_PIN_DEFS_PORT_H=\"mods/pin_defs_tm4c123.h\" #-DMICROPY_MPHALPORT_H=\"mphalport.h\"
-# CFLAGS += -DFFCONF_H=\"lib/oofatfs/ffconf.h\"
+# CFLAGS += -DMICROPY_MPHALPORT_H=\"mphalport.h\"
+
 # Arbitrary Interger Implementation
 ifeq ($(LONGINT_IMPL), mpz)
 CFLAGS += -DMICROPY_LONGINT_IMPL=MICROPY_LONGINT_IMPL_MPZ
@@ -231,11 +231,11 @@ endif
 # ADD_SRC_C = 
 # 	drivers/bus/softspi.c 
 		
-SRC_C = $(CORE_SRC_C) $(MODS_SRC_C) $(GEN_PINS_SRC) $(SRC_LIB) $(SRC_LIBF) $(ADD_SRC_C)
+SRC_C = $(CORE_SRC_C) $(MODS_SRC_C) $(SRC_LIB) $(SRC_LIBF) $(ADD_SRC_C) $(GEN_PINS_SRC)
 
 ASM_OBJ = $(addprefix $(BUILD)/, $(ASM_SRC_S:.s=.o))
 
-C_OBJ = $(addprefix $(BUILD)/, $(SRC_C:.c=.o))
+C_OBJ = $(addprefix $(BUILD)/, $(SRC_C:.c=.o))# $(BUILD)/board/pins.o
 
 OBJ = $(PY_O) $(ASM_OBJ) $(C_OBJ) 
 
@@ -262,15 +262,83 @@ $(PY_BUILD)/parsenum.o: COPT += -Os
 $(PY_BUILD)/mpprint.o: COPT += -Os
 
 ########################################################
+# Preprocessing
+########################################################
+
+# Build frozencode
+$(BUILD)/_frozen_mpy.c: frozentest.mpy $(BUILD)/genhdr/qstrdefs.generated.h
+	$(ECHO) "MISC freezing bytecode"
+	$(Q)$(TOP)/tools/mpy-tool.py -f -q $(BUILD)/genhdr/qstrdefs.preprocessed.h -mlongint-impl=none $< > $@
+	
+MAKE_PINS = board/make-pins.py
+BOARD_PINS = board/pins.csv
+AF_FILE = board/tm4c123_af.csv
+PREFIX_FILE = board/tm4c123_prefix.c
+GEN_PINS_SRC = $(BUILD)/pins.c
+GEN_PINS_HDR = $(HEADER_BUILD)/pins.h
+GEN_PINS_QSTR = $(BUILD)/pins_qstr.h
+
+INSERT_USB_IDS = $(TOP)/tools/insert-usb-ids.py
+FILE2H = $(TOP)/tools/file2h.py
+
+USB_IDS_FILE = mods/usb.h
+CDCINF_TEMPLATE = pybcdc.inf_template
+GEN_CDCINF_FILE = $(HEADER_BUILD)/pybcdc.inf
+GEN_CDCINF_HEADER = $(HEADER_BUILD)/pybcdc_inf.h
+
+# List of sources for qstr extraction
+SRC_QSTR += $(SRC_C) $(SRC_MOD) $(SRC_LIB) $(EXTMOD_SRC_C) $(GEN_PINS_SRC)
+# Append any auto-generated sources that are needed by sources listed in
+# SRC_QSTR
+SRC_QSTR_AUTO_DEPS += $(GEN_CDCINF_HEADER)
+
+# Making OBJ use an order-only depenedency on the generated pins.h file
+# has the side effect of making the pins.h file before we actually compile
+# any of the objects. The normal dependency generation will deal with the
+# case when pins.h is modified. But when it doesn't exist, we don't know
+# which source files might need it.
+$(OBJ): | $(GEN_PINS_HDR)
+
+# With conditional pins, we may need to regenerate qstrdefs.h when config
+# options change.
+$(HEADER_BUILD)/qstrdefs.generated.h: board/mpconfigboard.h
+
+# main.c can't be even preprocessed without $(GEN_CDCINF_HEADER)
+main.c: $(GEN_CDCINF_HEADER)
+
+# Call make-pins.py to generate both pins_gen.c and pins.h
+$(GEN_PINS_SRC) $(GEN_PINS_HDR) $(GEN_PINS_QSTR): $(BOARD_PINS) $(MAKE_PINS) $(AF_FILE) $(PREFIX_FILE) | $(HEADER_BUILD)
+	$(ECHO) "Create $@"
+	$(Q)$(PYTHON) $(MAKE_PINS) --board $(BOARD_PINS) --af $(AF_FILE) --prefix $(PREFIX_FILE) --hdr $(GEN_PINS_HDR) --qstr $(GEN_PINS_QSTR) > $(GEN_PINS_SRC)
+
+CMSIS_DIR = ./cmsis
+
+GEN_STMCONST_HDR = $(HEADER_BUILD)/modstm_const.h
+GEN_STMCONST_QSTR = $(BUILD)/modstm_qstr.h
+GEN_STMCONST_MPZ = $(HEADER_BUILD)/modstm_mpz.h
+CMSIS_MCU_HDR = $(CMSIS_DIR)/core_cm4.h
+# Use a pattern rule here so that make will only call make-stmconst.py once to
+# make both modstm_const.h and modstm_qstr.h
+$(HEADER_BUILD)/%_const.h $(BUILD)/%_qstr.h: $(CMSIS_MCU_HDR) make-stmconst.py | $(HEADER_BUILD)
+	$(ECHO) "GEN stmconst $@"
+	$(Q)$(PYTHON) make-stmconst.py --qstr $(GEN_STMCONST_QSTR) --mpz $(GEN_STMCONST_MPZ) $(CMSIS_MCU_HDR) > $(GEN_STMCONST_HDR)
+
+$(GEN_CDCINF_HEADER): $(GEN_CDCINF_FILE) $(FILE2H) | $(HEADER_BUILD)
+	$(ECHO) "GEN $@"
+	$(Q)$(PYTHON) $(FILE2H) $< > $@
+
+$(GEN_CDCINF_FILE): $(CDCINF_TEMPLATE) $(INSERT_USB_IDS) $(USB_IDS_FILE) | $(HEADER_BUILD)
+	$(ECHO) "GEN $@"
+	$(Q)$(PYTHON) $(INSERT_USB_IDS) $(USB_IDS_FILE) $< > $@
+
+########################################################
 # Build Targets
 ########################################################
 
 # Build axf and elf
 ${PROJECT_NAME}.axf: $(OBJ)
 	$(ECHO)
-	$(ECHO) Used these C-Flags: $(CFLAGS)
-# $(CC) $(CFLAGS) -E build/pins.c -o build/pins.e
-# $(ECHO)
+	$(ECHO) Used these C-Flags: $(CFLAGS) 
 	$(ECHO) Making driverlib
 	$(Q)$(MAKE) -C ${TIVAWARE_LIB}/driverlib/
 	$(ECHO)
@@ -299,8 +367,6 @@ info:
 	$(ECHO) + DEBUG = $(DEBUG)
 	$(ECHO) +---------------------------------------------------
 	$(ECHO) + Size = $(word 7, $(shell $(CROSS_COMPILE)size -Bd $(PROJECT_NAME).axf)) + $(word 8, $(shell $(CROSS_COMPILE)size -Bd $(PROJECT_NAME).axf)) kiB
-#	$(ECHO) + $(shell SIZE = $($(CROSS_COMPILE)size -Bd $(PROJECT_NAME).axf); echo $(($${SIZE[7]}) + $${SIZE[8]}))
-#	$(ECHO) + Size = $(shell $(($${FILESIZE[7]}) + $${FILESIZE[8]}))
 	$(ECHO) +---------------------------------------------------
 	$(ECHO) + OPT-Flags: $(COPT)
 	$(ECHO) +---------------------------------------------------
@@ -309,80 +375,7 @@ info:
 new: clean all
 
 .PHONY: all
-all: ${PROJECT_NAME} info
-
-########################################################
-# Preprocessing
-########################################################
-
-# Build frozencode
-$(BUILD)/_frozen_mpy.c: frozentest.mpy $(BUILD)/genhdr/qstrdefs.generated.h
-	$(ECHO) "MISC freezing bytecode"
-	$(Q)$(TOP)/tools/mpy-tool.py -f -q $(BUILD)/genhdr/qstrdefs.preprocessed.h -mlongint-impl=none $< > $@
-	
-MAKE_PINS = board/make-pins.py
-BOARD_PINS = board/pins.csv
-AF_FILE = board/tm4c123_af.csv
-PREFIX_FILE = board/tm4c123_prefix.c
-GEN_PINS_SRC = $(BUILD)/pins.c
-GEN_PINS_HDR = $(HEADER_BUILD)/pins.h
-GEN_PINS_QSTR = $(BUILD)/pins_qstr.h
-
-INSERT_USB_IDS = $(TOP)/tools/insert-usb-ids.py
-FILE2H = $(TOP)/tools/file2h.py
-
-USB_IDS_FILE = mods/usb.h
-CDCINF_TEMPLATE = pybcdc.inf_template
-GEN_CDCINF_FILE = $(HEADER_BUILD)/pybcdc.inf
-GEN_CDCINF_HEADER = $(HEADER_BUILD)/pybcdc_inf.h
-
-# List of sources for qstr extraction
-SRC_QSTR += $(SRC_C) $(SRC_MOD) $(SRC_LIB) $(EXTMOD_SRC_C)
-# Append any auto-generated sources that are needed by sources listed in
-# SRC_QSTR
-SRC_QSTR_AUTO_DEPS += $(GEN_CDCINF_HEADER)
-
-# Making OBJ use an order-only depenedency on the generated pins.h file
-# has the side effect of making the pins.h file before we actually compile
-# any of the objects. The normal dependency generation will deal with the
-# case when pins.h is modified. But when it doesn't exist, we don't know
-# which source files might need it.
-$(OBJ): | $(GEN_PINS_HDR)
-
-# With conditional pins, we may need to regenerate qstrdefs.h when config
-# options change.
-$(HEADER_BUILD)/qstrdefs.generated.h: board/mpconfigboard.h
-
-# main.c can't be even preprocessed without $(GEN_CDCINF_HEADER)
-main.c: $(GEN_CDCINF_HEADER)
-
-# Call make-pins.py to generate both pins_gen.c and pins.h
-$(GEN_PINS_SRC) $(GEN_PINS_HDR) $(GEN_PINS_QSTR): $(BOARD_PINS) $(MAKE_PINS) $(AF_FILE) $(PREFIX_FILE) | $(HEADER_BUILD)
-	$(ECHO) "Create $@"
-	$(Q)$(PYTHON) $(MAKE_PINS) --board $(BOARD_PINS) --af $(AF_FILE) --prefix $(PREFIX_FILE) --hdr $(GEN_PINS_HDR) --qstr $(GEN_PINS_QSTR) > $(GEN_PINS_SRC)
-
-$(BUILD)/pins.o: $(BUILD)/pins.c
-	$(call compile_c)	
-
-CMSIS_DIR = ./cmsis
-
-GEN_STMCONST_HDR = $(HEADER_BUILD)/modstm_const.h
-GEN_STMCONST_QSTR = $(BUILD)/modstm_qstr.h
-GEN_STMCONST_MPZ = $(HEADER_BUILD)/modstm_mpz.h
-CMSIS_MCU_HDR = $(CMSIS_DIR)/core_cm4.h
-# Use a pattern rule here so that make will only call make-stmconst.py once to
-# make both modstm_const.h and modstm_qstr.h
-$(HEADER_BUILD)/%_const.h $(BUILD)/%_qstr.h: $(CMSIS_MCU_HDR) make-stmconst.py | $(HEADER_BUILD)
-	$(ECHO) "GEN stmconst $@"
-	$(Q)$(PYTHON) make-stmconst.py --qstr $(GEN_STMCONST_QSTR) --mpz $(GEN_STMCONST_MPZ) $(CMSIS_MCU_HDR) > $(GEN_STMCONST_HDR)
-
-$(GEN_CDCINF_HEADER): $(GEN_CDCINF_FILE) $(FILE2H) | $(HEADER_BUILD)
-	$(ECHO) "GEN $@"
-	$(Q)$(PYTHON) $(FILE2H) $< > $@
-
-$(GEN_CDCINF_FILE): $(CDCINF_TEMPLATE) $(INSERT_USB_IDS) $(USB_IDS_FILE) | $(HEADER_BUILD)
-	$(ECHO) "GEN $@"
-	$(Q)$(PYTHON) $(INSERT_USB_IDS) $(USB_IDS_FILE) $< > $@
+all: $(OBJ) ${PROJECT_NAME}.axf ${PROJECT_NAME} info
 
 ########################################################
 # Cleanup
