@@ -24,7 +24,7 @@
  */
 
 /*
- * Modified for TM4C123
+ * Modified for TM4C123 by Raphael Kriegl
  */
 
 /*
