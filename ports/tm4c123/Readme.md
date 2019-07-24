@@ -9,7 +9,7 @@
   * On Debian: `sudo apt install gcc-arm-none-eabi`
   * On Ubuntu: `sudo apt install gcc-arm-embedded`
   * Other: `gcc-arm-none-eabi` is available on most other distros
-  * On Windows you can install WSL for easy setup
+  * On Windows you can install WSL with Debian or Ubuntu for easy setup
 2. Download & install TivaWare:
    [Here](http://software-dl.ti.com/tiva-c/SW-TM4C/latest/index_FDS.html) 
    - Workaround if no account:
@@ -18,10 +18,11 @@
    ```bash
    cd <your target directory>
    git clone https://github.com/rk-exxec/micropython.git && git checkout tiva_from_stable
+   cd micropython/ports/tm4c123
    ```
-4. Build:
+4. Adjust makefile and set the path to your TivaWare
+5. Build:
    ```bash
-   cd <your directory here>/ports/tm4c123
    make
    ```
    
@@ -90,7 +91,7 @@ See also:
 | --------: | :----------------------------------------------- | :-------------------------------------------- | :----------- |
 |        id | Pin ID as Number, String or Tuple \[port, pin\] | P\[A..F\]\[0..8\]                             | \-           |
 |      mode | Pin mode                                        | IN, OUT, OPEN\_DRAIN, ALT                     | \-           |
-|      pull | PullUp or  Down                                 | PULL\_NONE, PULL\_UP, PULL\_DOWM, OPEN\_DRAIN | PULL\_NONE   |
+|      pull | PullUp or  Down                                 | PULL\_NONE, PULL\_UP, PULL\_DOWN, OPEN\_DRAIN | PULL\_NONE   |
 |     value | Pin value                                       | 0, 1                                          | 0            |
 |     drive | Strength of the pad driver                          | LOW\_POWER, MED\_POWER, HIGH\_POWER           | LOW\_POWER   |
 |       alt | ID of the alternative function                    | 0..15                                         | \-           |
