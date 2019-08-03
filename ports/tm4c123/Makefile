@@ -8,9 +8,9 @@
 # User Variables
 ########################################################
 
-# Enables Debugging firendly settings, change requires full rebuild
+# Enables Debugging friendly settings, change requires full rebuild
 DEBUG ?= 1
-# Enables Link Time Optimization, only when not combiling for DEBUG, change requires full rebuild
+# Enables Link Time Optimization, only when not compiling for DEBUG, change requires full rebuild
 LINK_TIME_OPT = 1
 
 # Location of the TivaWare library
@@ -86,10 +86,10 @@ FATFS_DIR=lib/oofatfs
 CFLAGS_CORTEX_M4 = -mthumb -mtune=cortex-m4 -mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mabi=aapcs-linux
 
 # Warnings
-CFLAGS = $(INC) -Wall -Werror -Wpointer-arith
+CFLAGS = -Wall -Werror -Wpointer-arith
 
 # Misc flags
-CFLAGS += -std=gnu99 -nostdlib $(CFLAGS_CORTEX_M4) $(COPT) -fshort-enums -fdata-sections -ffunction-sections 
+CFLAGS += $(INC) -std=gnu99 -nostdlib $(CFLAGS_CORTEX_M4) $(COPT) -fshort-enums -fdata-sections -ffunction-sections 
 
 # Preprocessor Flags
 CFLAGS += $(addprefix -D, \
@@ -122,7 +122,7 @@ endif
 # Tune for Debugging or Optimization
 ifeq ($(DEBUG), 1)
 CFLAGS += -ggdb -DDEBUG -DPENDSV_DEBUG
-COPT += -O0 
+COPT += -Og
 else
 COPT += -Os -DNDEBUG
 # Flags for Link Time Optimization
@@ -224,7 +224,10 @@ ASM_SRC_S = \
 
 # LIBM
 ifeq ($(MICROPY_FLOAT_IMPL),single)
-SRC_LIBF = $(addprefix lib/libm/, math.c thumb_vfp_sqrtf.c acoshf.c asinfacosf.c asinhf.c atan2f.c atanf.c atanhf.c ef_rem_pio2.c erf_lgamma.c fmodf.c kf_cos.c kf_rem_pio2.c kf_sin.c kf_tan.c log1pf.c nearbyintf.c sf_cos.c sf_erf.c sf_frexp.c sf_ldexp.c sf_modf.c sf_sin.c sf_tan.c wf_lgamma.c wf_tgamma.c )
+SRC_LIBF = $(addprefix lib/libm/, math.c thumb_vfp_sqrtf.c acoshf.c asinfacosf.c asinhf.c \
+			atan2f.c atanf.c atanhf.c ef_rem_pio2.c erf_lgamma.c fmodf.c kf_cos.c kf_rem_pio2.c \
+			kf_sin.c kf_tan.c log1pf.c nearbyintf.c sf_cos.c sf_erf.c sf_frexp.c sf_ldexp.c \
+			sf_modf.c sf_sin.c sf_tan.c wf_lgamma.c wf_tgamma.c )
 endif
 
 # Additional sources
@@ -339,6 +342,7 @@ $(GEN_CDCINF_FILE): $(CDCINF_TEMPLATE) $(INSERT_USB_IDS) $(USB_IDS_FILE) | $(HEA
 ${PROJECT_NAME}.axf: $(OBJ)
 	$(ECHO)
 	$(ECHO) Used these C-Flags: $(CFLAGS) 
+	$(ECHO)
 	$(ECHO) Making driverlib
 	$(Q)$(MAKE) -C ${TIVAWARE_LIB}/driverlib/
 	$(ECHO)
@@ -366,7 +370,7 @@ info:
 	$(ECHO) +---------------------------------------------------
 	$(ECHO) + DEBUG = $(DEBUG)
 	$(ECHO) +---------------------------------------------------
-	$(ECHO) + Size = $(word 7, $(shell $(CROSS_COMPILE)size -Bd $(PROJECT_NAME).axf)) + $(word 8, $(shell $(CROSS_COMPILE)size -Bd $(PROJECT_NAME).axf)) kiB
+	$(ECHO) + Size = $$(( $(word 7, $(shell $(CROSS_COMPILE)size -Bd $(PROJECT_NAME).axf)) + $(word 8, $(shell $(CROSS_COMPILE)size -Bd $(PROJECT_NAME).axf)) )) kiB
 	$(ECHO) +---------------------------------------------------
 	$(ECHO) + OPT-Flags: $(COPT)
 	$(ECHO) +---------------------------------------------------
