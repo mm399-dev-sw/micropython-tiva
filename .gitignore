@@ -8,6 +8,8 @@
 *.hex
 *.dis
 *.exe
+*.axf
+*.lst
 
 # Packages
 ############
@@ -42,3 +44,19 @@ user.props
 # Generated rst files
 ######################
 genrst/
+
+
+
+ports/tm4c123/\.directory
+
+ports/tm4c123/\.vscode
+
+*.ipch
+
+ports/tm4c123/vscode\.code-workspace
+
+ports/stm32/\.directory
+
+ports/tm4c123/\.settings/language\.settings\.xml
+
+ports/tm4c123/micropython\.code-workspace
