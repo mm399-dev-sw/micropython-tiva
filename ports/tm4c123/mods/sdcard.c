@@ -749,26 +749,6 @@ DRESULT sd_disk_ioctl (
     return res;
 }
 
-/*---------------------------------------------------------*/
-/* User Provided Timer Function for FatFs module           */
-/*---------------------------------------------------------*/
-/* This is a real time clock service to be called from     */
-/* FatFs module. Any valid time must be returned even if   */
-/* the system does not support a real time clock.          */
-
-uint32_t get_fattime (void)
-{
-
-    return    ((2007UL-1980) << 25)    // Year = 2007
-            | (6UL << 21)            // Month = June
-            | (5UL << 16)            // Day = 5
-            | (11U << 11)            // Hour = 11
-            | (38U << 5)            // Min = 38
-            | (0U >> 1)                // Sec = 0
-            ;
-
-}
-
 void sdcard_init(void) {
     sd_power_on();
     // sd_disk_init(0);

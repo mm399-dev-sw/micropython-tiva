@@ -15,8 +15,8 @@ LINK_TIME_OPT = 1
 
 # Location of the TivaWare library
 # Can be pointed to a newer version if desired
-TIVAWARE_LIB = /mnt/c/ti/TivaWare
-#TIVAWARE_LIB = /home/raphael/ti/tivaware
+#TIVAWARE_LIB = /mnt/c/ti/TivaWare
+TIVAWARE_LIB = /home/raphael/ti/tivaware
 
 # Name of the Project (and the resulting binary file)
 PROJECT_NAME = uPY_TM4C123
@@ -195,8 +195,8 @@ MODS_SRC_C = $(addprefix mods/,\
 	modutime.c \
 	irq.c \
 	mpthreadport.c \
+	fatfs_port.c \
 )
-	# fatfs_port.c \
 	# irq.c \
 	# modutime.c \	
 	# moduos.c \
