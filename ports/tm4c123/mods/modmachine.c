@@ -229,7 +229,7 @@ STATIC mp_obj_t machine_freq(size_t n_args, const mp_obj_t *args) {
         };
         return mp_obj_new_tuple(MP_ARRAY_SIZE(tuple), tuple);
         } else {
-            mp_raise_ValueError("freq change not supported");
+            mp_raise_ValueError(MP_ERROR_TEXT("freq change not supported"));
 
 
 //        // set
@@ -263,7 +263,7 @@ STATIC mp_obj_t machine_freq(size_t n_args, const mp_obj_t *args) {
 //                }
 //            }
 //        }
-//        mp_raise_ValueError("can't make valid freq");
+//        mp_raise_ValueError(MP_ERROR_TEXT("can't make valid freq"));
 //
 //    set_clk:
 //        //printf("%lu %lu %lu %lu %lu\n", sysclk_source, m, n, p, q);
@@ -490,4 +490,3 @@ const mp_obj_module_t machine_module = {
     .base = { &mp_type_module },
     .globals = (mp_obj_dict_t*)&machine_module_globals,
 };
-

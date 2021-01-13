@@ -15,8 +15,8 @@ LINK_TIME_OPT = 1
 
 # Location of the TivaWare library
 # Can be pointed to a newer version if desired
-#TIVAWARE_LIB = /mnt/c/ti/TivaWare
-TIVAWARE_LIB = /home/raphael/ti/tivaware
+TIVAWARE_LIB = /mnt/c/ti/TivaWare
+#TIVAWARE_LIB = /home/raphael/ti/tivaware
 
 # Name of the Project (and the resulting binary file)
 PROJECT_NAME = uPY_TM4C123
@@ -48,6 +48,9 @@ MICROPY_FLOAT_IMPL=single
 
 # Implementation of arbitrary long integers
 LONGINT_IMPL=mpz
+
+# MicroPython feature configurations
+MICROPY_ROM_TEXT_COMPRESSION ?= 1
 
 # include py core make definitions
 include $(TOP)/py/py.mk
@@ -173,16 +176,15 @@ SRC_LIB = $(addprefix lib/,\
 	utils/pyexec.c \
 	utils/sys_stdio_mphal.c \
 	oofatfs/ff.c \
-	oofatfs/option/unicode.c \
+	oofatfs/ffunicode.c \
 	)
 
 # Module sources
-MODS_SRC_C = $(addprefix mods/,\
+SRC_MOD = $(addprefix mods/,\
 	mphalport.c \
 	pin.c \
 	pin_named_pins.c \
 	modmachine.c \
-	modpyb.c \
 	uart.c \
 	rtc.c \
 	systick.c \
@@ -190,36 +192,30 @@ MODS_SRC_C = $(addprefix mods/,\
 	spi.c \
 	sdcard.c \
 	moduos.c \
+	fatfs_port.c \
 	pendsv.c \
 	pybthread.c \
 	modutime.c \
 	irq.c \
 	mpthreadport.c \
-	fatfs_port.c \
 )
-	# irq.c \
-	# modutime.c \	
-	# moduos.c \
-	# pybthread.c \
+
+	# modpyb.c \
 	# pendsv.c \
 	# flashbdev.c \
 	# storage.c \
 	# flash.c \
 	# )
-	#	extint.c see forum
-
-# QSTR sources
-SRC_QSTR += $(MODS_SRC_C)
 
 # Core sources
-CORE_SRC_C = \
+SRC_CORE = \
 	$(STARTUP_FILE) \
 	main.c \
 	uart_core.c \
 	gccollect.c \
 	$(SYSTEM_FILE) \
 	
-ASM_SRC_S = \
+SRC_ASM = \
 	gchelper.s 
 
 # LIBM
@@ -231,12 +227,12 @@ SRC_LIBF = $(addprefix lib/libm/, math.c thumb_vfp_sqrtf.c acoshf.c asinfacosf.c
 endif
 
 # Additional sources
-# ADD_SRC_C = 
+# SRC_ADD = 
 # 	drivers/bus/softspi.c 
 		
-SRC_C = $(CORE_SRC_C) $(MODS_SRC_C) $(SRC_LIB) $(SRC_LIBF) $(ADD_SRC_C) $(GEN_PINS_SRC)
+SRC_C = $(SRC_CORE) $(SRC_MOD) $(SRC_LIB) $(SRC_LIBF) $(SRC_ADD) $(GEN_PINS_SRC)
 
-ASM_OBJ = $(addprefix $(BUILD)/, $(ASM_SRC_S:.s=.o))
+ASM_OBJ = $(addprefix $(BUILD)/, $(SRC_ASM:.s=.o))
 
 C_OBJ = $(addprefix $(BUILD)/, $(SRC_C:.c=.o))# $(BUILD)/board/pins.o
 
@@ -290,7 +286,7 @@ GEN_CDCINF_FILE = $(HEADER_BUILD)/pybcdc.inf
 GEN_CDCINF_HEADER = $(HEADER_BUILD)/pybcdc_inf.h
 
 # List of sources for qstr extraction
-SRC_QSTR += $(SRC_C) $(SRC_MOD) $(SRC_LIB) $(EXTMOD_SRC_C) $(GEN_PINS_SRC)
+SRC_QSTR += $(SRC_C)
 # Append any auto-generated sources that are needed by sources listed in
 # SRC_QSTR
 SRC_QSTR_AUTO_DEPS += $(GEN_CDCINF_HEADER)
@@ -389,4 +385,3 @@ all: $(OBJ) ${PROJECT_NAME}.axf ${PROJECT_NAME} info
 CLEAN_EXTRA += *.axf *.bin *.lst *.elf *.map #$(TIVAWARE_LIB)/driverlib/gcc/* 
 
 include $(TOP)/py/mkrules.mk
-
