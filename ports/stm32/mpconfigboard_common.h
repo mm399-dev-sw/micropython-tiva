@@ -102,6 +102,11 @@
 #define MICROPY_HW_ENABLE_MMCARD (0)
 #endif
 
+// SD/MMC interface bus width (defaults to 4 bits)
+#ifndef MICROPY_HW_SDMMC_BUS_WIDTH
+#define MICROPY_HW_SDMMC_BUS_WIDTH (4)
+#endif
+
 // Whether to automatically mount (and boot from) the SD card if it's present
 #ifndef MICROPY_HW_SDCARD_MOUNT_AT_BOOT
 #define MICROPY_HW_SDCARD_MOUNT_AT_BOOT (MICROPY_HW_ENABLE_SDCARD)
@@ -120,6 +125,31 @@
 // The volume label used when creating the flash filesystem
 #ifndef MICROPY_HW_FLASH_FS_LABEL
 #define MICROPY_HW_FLASH_FS_LABEL "pybflash"
+#endif
+
+// Function to determine if the given can_id is reserved for system use or not.
+#ifndef MICROPY_HW_CAN_IS_RESERVED
+#define MICROPY_HW_CAN_IS_RESERVED(can_id) (false)
+#endif
+
+// Function to determine if the given i2c_id is reserved for system use or not.
+#ifndef MICROPY_HW_I2C_IS_RESERVED
+#define MICROPY_HW_I2C_IS_RESERVED(i2c_id) (false)
+#endif
+
+// Function to determine if the given spi_id is reserved for system use or not.
+#ifndef MICROPY_HW_SPI_IS_RESERVED
+#define MICROPY_HW_SPI_IS_RESERVED(spi_id) (false)
+#endif
+
+// Function to determine if the given tim_id is reserved for system use or not.
+#ifndef MICROPY_HW_TIM_IS_RESERVED
+#define MICROPY_HW_TIM_IS_RESERVED(tim_id) (false)
+#endif
+
+// Function to determine if the given uart_id is reserved for system use or not.
+#ifndef MICROPY_HW_UART_IS_RESERVED
+#define MICROPY_HW_UART_IS_RESERVED(uart_id) (false)
 #endif
 
 /*****************************************************************************/
@@ -191,7 +221,7 @@
 #define PYB_EXTI_NUM_VECTORS (30) // TODO (22 configurable, 7 direct)
 #define MICROPY_HW_MAX_I2C (3)
 #define MICROPY_HW_MAX_TIMER (22)
-#define MICROPY_HW_MAX_UART (4)
+#define MICROPY_HW_MAX_UART (5)
 
 // Configuration for STM32L4 series
 #elif defined(STM32L4)
@@ -201,6 +231,19 @@
 #define MICROPY_HW_MAX_I2C (4)
 #define MICROPY_HW_MAX_TIMER (17)
 #define MICROPY_HW_MAX_UART (6)
+
+// Configuration for STM32WB series
+#elif defined(STM32WB)
+
+#define MP_HAL_UNIQUE_ID_ADDRESS (UID_BASE)
+#define PYB_EXTI_NUM_VECTORS (20)
+#define MICROPY_HW_MAX_I2C (3)
+#define MICROPY_HW_MAX_TIMER (17)
+#define MICROPY_HW_MAX_UART (1)
+
+#ifndef MICROPY_HW_STM32WB_FLASH_SYNCRONISATION
+#define MICROPY_HW_STM32WB_FLASH_SYNCRONISATION (1)
+#endif
 
 #else
 #error Unsupported MCU series
@@ -243,6 +286,14 @@
 #define MICROPY_HW_BDEV_WRITEBLOCK flash_bdev_writeblock
 #endif
 
+// Whether to enable caching for external SPI flash, to allow block writes that are
+// smaller than the native page-erase size of the SPI flash, eg when FAT FS is used.
+// Enabling this enables spi_bdev_readblocks() and spi_bdev_writeblocks() functions,
+// and requires a valid mp_spiflash_config_t.cache pointer.
+#ifndef MICROPY_HW_SPIFLASH_ENABLE_CACHE
+#define MICROPY_HW_SPIFLASH_ENABLE_CACHE (0)
+#endif
+
 // Enable the storage sub-system if a block device is defined
 #if defined(MICROPY_HW_BDEV_IOCTL)
 #define MICROPY_HW_ENABLE_STORAGE (1)
@@ -261,6 +312,9 @@
 // Enable CAN if there are any peripherals defined
 #if defined(MICROPY_HW_CAN1_TX) || defined(MICROPY_HW_CAN2_TX) || defined(MICROPY_HW_CAN3_TX)
 #define MICROPY_HW_ENABLE_CAN (1)
+#if defined(STM32H7)
+#define MICROPY_HW_ENABLE_FDCAN (1) // define for MCUs with FDCAN
+#endif
 #else
 #define MICROPY_HW_ENABLE_CAN (0)
 #define MICROPY_HW_MAX_CAN (0)
@@ -273,9 +327,22 @@
 #define MICROPY_HW_MAX_CAN (1)
 #endif
 
-// Configure maximum number of CDC VCP interfaces
+// Whether the USB peripheral is device-only, or multiple OTG
+#if defined(STM32L0) || defined(STM32L432xx) || defined(STM32WB)
+#define MICROPY_HW_USB_IS_MULTI_OTG (0)
+#else
+#define MICROPY_HW_USB_IS_MULTI_OTG (1)
+#endif
+
+// Configure maximum number of CDC VCP interfaces, and whether MSC/HID are supported
 #ifndef MICROPY_HW_USB_CDC_NUM
 #define MICROPY_HW_USB_CDC_NUM (1)
+#endif
+#ifndef MICROPY_HW_USB_MSC
+#define MICROPY_HW_USB_MSC (MICROPY_HW_ENABLE_USB)
+#endif
+#ifndef MICROPY_HW_USB_HID
+#define MICROPY_HW_USB_HID (MICROPY_HW_ENABLE_USB)
 #endif
 
 // Pin definition header file
@@ -284,11 +351,11 @@
 // D-cache clean/invalidate helpers
 #if __DCACHE_PRESENT == 1
 #define MP_HAL_CLEANINVALIDATE_DCACHE(addr, size) \
-    (SCB_CleanInvalidateDCache_by_Addr((uint32_t*)((uint32_t)addr & ~0x1f), \
-        ((uint32_t)((uint8_t*)addr + size + 0x1f) & ~0x1f) - ((uint32_t)addr & ~0x1f)))
+    (SCB_CleanInvalidateDCache_by_Addr((uint32_t *)((uint32_t)addr & ~0x1f), \
+    ((uint32_t)((uint8_t *)addr + size + 0x1f) & ~0x1f) - ((uint32_t)addr & ~0x1f)))
 #define MP_HAL_CLEAN_DCACHE(addr, size) \
-    (SCB_CleanDCache_by_Addr((uint32_t*)((uint32_t)addr & ~0x1f), \
-        ((uint32_t)((uint8_t*)addr + size + 0x1f) & ~0x1f) - ((uint32_t)addr & ~0x1f)))
+    (SCB_CleanDCache_by_Addr((uint32_t *)((uint32_t)addr & ~0x1f), \
+    ((uint32_t)((uint8_t *)addr + size + 0x1f) & ~0x1f) - ((uint32_t)addr & ~0x1f)))
 #else
 #define MP_HAL_CLEANINVALIDATE_DCACHE(addr, size)
 #define MP_HAL_CLEAN_DCACHE(addr, size)

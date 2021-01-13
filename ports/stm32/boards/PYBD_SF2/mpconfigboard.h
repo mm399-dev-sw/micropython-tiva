@@ -56,8 +56,8 @@ void board_sleep(int value);
 #define MICROPY_HW_FLASH_LATENCY    (FLASH_LATENCY_3)
 
 // There is an external 32kHz oscillator
-#define RTC_ASYNCH_PREDIV           (0)
-#define RTC_SYNCH_PREDIV            (0x7fff)
+#define RTC_ASYNCH_PREDIV           (3)
+#define RTC_SYNCH_PREDIV            (0x1fff)
 #define MICROPY_HW_RTC_USE_BYPASS   (1)
 #define MICROPY_HW_RTC_USE_US       (1)
 #define MICROPY_HW_RTC_USE_CALOUT   (1)
@@ -77,6 +77,9 @@ void board_sleep(int value);
 // SPI flash #1, block device config
 extern const struct _mp_spiflash_config_t spiflash_config;
 extern struct _spi_bdev_t spi_bdev;
+#if !BUILDING_MBOOT
+#define MICROPY_HW_SPIFLASH_ENABLE_CACHE (1)
+#endif
 #define MICROPY_HW_BDEV_IOCTL(op, arg) ( \
     (op) == BDEV_IOCTL_NUM_BLOCKS ? (MICROPY_HW_SPIFLASH_SIZE_BITS / 8 / FLASH_BLOCK_SIZE) : \
     (op) == BDEV_IOCTL_INIT ? spi_bdev_ioctl(&spi_bdev, (op), (uint32_t)&spiflash_config) : \
@@ -84,6 +87,7 @@ extern struct _spi_bdev_t spi_bdev;
 )
 #define MICROPY_HW_BDEV_READBLOCKS(dest, bl, n) spi_bdev_readblocks(&spi_bdev, (dest), (bl), (n))
 #define MICROPY_HW_BDEV_WRITEBLOCKS(src, bl, n) spi_bdev_writeblocks(&spi_bdev, (src), (bl), (n))
+#define MICROPY_HW_BDEV_SPIFLASH_EXTENDED (&spi_bdev) // for extended block protocol
 
 // SPI flash #2, to be memory mapped
 #define MICROPY_HW_QSPIFLASH_SIZE_BITS_LOG2 (24)
@@ -153,6 +157,7 @@ extern struct _spi_bdev_t spi_bdev2;
 #define MICROPY_HW_USRSW_PRESSED    (0)
 
 // LEDs
+#define MICROPY_HW_LED_INVERTED     (1) // LEDs are on when pin is driven low
 #define MICROPY_HW_LED1             (pyb_pin_LED_RED)
 #define MICROPY_HW_LED2             (pyb_pin_LED_GREEN)
 #define MICROPY_HW_LED3             (pyb_pin_LED_BLUE)
@@ -177,11 +182,16 @@ extern struct _spi_bdev_t spi_bdev2;
 #define MICROPY_HW_USB_HS_IN_FS     (1)
 #define MICROPY_HW_USB_MAIN_DEV     (USB_PHY_HS_ID)
 
+// Bluetooth config
+#define MICROPY_HW_BLE_UART_ID       (PYB_UART_6)
+#define MICROPY_HW_BLE_UART_BAUDRATE (115200)
+
 /******************************************************************************/
 // Bootloader configuration
 
 #define MBOOT_USB_AUTODETECT_PORT   (1)
 #define MBOOT_FSLOAD                (1)
+#define MBOOT_VFS_FAT               (1)
 
 #define MBOOT_I2C_PERIPH_ID         1
 #define MBOOT_I2C_SCL               (pin_B8)

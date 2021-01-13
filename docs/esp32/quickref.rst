@@ -77,11 +77,12 @@ The :mod:`network` module::
     wlan.scan()             # scan for access points
     wlan.isconnected()      # check if the station is connected to an AP
     wlan.connect('essid', 'password') # connect to an AP
-    wlan.config('mac')      # get the interface's MAC adddress
+    wlan.config('mac')      # get the interface's MAC address
     wlan.ifconfig()         # get the interface's IP/netmask/gw/DNS addresses
 
     ap = network.WLAN(network.AP_IF) # create access-point interface
     ap.config(essid='ESP-AP') # set the ESSID of the access point
+    ap.config(max_clients=10) # set how many clients can connect to the network
     ap.active(True)         # activate the interface
 
 A useful function for connecting to your local WiFi network is::
@@ -117,16 +118,20 @@ Use the :mod:`time <utime>` module::
 Timers
 ------
 
-Virtual (RTOS-based) timers are supported. Use the :ref:`machine.Timer <machine.Timer>` class
-with timer ID of -1::
+The ESP32 port has four hardware timers. Use the :ref:`machine.Timer <machine.Timer>` class
+with a timer ID from 0 to 3 (inclusive)::
 
     from machine import Timer
 
-    tim = Timer(-1)
-    tim.init(period=5000, mode=Timer.ONE_SHOT, callback=lambda t:print(1))
-    tim.init(period=2000, mode=Timer.PERIODIC, callback=lambda t:print(2))
+    tim0 = Timer(0)
+    tim0.init(period=5000, mode=Timer.ONE_SHOT, callback=lambda t:print(0))
+
+    tim1 = Timer(1)
+    tim1.init(period=2000, mode=Timer.PERIODIC, callback=lambda t:print(1))
 
 The period is in milliseconds.
+
+Virtual timers are not currently supported on this port.
 
 .. _Pins_and_GPIO:
 
@@ -171,9 +176,10 @@ PWM (pulse width modulation)
 
 PWM can be enabled on all output-enabled pins. The base frequency can
 range from 1Hz to 40MHz but there is a tradeoff; as the base frequency
-*increases* the duty resolution *decreases*. See 
+*increases* the duty resolution *decreases*. See
 `LED Control <https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/peripherals/ledc.html>`_
 for more details.
+Currently the duty cycle has to be in the range of 0-1023.
 
 Use the ``machine.PWM`` class::
 
@@ -203,7 +209,7 @@ Use the :ref:`machine.ADC <machine.ADC>` class::
     adc = ADC(Pin(32))          # create ADC object on ADC pin
     adc.read()                  # read value, 0-4095 across voltage range 0.0v - 1.0v
 
-    adc.atten(ADC.ATTN_11DB)    # set 11dB input attentuation (voltage range roughly 0.0v - 3.6v)
+    adc.atten(ADC.ATTN_11DB)    # set 11dB input attenuation (voltage range roughly 0.0v - 3.6v)
     adc.width(ADC.WIDTH_9BIT)   # set 9 bit return values (returned range 0-511)
     adc.read()                  # read value using the newly configured attenuation and width
 
@@ -243,21 +249,20 @@ ESP32 specific ADC class method reference:
 Software SPI bus
 ----------------
 
-There are two SPI drivers. One is implemented in software (bit-banging)
-and works on all pins, and is accessed via the :ref:`machine.SPI <machine.SPI>`
-class::
+Software SPI (using bit-banging) works on all pins, and is accessed via the
+:ref:`machine.SoftSPI <machine.SoftSPI>` class::
 
-    from machine import Pin, SPI
+    from machine import Pin, SoftSPI
 
-    # construct an SPI bus on the given pins
+    # construct a SoftSPI bus on the given pins
     # polarity is the idle state of SCK
     # phase=0 means sample on the first edge of SCK, phase=1 means the second
-    spi = SPI(baudrate=100000, polarity=1, phase=0, sck=Pin(0), mosi=Pin(2), miso=Pin(4))
+    spi = SoftSPI(baudrate=100000, polarity=1, phase=0, sck=Pin(0), mosi=Pin(2), miso=Pin(4))
 
     spi.init(baudrate=200000) # set the baudrate
 
     spi.read(10)            # read 10 bytes on MISO
-    spi.read(10, 0xff)      # read 10 bytes while outputing 0xff on MOSI
+    spi.read(10, 0xff)      # read 10 bytes while outputting 0xff on MOSI
 
     buf = bytearray(50)     # create a buffer
     spi.readinto(buf)       # read into the given buffer (reads 50 bytes in this case)
@@ -271,7 +276,7 @@ class::
 
 .. Warning::
    Currently *all* of ``sck``, ``mosi`` and ``miso`` *must* be specified when
-   initialising Software SPI. 
+   initialising Software SPI.
 
 Hardware SPI bus
 ----------------
@@ -292,30 +297,53 @@ mosi   13           23
 miso   12           19
 =====  ===========  ============
 
-Hardware SPI has the same methods as Software SPI above::
+Hardware SPI is accessed via the :ref:`machine.SPI <machine.SPI>` class and
+has the same methods as software SPI above::
 
     from machine import Pin, SPI
 
     hspi = SPI(1, 10000000, sck=Pin(14), mosi=Pin(13), miso=Pin(12))
     vspi = SPI(2, baudrate=80000000, polarity=0, phase=0, bits=8, firstbit=0, sck=Pin(18), mosi=Pin(23), miso=Pin(19))
 
+Software I2C bus
+----------------
 
-I2C bus
--------
+Software I2C (using bit-banging) works on all output-capable pins, and is
+accessed via the :ref:`machine.SoftI2C <machine.SoftI2C>` class::
 
-The I2C driver is implemented in software and works on all pins,
-and is accessed via the :ref:`machine.I2C <machine.I2C>` class::
+    from machine import Pin, SoftI2C
 
-    from machine import Pin, I2C
+    i2c = SoftI2C(scl=Pin(5), sda=Pin(4), freq=100000)
 
-    # construct an I2C bus
-    i2c = I2C(scl=Pin(5), sda=Pin(4), freq=100000)
+    i2c.scan()              # scan for devices
 
-    i2c.readfrom(0x3a, 4)   # read 4 bytes from slave device with address 0x3a
-    i2c.writeto(0x3a, '12') # write '12' to slave device with address 0x3a
+    i2c.readfrom(0x3a, 4)   # read 4 bytes from device with address 0x3a
+    i2c.writeto(0x3a, '12') # write '12' to device with address 0x3a
 
     buf = bytearray(10)     # create a buffer with 10 bytes
     i2c.writeto(0x3a, buf)  # write the given buffer to the slave
+
+Hardware I2C bus
+----------------
+
+There are two hardware I2C peripherals with identifiers 0 and 1.  Any available
+output-capable pins can be used for SCL and SDA but the defaults are given
+below.
+
+=====  ===========  ============
+\      I2C(0)       I2C(1)
+=====  ===========  ============
+scl    18           25
+sda    19           26
+=====  ===========  ============
+
+The driver is accessed via the :ref:`machine.I2C <machine.I2C>` class and
+has the same methods as software I2C above::
+
+    from machine import Pin, I2C
+
+    i2c = I2C(0)
+    i2c = I2C(1, scl=Pin(5), sda=Pin(4), freq=400000)
 
 Real time clock (RTC)
 ---------------------
@@ -351,11 +379,25 @@ Notes:
   To further reduce power consumption it is possible to disable the internal pullups::
 
     p1 = Pin(4, Pin.IN, Pin.PULL_HOLD)
-    
+
   After leaving deepsleep it may be necessary to un-hold the pin explicitly (e.g. if
   it is an output pin) via::
-    
+
     p1 = Pin(4, Pin.OUT, None)
+
+RMT
+---
+
+The RMT is ESP32-specific and allows generation of accurate digital pulses with
+12.5ns resolution.  See :ref:`esp32.RMT <esp32.RMT>` for details.  Usage is::
+
+    import esp32
+    from machine import Pin
+
+    r = esp32.RMT(0, pin=Pin(18), clock_div=8)
+    r   # RMT(channel=0, pin=18, source_freq=80000000, clock_div=8)
+    # The channel resolution is 100ns (1/(source_freq/clock_div)).
+    r.write_pulses((1, 20, 2, 40), start=0) # Send 0 for 100ns, 1 for 2000ns, 0 for 200ns, 1 for 4000ns
 
 OneWire driver
 --------------
@@ -413,7 +455,7 @@ For low-level driving of a NeoPixel::
    ``NeoPixel`` object.
 
 
-Capacitive Touch
+Capacitive touch
 ----------------
 
 Use the ``TouchPad`` class in the ``machine`` module::
@@ -421,11 +463,11 @@ Use the ``TouchPad`` class in the ``machine`` module::
     from machine import TouchPad, Pin
 
     t = TouchPad(Pin(14))
-    t.read()              # Returns a smaller number when touched 
+    t.read()              # Returns a smaller number when touched
 
 ``TouchPad.read`` returns a value relative to the capacitive variation. Small numbers (typically in
-the *tens*) are common when a pin is touched, larger numbers (above *one thousand*) when 
-no touch is present. However the values are *relative* and can vary depending on the board 
+the *tens*) are common when a pin is touched, larger numbers (above *one thousand*) when
+no touch is present. However the values are *relative* and can vary depending on the board
 and surrounding composition so some calibration may be required.
 
 There are ten capacitive touch-enabled pins that can be used on the ESP32: 0, 2, 4, 12, 13
