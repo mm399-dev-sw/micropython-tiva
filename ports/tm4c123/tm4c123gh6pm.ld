@@ -1,224 +1,137 @@
 /******************************************************************************
- *
- * Default Linker script for the Texas Instruments TM4C123GH6PM
- *
- * This is derived from revision 15071 of the TivaWare Library.
+
  * Source: https://e2e.ti.com/support/microcontrollers/other/f/908/p/479812/2164975
- *
+
  *****************************************************************************/
 
 MEMORY
 {
-    FLASH (RX) : ORIGIN = 0x00000000, LENGTH = 0x00040000
-    RAM (WX)  : ORIGIN = 0x20000000, LENGTH = 0x00008000
+    FLASH (RX) : ORIGIN = 0x00000000, LENGTH = 256K 
+	/* FLASH (RX) : ORIGIN = 0x00000000, LENGTH = 232K
+	FLASH_FS (WX) : ORIGIN = 0x0003A000, LENGTH = 24K */
+	SRAM  (WX) : ORIGIN = 0x20000000, LENGTH = 32K 
+    /*SRAM  (WX) : ORIGIN = 0x20000000, LENGTH = 24K
+	CACHE (WX) : ORIGIN = 0x20006000, LENGTH = 8K */
 }
 
-HEAPSIZE = 0x2000;
-STACKSIZE = 0x0800;
+/* SRAM extents for the garbage collector */
+_ram_start = ORIGIN(SRAM);
+_ram_end = ORIGIN(SRAM) + LENGTH(SRAM);
 
-REGION_ALIAS("REGION_TEXT", FLASH);
-REGION_ALIAS("REGION_BSS", RAM);
-REGION_ALIAS("REGION_DATA", RAM);
-REGION_ALIAS("REGION_STACK", RAM);
-REGION_ALIAS("REGION_HEAP", RAM);
-REGION_ALIAS("REGION_ARM_EXIDX", FLASH);
-REGION_ALIAS("REGION_ARM_EXTAB", FLASH);
+/*_flash_fs_start = ORIGIN(FLASH_FS);
+_flash_fs_end = ORIGIN(FLASH_FS) + LENGTH(FLASH_FS);
 
-/* Linker script to place sections and symbol values. Should be used together
- * with other linker script that defines memory regions FLASH and RAM.
- * It references following symbols, which must be defined in code:
- *   Reset_Handler : Entry of reset handler
- *
- * It defines following symbols, which code can use without definition:
- *   __exidx_start
- *   __exidx_end
- *   __copy_table_start__
- *   __copy_table_end__
- *   __zero_table_start__
- *   __zero_table_end__
- *   __etext
- *   __data_start__
- *   __preinit_array_start
- *   __preinit_array_end
- *   __init_array_start
- *   __init_array_end
- *   __fini_array_start
- *   __fini_array_end
- *   __data_end__
- *   __bss_start__
- *   __bss_end__
- *   __end__
- *   end
- *   __heap_start
- *   __heap_start__
- *   __heap_end
- *   __heap_end__
- *   __HeapLimit
- *   _stack
- *   __stack
- *   __StackLimit
- *   __StackTop
- *   __stack
- */
+_cache_start = ORIGIN(CACHE);
+_cache_end = ORIGIN(CACHE) + LENGTH(CACHE);*/
+
+_Min_Heap_Size = 0x6000;
+_Min_Stack_Size = 0x0800;
+
+
 ENTRY(Reset_Handler)
 
-SECTIONS
-{
-	.text :
-	{
-		KEEP(*(.vectors))
-		*(.text*)
+SECTIONS {
 
-		KEEP(*(.init))
-		KEEP(*(.fini))
+    PROVIDE (_intvecs_base_address = 0x0);
 
-		/* .ctors */
-		*crtbegin.o(.ctors)
-		*crtbegin?.o(.ctors)
-		*(EXCLUDE_FILE(*crtend?.o *crtend.o) .ctors)
-		*(SORT(.ctors.*))
-		*(.ctors)
+    .intvecs (_intvecs_base_address) : AT (_intvecs_base_address) {
+        KEEP (*(.vectors))
+    } > FLASH
 
-		/* .dtors */
- 		*crtbegin.o(.dtors)
- 		*crtbegin?.o(.dtors)
- 		*(EXCLUDE_FILE(*crtend?.o *crtend.o) .dtors)
- 		*(SORT(.dtors.*))
- 		*(.dtors)
+    PROVIDE (_vtable_base_address = 0x20000000);
 
-		*(.rodata*)
+    .vtable (_vtable_base_address) : AT (_vtable_base_address) {
+        KEEP (*(.vtable))
+    } > SRAM
 
-		KEEP(*(.eh_frame*))
-	} > FLASH
+    .text : {
+        CREATE_OBJECT_SYMBOLS
+        *(.text)
+        *(.text.*)
+        . = ALIGN(0x4);
+        KEEP (*(.ctors))
+        . = ALIGN(0x4);
+        KEEP (*(.dtors))
+        . = ALIGN(0x4);
+        __init_array_start = .;
+        KEEP (*(.init_array*))
+        __init_array_end = .;
+        *(.init)
+        *(.fini*)
+    } > FLASH
 
-	.ARM.extab :
-	{
-		*(.ARM.extab* .gnu.linkonce.armextab.*)
-	} > FLASH
+    PROVIDE (__etext = .);
+    PROVIDE (_etext = .);
+    PROVIDE (etext = .);
+	PROVIDE (_sidata = .);
 
-	__exidx_start = .;
-	.ARM.exidx :
-	{
-		*(.ARM.exidx* .gnu.linkonce.armexidx.*)
-	} > FLASH
-	__exidx_end = .;
+    .rodata : {
+        *(.rodata)
+        *(.rodata*)
+    } > FLASH
 
-	/* To copy multiple ROM to RAM sections,
-	 * uncomment .copy.table section and,
-	 * define __STARTUP_COPY_MULTIPLE in startup_ARMCMx.S */
-	/*
-	.copy.table :
-	{
-		. = ALIGN(4);
-		__copy_table_start__ = .;
-		LONG (__etext)
-		LONG (__data_start__)
-		LONG (__data_end__ - __data_start__)
-		LONG (__etext2)
-		LONG (__data2_start__)
-		LONG (__data2_end__ - __data2_start__)
-		__copy_table_end__ = .;
-	} > FLASH
-	*/
+    .data : ALIGN (0x4) {
+        __data_load__ = LOADADDR (.data);
+        __data_start__ = .;
+		_sdata = __data_start__;
+        *(.data)
+        *(.data*)
+        . = ALIGN (0x4);
+        __data_end__ = .;
+		_edata = __data_end__;
+    } > SRAM AT> FLASH
 
-	/* To clear multiple BSS sections,
-	 * uncomment .zero.table section and,
-	 * define __STARTUP_CLEAR_BSS_MULTIPLE in startup_ARMCMx.S */
-	/*
-	.zero.table :
-	{
-		. = ALIGN(4);
-		__zero_table_start__ = .;
-		LONG (__bss_start__)
-		LONG (__bss_end__ - __bss_start__)
-		LONG (__bss2_start__)
-		LONG (__bss2_end__ - __bss2_start__)
-		__zero_table_end__ = .;
-	} > FLASH
-	*/
+    .ARM.exidx : {
+        __exidx_start = .;
+        *(.ARM.exidx* .gnu.linkonce.armexidx.*)
+        __exidx_end = .;
+    } > FLASH
 
-	/* Location counter can end up 2byte aligned with narrow Thumb code but
-	   __etext is assumed by startup code to be the LMA of a section in RAM
-	   which must be 4byte aligned */
-	__etext = ALIGN (4);
+    .ARM.extab : {
+        *(.ARM.extab* .gnu.linkonce.armextab.*)
+    } > FLASH
 
-	.data : AT (__etext)
-	{
-		__data_start__ = .;
-		*(vtable)
-		*(.data*)
+    .bss : {
+        __bss_start__ = .;
+		_sbss = __bss_start__;
+        *(.shbss)
+        *(.bss)
+        *(.bss.*)
+        *(COMMON)
+        . = ALIGN (4);
+        __bss_end__ = .;
+		_ebss = __bss_end__;
+    } > SRAM
 
-		. = ALIGN(4);
-		/* preinit data */
-		PROVIDE_HIDDEN (__preinit_array_start = .);
-		KEEP(*(.preinit_array))
-		PROVIDE_HIDDEN (__preinit_array_end = .);
+    .heap : {
+        PROVIDE (__heap_start__ = .);
+        _heap_start = __heap_start__;
+        . = . + _Min_Heap_Size;
+        KEEP(*(.heap))
+        PROVIDE (__heap_end__ = .);
+        __HeapLimit = __heap_end__;
+        _heap_end = __heap_end__;
+    } > SRAM
 
-		. = ALIGN(4);
-		/* init data */
-		PROVIDE_HIDDEN (__init_array_start = .);
-		KEEP(*(SORT(.init_array.*)))
-		KEEP(*(.init_array))
-		PROVIDE_HIDDEN (__init_array_end = .);
+    _Heapsize = __heap_end__ - __heap_start__;
+    _Stacksize = _ram_end - __heap_end__ - 4;
 
+    .stack : ALIGN(0x8) {
+        PROVIDE (_stack = .);
+        __stack = .;
+        . = . + _Stacksize;
+        KEEP(*(.stack))
+        PROVIDE (_estack = .);
+        __estack = .;
+    } > SRAM
 
-		. = ALIGN(4);
-		/* finit data */
-		PROVIDE_HIDDEN (__fini_array_start = .);
-		KEEP(*(SORT(.fini_array.*)))
-		KEEP(*(.fini_array))
-		PROVIDE_HIDDEN (__fini_array_end = .);
+    /DISCARD/ :
+    {
+        libc.a ( * )
+        libm.a ( * )
+        libgcc.a ( * )
+    }
 
-		KEEP(*(.jcr*))
-		. = ALIGN(4);
-		/* All data end */
-		__data_end__ = .;
-
-	} > RAM
-
-	.bss :
-	{
-		. = ALIGN(4);
-		__bss_start__ = .;
-		*(.bss*)
-		*(COMMON)
-		. = ALIGN(4);
-		__bss_end__ = .;
-	} > RAM
-
-	.heap (COPY):
-	{
-		__end__ = .;
-		__heap_start__ = __end__;
-		__heap_start = __heap_start__;
-		PROVIDE(end = .);
-		*(.heap*)
-		__HeapLimit = .;
-		__heap_end__ = __HeapLimit;
-		__heap_end = __heap_end__;
-	} > RAM
-
-	/* .stack_dummy section doesn't contain any symbols. It is only
-	 * used for linker to calculate size of stack sections, and assign
-	 * values to stack symbols later */
-	.stack_dummy (COPY):
-	{
-		_stack = .;
-		__stack = .;
-		*(.stack*)
-	} > RAM
-
-	/* Set stack top to end of RAM, and stack limit move down by
-	 * size of stack_dummy section */
-	__StackTop = ORIGIN(RAM) + LENGTH(RAM);
-	__StackLimit = __StackTop - SIZEOF(.stack_dummy);
-	PROVIDE(__stack = __StackTop);
-
-	/* Check if data + heap + stack exceeds RAM limit */
-	ASSERT(__StackLimit >= __HeapLimit, "region RAM overflowed with stack")
+	ASSERT(_Min_Heap_Size <= _Heapsize, "Could not allocate enough space for heap")
+	ASSERT(_Min_Stack_Size <= _Stacksize, "Could not allocate enough space for stack")
 }
-
-
-/* RAM extents for the garbage collector */
-_ram_start = ORIGIN(RAM);
-_ram_end = ORIGIN(RAM) + LENGTH(RAM);
