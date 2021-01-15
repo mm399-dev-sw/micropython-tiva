@@ -15,7 +15,7 @@ LINK_TIME_OPT = 1
 
 # Location of the TivaWare library
 # Can be pointed to a newer version if desired
-TIVAWARE_LIB = /mnt/c/ti/TivaWare
+TIVAWARE_LIB ?= /mnt/c/ti/TivaWare
 #TIVAWARE_LIB = /home/raphael/ti/tivaware
 
 # Name of the Project (and the resulting binary file)
