@@ -377,6 +377,9 @@ new: clean all
 .PHONY: all
 all: $(OBJ) ${PROJECT_NAME}.axf ${PROJECT_NAME} info
 
+.PHONY: ci
+ci: $(OBJ) ${PROJECT_NAME}
+
 ########################################################
 # Cleanup
 ########################################################
