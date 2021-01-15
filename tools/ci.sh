@@ -241,7 +241,7 @@ function ci_tm4c123_setup {
 }
 
 function ci_tm4c123_build {
-    make ${MAKEOPTS} -C ports/tm4c123 ci TIVAWARE_LIB=tivaware
+    make ${MAKEOPTS} -C ports/tm4c123 TIVAWARE_LIB=tivaware
 }
 
 ########################################################################################

@@ -14,13 +14,9 @@ DEBUG ?= 1
 LINK_TIME_OPT = 1
 
 # Location of the TivaWare library
-# Can be pointed to a newer version if desired
-TIVAWARE_LIB ?= /mnt/c/ti/TivaWare
-#TIVAWARE_LIB = /home/raphael/ti/tivaware
+TIVAWARE_LIB ?= tivaware
 
-# Name of the Project (and the resulting binary file)
-PROJECT_NAME = uPY_TM4C123
-
+## NOT YET IMPLEMENTED, USE LMFLASHER 
 # OpenOCD paths
 #OPENOCD_PATH = /usr/local/share/openocd
 OPENOCD_PATH = openocd
@@ -89,7 +85,7 @@ FATFS_DIR=lib/oofatfs
 CFLAGS_CORTEX_M4 = -mthumb -mtune=cortex-m4 -mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mabi=aapcs-linux
 
 # Warnings
-CFLAGS = -Wall -Werror -Wpointer-arith
+CFLAGS = -Wall -Werror -Wpointer-arith -Wno-missing-attributes
 
 # Misc flags
 CFLAGS += $(INC) -std=gnu99 -nostdlib $(CFLAGS_CORTEX_M4) $(COPT) -fshort-enums -fdata-sections -ffunction-sections 
@@ -127,7 +123,8 @@ ifeq ($(DEBUG), 1)
 CFLAGS += -ggdb -DDEBUG -DPENDSV_DEBUG
 COPT += -Og
 else
-COPT += -Os -DNDEBUG
+CFLAGS += -DNDEBUG
+COPT += -Os
 # Flags for Link Time Optimization
 ifeq ($(LINK_TIME_OPT), 1)
 CFLAGS += -flto -fuse-linker-plugin
@@ -142,7 +139,7 @@ LINKER_FILE = board/tm4c123gh6pm.ld
 
 # use gcc as linker frontend for additional funtionality
 LD = $(CC)
-LDFLAGS = -Wl,-nostdlib,-T,$(LINKER_FILE),-Map=$(@:.axf=.map),--cref,--gc-sections $(CFLAGS)
+LDFLAGS = -Wl,-nostdlib,-T,$(LINKER_FILE),-Map=build/ld_output.map,--cref,--gc-sections $(CFLAGS)
 
 # Libraries
 LIBS = $(TIVAWARE_LIB)/driverlib/gcc/libdriver.a
@@ -335,7 +332,7 @@ $(GEN_CDCINF_FILE): $(CDCINF_TEMPLATE) $(INSERT_USB_IDS) $(USB_IDS_FILE) | $(HEA
 ########################################################
 
 # Build axf and elf
-${PROJECT_NAME}.axf: $(OBJ)
+firmware: $(OBJ)
 	$(ECHO)
 	$(ECHO) Used these C-Flags: $(CFLAGS) 
 	$(ECHO)
@@ -343,20 +340,24 @@ ${PROJECT_NAME}.axf: $(OBJ)
 	$(Q)$(MAKE) -C ${TIVAWARE_LIB}/driverlib/
 	$(ECHO)
 	$(ECHO) Linking...
-	$(ECHO) " >" ${PROJECT_NAME}.axf
-	$(Q)$(LD) $(LDFLAGS) -o ${PROJECT_NAME}.axf $(OBJ) $(LIBS) $(LIBM) $(LIBC) $(LIBGCC)
-	$(ECHO) " >" ${PROJECT_NAME}.elf
-	$(Q)$(LD) $(LDFLAGS) -o ${PROJECT_NAME}.elf $(OBJ) $(LIBS) $(LIBM) $(LIBC) $(LIBGCC)
+	$(ECHO) " >" build/firmware.axf
+	$(Q)$(LD) $(LDFLAGS) -o build/firmware.axf $(OBJ) $(LIBS) $(LIBM) $(LIBC) $(LIBGCC)
+	# $(ECHO) " >" build/firmware.elf
+	# $(Q)$(LD) $(LDFLAGS) -o build/firmware.elf $(OBJ) $(LIBS) $(LIBM) $(LIBC) $(LIBGCC)
 
-# Build binary
-${PROJECT_NAME}: ${PROJECT_NAME}.axf
+# Extract pure binary from firmware
+binary: firmware
 	$(ECHO)
 	$(ECHO) -n Copying...
-	$(Q)$(OBJCOPY) $(CPFLAGS) ${PROJECT_NAME}.axf ${PROJECT_NAME}.bin
-	$(ECHO) " >" ${PROJECT_NAME}.bin
+	$(Q)$(OBJCOPY) $(CPFLAGS) build/firmware.axf build/firmware.bin
+	$(ECHO) " >" build/firmware.bin
+	$(ECHO)
+
+list: firmware
+	$(ECHO)
 	$(ECHO) -n Creating list file...
-	$(Q)$(OD) $(ODFLAGS) ${PROJECT_NAME}.axf > ${PROJECT_NAME}.lst
-	$(ECHO) " >" ${PROJECT_NAME}.lst
+	$(Q)$(OD) $(ODFLAGS) build/firmware.axf > build/firmware.lst
+	$(ECHO) " >" build/firmware.lst
 	$(ECHO)
 
 .PHONY: info
@@ -366,7 +367,7 @@ info:
 	$(ECHO) +---------------------------------------------------
 	$(ECHO) + DEBUG = $(DEBUG)
 	$(ECHO) +---------------------------------------------------
-	$(ECHO) + Size = $$(( $(word 7, $(shell $(CROSS_COMPILE)size -Bd $(PROJECT_NAME).axf)) + $(word 8, $(shell $(CROSS_COMPILE)size -Bd $(PROJECT_NAME).axf)) )) kiB
+	-$(ECHO) + Size = $(shell stat -c %s build/firmware.bin) kiB
 	$(ECHO) +---------------------------------------------------
 	$(ECHO) + OPT-Flags: $(COPT)
 	$(ECHO) +---------------------------------------------------
@@ -375,10 +376,7 @@ info:
 new: clean all
 
 .PHONY: all
-all: $(OBJ) ${PROJECT_NAME}.axf ${PROJECT_NAME} info
-
-.PHONY: ci
-ci: $(OBJ) ${PROJECT_NAME}
+all: binary info
 
 ########################################################
 # Cleanup
