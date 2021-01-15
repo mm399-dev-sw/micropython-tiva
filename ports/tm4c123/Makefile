@@ -138,7 +138,7 @@ endif
 # Linker                                               #
 ########################################################
 
-LINKER_FILE = tm4c123gh6pm.ld
+LINKER_FILE = board/tm4c123gh6pm.ld
 
 # use gcc as linker frontend for additional funtionality
 LD = $(CC)
@@ -163,8 +163,8 @@ CPFLAGS = -O binary
 # Sources	
 ########################################################
 
-STARTUP_FILE = startup_TM4C123.c
-SYSTEM_FILE = misc/system_TM4C123.c
+STARTUP_FILE = board/startup_TM4C123.c
+SYSTEM_FILE = board/system_TM4C123.c
 
 # lib
 SRC_LIB = $(addprefix lib/,\
