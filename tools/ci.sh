@@ -228,6 +228,23 @@ function ci_teensy_build {
 }
 
 ########################################################################################
+# ports/tm4c123
+
+function ci_tm4c123_setup {
+    ci_gcc_arm_setup
+    sudo apt update
+    sudo apt install p7zip
+    # install TivaWare
+    mkdir /tivaware
+    wget -O ./tivaware.exe http://software-dl.ti.com/tiva-c/SW-TM4C/2.2.0.295/exports/SW-TM4C-DRL-2.2.0.295.exe
+    7zr e -o /tivaware tivaware.exe
+}
+
+function ci_tm4c123_build {
+    make ${MAKEOPTS} -C ports/tm4c123 TIVAWARE_LIB=/tivaware
+}
+
+########################################################################################
 # ports/unix
 
 CI_UNIX_OPTS_SYS_SETTRACE=(
