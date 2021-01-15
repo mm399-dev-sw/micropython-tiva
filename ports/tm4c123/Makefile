@@ -139,7 +139,7 @@ LINKER_FILE = board/tm4c123gh6pm.ld
 
 # use gcc as linker frontend for additional funtionality
 LD = $(CC)
-LDFLAGS = -Wl,-nostdlib,-T,$(LINKER_FILE),-Map=build/ld_output.map,--cref,--gc-sections $(CFLAGS)
+LDFLAGS = -Wl,-nostdlib,-T,$(LINKER_FILE),-Map=$(BUILD)/ld_output.map,--cref,--gc-sections $(CFLAGS)
 
 # Libraries
 LIBS = $(TIVAWARE_LIB)/driverlib/gcc/libdriver.a
@@ -332,7 +332,7 @@ $(GEN_CDCINF_FILE): $(CDCINF_TEMPLATE) $(INSERT_USB_IDS) $(USB_IDS_FILE) | $(HEA
 ########################################################
 
 # Build axf and elf
-firmware: $(OBJ)
+$(BUILD)/firmware.axf: $(OBJ)
 	$(ECHO)
 	$(ECHO) Used these C-Flags: $(CFLAGS) 
 	$(ECHO)
@@ -340,34 +340,33 @@ firmware: $(OBJ)
 	$(Q)$(MAKE) -C ${TIVAWARE_LIB}/driverlib/
 	$(ECHO)
 	$(ECHO) Linking...
-	$(ECHO) " >" build/firmware.axf
-	$(Q)$(LD) $(LDFLAGS) -o build/firmware.axf $(OBJ) $(LIBS) $(LIBM) $(LIBC) $(LIBGCC)
-	# $(ECHO) " >" build/firmware.elf
-	# $(Q)$(LD) $(LDFLAGS) -o build/firmware.elf $(OBJ) $(LIBS) $(LIBM) $(LIBC) $(LIBGCC)
+	$(ECHO) " >" $(BUILD)/firmware.axf
+	$(Q)$(LD) $(LDFLAGS) -o $(BUILD)/firmware.axf $(OBJ) $(LIBS) $(LIBM) $(LIBC) $(LIBGCC)
+	# $(ECHO) " >" $(BUILD)/firmware.elf
+	# $(Q)$(LD) $(LDFLAGS) -o $(BUILD)/firmware.elf $(OBJ) $(LIBS) $(LIBM) $(LIBC) $(LIBGCC)
 
 # Extract pure binary from firmware
-binary: firmware
+$(BUILD)/firmware.bin: $(BUILD)/firmware.axf
 	$(ECHO)
 	$(ECHO) -n Copying...
-	$(Q)$(OBJCOPY) $(CPFLAGS) build/firmware.axf build/firmware.bin
-	$(ECHO) " >" build/firmware.bin
+	$(Q)$(OBJCOPY) $(CPFLAGS) $(BUILD)/firmware.axf $(BUILD)/firmware.bin
+	$(ECHO) " >" $(BUILD)/firmware.bin
 	$(ECHO)
 
-list: firmware
+list: $(BUILD)/firmware.axf
 	$(ECHO)
 	$(ECHO) -n Creating list file...
-	$(Q)$(OD) $(ODFLAGS) build/firmware.axf > build/firmware.lst
-	$(ECHO) " >" build/firmware.lst
+	$(Q)$(OD) $(ODFLAGS) $(BUILD)/firmware.axf > $(BUILD)/firmware.lst
+	$(ECHO) " >" $(BUILD)/firmware.lst
 	$(ECHO)
 
-.PHONY: info
-info:
+info: $(BUILD)/firmware.bin
 	$(ECHO) +---------------------------------------------------
 	$(ECHO) + Info
 	$(ECHO) +---------------------------------------------------
 	$(ECHO) + DEBUG = $(DEBUG)
 	$(ECHO) +---------------------------------------------------
-	-$(ECHO) + Size = $(shell stat -c %s build/firmware.bin) kiB
+	-$(ECHO) + Size = $(shell stat -c %s $(BUILD)/firmware.bin) kiB
 	$(ECHO) +---------------------------------------------------
 	$(ECHO) + OPT-Flags: $(COPT)
 	$(ECHO) +---------------------------------------------------
@@ -376,7 +375,7 @@ info:
 new: clean all
 
 .PHONY: all
-all: binary info
+all: $(BUILD)/firmware.bin info
 
 ########################################################
 # Cleanup
