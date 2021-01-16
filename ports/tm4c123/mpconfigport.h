@@ -10,7 +10,7 @@
 #define MICROPY_ENABLE_COMPILER     (1)
 
 #define MICROPY_QSTR_BYTES_IN_HASH  (1)
-//#define MICROPY_QSTR_EXTRA_POOL     mp_qstr_frozen_const_pool
+// #define MICROPY_QSTR_EXTRA_POOL     mp_qstr_frozen_const_pool
 #define MICROPY_ALLOC_PATH_MAX      (256)
 #define MICROPY_ALLOC_PARSE_CHUNK_INIT (16)
 #define MICROPY_EMIT_X64            (0)
@@ -33,7 +33,7 @@
 #define MICROPY_ENABLE_SOURCE_LINE  (0)
 #define MICROPY_ENABLE_DOC_STRING   (0)
 #define MICROPY_STREAMS_NON_BLOCK   (1)
-//#define MICROPY_ERROR_REPORTING     (MICROPY_ERROR_REPORTING_TERSE)
+// #define MICROPY_ERROR_REPORTING     (MICROPY_ERROR_REPORTING_TERSE)
 #define MICROPY_BUILTIN_METHOD_CHECK_SELF_ARG (0)
 #define MICROPY_PY_ASYNC_AWAIT      (0)
 #define MICROPY_PY_BUILTINS_BYTEARRAY (1)
@@ -59,7 +59,7 @@
 #define MICROPY_VFS                 (1)
 #define MICROPY_VFS_FAT             (1)
 #define MICROPY_READER_VFS          (1)
-#define MICROPY_MODULE_FROZEN_MPY   (0) //was 1
+#define MICROPY_MODULE_FROZEN_MPY   (0) // was 1
 #define MICROPY_CPYTHON_COMPAT      (0)
 // #define MICROPY_LONGINT_IMPL        (MICROPY_LONGINT_IMPL_NONE)
 // #define MICROPY_FLOAT_IMPL          (MICROPY_FLOAT_IMPL_NONE)
@@ -109,7 +109,7 @@
 
 // type definitions for the specific machine
 
-#define MICROPY_MAKE_POINTER_CALLABLE(p) ((void*)((mp_uint_t)(p) | 1))
+#define MICROPY_MAKE_POINTER_CALLABLE(p) ((void *)((mp_uint_t)(p) | 1))
 
 // This port is intended to be 32-bit, but unfortunately, int32_t for
 // different targets may be defined in different ways - either as int
@@ -173,7 +173,7 @@ static inline mp_uint_t disable_irq(void) {
 
 extern const struct _mp_obj_module_t machine_module;
 extern const struct _mp_obj_module_t mp_module_uos;
-//extern const struct _mp_obj_module_t pin_module;
+// extern const struct _mp_obj_module_t pin_module;
 
 // extra built in names to add to the global namespace
 #define MICROPY_PORT_BUILTINS
@@ -185,8 +185,8 @@ extern const struct _mp_obj_module_t mp_module_uos;
 // We need to provide a declaration/definition of alloca()
 #include <alloca.h>
 
-//#define MICROPY_HW_BOARD_NAME "Tiva Launch Pad"
-//#define MICROPY_HW_MCU_NAME "TM4C123G6HPM"
+// #define MICROPY_HW_BOARD_NAME "Tiva Launch Pad"
+// #define MICROPY_HW_MCU_NAME "TM4C123G6HPM"
 
 #ifdef __linux__
 #define MICROPY_MIN_USE_STDOUT (1)
@@ -199,7 +199,7 @@ extern const struct _mp_obj_module_t mp_module_uos;
 
 #define MICROPY_PORT_BUILTIN_MODULES \
     { MP_ROM_QSTR(MP_QSTR_umachine), MP_ROM_PTR(&machine_module) }, \
-    { MP_ROM_QSTR(MP_QSTR_uos), MP_ROM_PTR(&mp_module_uos) }, 
+    { MP_ROM_QSTR(MP_QSTR_uos), MP_ROM_PTR(&mp_module_uos) },
 
 #define MICROPY_PORT_CONSTANTS \
     { MP_ROM_QSTR(MP_QSTR_umachine), MP_ROM_PTR(&machine_module) }, \
@@ -228,6 +228,6 @@ extern const struct _mp_obj_module_t mp_module_uos;
     \
     /* pointers to all UART objects (if they have been created) */ \
     struct _machine_uart_obj_t *machine_uart_obj_all[MICROPY_HW_MAX_UART]; \
-    struct _machine_hard_spi_obj_t *machine_spi_obj_all[MICROPY_HW_MAX_SPI];\
+    struct _machine_hard_spi_obj_t *machine_spi_obj_all[MICROPY_HW_MAX_SPI]; \
 
-//EOF
+// EOF
