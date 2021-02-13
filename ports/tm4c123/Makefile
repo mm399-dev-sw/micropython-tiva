@@ -195,6 +195,8 @@ SRC_MOD = $(addprefix mods/,\
 	modutime.c \
 	irq.c \
 	mpthreadport.c \
+	dma.c \
+	extint.c \
 )
 
 	# modpyb.c \
