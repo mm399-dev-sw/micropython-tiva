@@ -65,19 +65,21 @@ Currently, these Modules are available:
   * SPI
   * UART
   * SDCard
+  * IRQ
+  * DMA
 * uos
 ---
 ### SD-Card
 
 Connect the SD-Card in SPI-mode according to this table:  
 
-| Board Pin | SD-Pin           |
-| --------: | :--------------- |
-|       PB3 | Card Detect (CD) |
-|       PB4 | Clock (SCK)      |
-|       PB5 | Chip Select (CS) |
-|       PB6 | Data Out (DO)    |
-|       PB7 | Data In (DI)     |
+| Board Pin | SD-Pin (SPI / SDIO)    |
+| --------: | :--------------------- |
+|       PB3 | Card Detect (CD / DET) |
+|       PB4 | Clock (SCK / CLK)      |
+|       PB5 | Chip Select (CS / D3)  |
+|       PB6 | Data Out (MISO / D0)   |
+|       PB7 | Data In (MOSI / CMD)   |
 
 ---
 ### Pin
