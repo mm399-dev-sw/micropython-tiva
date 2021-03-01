@@ -12,9 +12,9 @@
    cd ./micropython
    ```
 2. Install Toolchain:
-  ```bash
-    source tools/ci.sh && ci_tm4c123_setup
-  ```
+   ```bash
+   source tools/ci.sh && ci_tm4c123_setup
+   ```
 3. Build:
    ```bash
    cd ./ports/tm4c123
