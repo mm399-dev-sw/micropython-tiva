@@ -4,25 +4,20 @@
 ![Tiva Launchpad](https://www.ti.com/diagrams/med_ek-tm4c123gxl_tivalp_angle_new.jpg)
 
 ## Build
-
-1. Install Toolchain:
-  * On Debian: `sudo apt install gcc-arm-none-eabi`
-  * On Ubuntu: `sudo apt install gcc-arm-embedded`
-  * Other: `gcc-arm-none-eabi` is available on most other distros
-  * On Windows you can install WSL with Debian or Ubuntu for easy setup
-2. Download & install TivaWare:
-   [Here](http://software-dl.ti.com/tiva-c/SW-TM4C/latest/index_FDS.html) 
-   - Workaround if no account:
-   Find Filename for TivaWare and append to "http://software-dl.ti.com/tiva-c/SWTM4C/latest/exports/"
-3. Clone git repo:
+**For Ubuntu / Debian**
+1. Clone git repo:
    ```bash
    cd <your target directory>
    git clone https://github.com/rk-exxec/micropython.git && git checkout tiva_from_stable
-   cd micropython/ports/tm4c123
+   cd ./micropython
    ```
-4. Adjust makefile and set the path to your TivaWare
-5. Build:
+2. Install Toolchain:
+  ```bash
+    source tools/ci.sh && ci_tm4c123_setup
+  ```
+3. Build:
    ```bash
+   cd ./ports/tm4c123
    make
    ```
    
