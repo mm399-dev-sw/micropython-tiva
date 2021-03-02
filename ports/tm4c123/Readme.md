@@ -1,7 +1,7 @@
 # MicroPython Port for Tiva Launchpad
 
-![Micropython](https://github.com/micropython/micropython/blob/8402c26cfa98b4689f5ac4673952a654cfe5b678/logo/logo.jpg)
-![Tiva Launchpad](https://www.ti.com/diagrams/med_ek-tm4c123gxl_tivalp_angle_new.jpg)
+<img src="https://raw.githubusercontent.com/rk-exxec/micropython/tiva_from_stable/logo/trans-logo.png" height="200" /><img src="https://www.ti.com/diagrams/med_ek-tm4c123gxl_tivalp_angle_new.jpg" height="200" />
+
 
 #### Table of contents
 1. [Build](#build)
