@@ -80,24 +80,28 @@
       **Add it to your PATH**
    - Ubuntu / Debian: `sudo apt install openocd`
    
-4. In VSCode debugging menu, click new config and replace contents with this:
+4. In VSCode debugging menu, click new config and replace contents of your `launch.json` with this:
    ```json
-   {
-    "version": "0.2.0",
-    "configurations": [
-        {
-            "name": "Cortex Debug",
-            "cwd": "${workspaceRoot}",
-            "executable": "./build/firmware.axf",
-            "request": "launch",
-            "type": "cortex-debug",
-            "servertype": "openocd",
-            "configFiles": [
-                "<path_to_openocd>/share/openocd/scripts/board/ek-tm4c123gxl.cfg"
-            ]
-        }
-    ]
-   }
+      {
+         // Use IntelliSense to learn about possible attributes.
+         // Hover to view descriptions of existing attributes.
+         // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+         "version": "0.2.0",
+         "configurations": [
+            {
+                  "name": "Cortex Debug",
+                  "cwd": "${workspaceRoot}",
+                  "executable": "./build/firmware.axf",
+                  "request": "launch",
+                  "type": "cortex-debug",
+                  "servertype": "openocd",
+                  "svdFile": "TM4C123GH6PM.svd.xml",
+                  "configFiles": [
+                     "board/ek-tm4c123gxl.cfg"
+                  ]
+            }
+         ]
+      }
    ```
       **Make sure to set the `configFiles` path correctly.**
       
