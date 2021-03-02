@@ -93,7 +93,7 @@
             "type": "cortex-debug",
             "servertype": "openocd",
             "configFiles": [
-                "<path_to_openocd>/share/openocd/scripts/board/ek-tm4c123gxl.cfg"
+                "board/ek-tm4c123gxl.cfg"
             ]
         }
     ]
