@@ -1,7 +1,7 @@
 # MicroPython Port for Tiva Launchpad
 
-![Micropython](https://github.com/micropython/micropython/blob/8402c26cfa98b4689f5ac4673952a654cfe5b678/logo/logo.jpg)
-![Tiva Launchpad](https://www.ti.com/diagrams/med_ek-tm4c123gxl_tivalp_angle_new.jpg)
+<img src="https://raw.githubusercontent.com/rk-exxec/micropython/tiva_from_stable/logo/trans-logo.png" height="200" /><img src="https://www.ti.com/diagrams/med_ek-tm4c123gxl_tivalp_angle_new.jpg" height="200" />
+
 
 #### Table of contents
 1. [Build](#build)
@@ -82,26 +82,22 @@
    
 4. In VSCode debugging menu, click new config and replace contents of your `launch.json` with this:
    ```json
-      {
-         // Use IntelliSense to learn about possible attributes.
-         // Hover to view descriptions of existing attributes.
-         // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
-         "version": "0.2.0",
-         "configurations": [
-            {
-                  "name": "Cortex Debug",
-                  "cwd": "${workspaceRoot}",
-                  "executable": "./build/firmware.axf",
-                  "request": "launch",
-                  "type": "cortex-debug",
-                  "servertype": "openocd",
-                  "svdFile": "TM4C123GH6PM.svd.xml",
-                  "configFiles": [
-                     "board/ek-tm4c123gxl.cfg"
-                  ]
-            }
-         ]
-      }
+   {
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Cortex Debug",
+            "cwd": "${workspaceRoot}",
+            "executable": "./build/firmware.axf",
+            "request": "launch",
+            "type": "cortex-debug",
+            "servertype": "openocd",
+            "configFiles": [
+                "board/ek-tm4c123gxl.cfg"
+            ]
+        }
+    ]
+   }
    ```
       **Make sure to set the `configFiles` path correctly.**
       
