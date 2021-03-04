@@ -101,13 +101,12 @@ STATIC mp_obj_t machine_info(size_t n_args, const mp_obj_t *args) {
     {
         uint32_t id = SYSCTL->DID0;
 
-        printf("ID: CLASS=%02x, v%02u.%02u", (uint8_t)((id >> 16) & 0xff), (uint8_t)((id >> 8) & 0xff), (uint8_t)(id & 0xff));
+        printf("ID: CLASS=%02x, v%02u.%02u\n", (uint8_t)((id >> 16) & 0xff), (uint8_t)((id >> 8) & 0xff), (uint8_t)(id & 0xff));
     }
 
     // get and print clock speeds
-    // SYSCLK=168MHz, HCLK=168MHz, PCLK1=42MHz, PCLK2=84MHz
     {
-        printf("%u Hz", (unsigned int)SysCtlClockGet());
+        printf("%u Hz\n", (unsigned int)SysCtlClockGet());
     }
 
     // to print info about memory
@@ -462,7 +461,7 @@ STATIC const mp_rom_map_elem_t machine_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_WDT),                 MP_ROM_PTR(&pyb_wdt_type) },
 #endif
 #if MICROPY_HW_HAS_SDCARD
-    { MP_ROM_QSTR(MP_QSTR_SD),                  MP_ROM_PTR(&pyb_sdcard_type) },
+    { MP_ROM_QSTR(MP_QSTR_SDCard),                  MP_ROM_PTR(&pyb_sdcard_type) },
 #endif
 #if 0
     { MP_ROM_QSTR(MP_QSTR_Timer),               MP_ROM_PTR(&pyb_timer_type) },
