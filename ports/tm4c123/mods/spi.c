@@ -195,7 +195,8 @@ void spi_init(const mp_obj_t *self_in) {
     machine_hard_spi_obj_t *self = (machine_hard_spi_obj_t*) self_in;
     const pin_obj_t *pins[4] = { NULL, NULL, NULL, NULL };
 
-    if (0) {
+    if (0) { // needed for code structure, has no actual effect
+
     #if defined(MICROPY_HW_SPI0_SCK)
     } else if (self->spi_id == SPI_0) {
         self->spi_base = SSI0_BASE;
@@ -476,7 +477,8 @@ mp_uint_t spi_rx_tx(machine_hard_spi_obj_t *self, const uint16_t* data_tx, uint1
         spi_dma_tx(self->dma_channel_tx, data_tx,(uint8_t*) (self->spi_base + SSI_O_DR), self->bits,len);
         return len;
     }
-    else{
+    else
+    {
         while(num_rtx < len) {
 
             // if(!spi_rx_wait(self, word_timeout)) {
@@ -490,37 +492,37 @@ mp_uint_t spi_rx_tx(machine_hard_spi_obj_t *self, const uint16_t* data_tx, uint1
                 }*/
 
                 // Reversing bit order of data
-                if(self->lsb_first) {
-                    asm volatile("rbit %1,%0" : "=r" (dat) : "r" (data_tx[num_rtx]));
-                    dat >>= (32 - self->bits);
-                    //nop here?
-                    SSIDataPutNonBlocking(self->spi_base, dat);
-                } else {
-                    SSIDataPutNonBlocking(self->spi_base, data_tx[num_rtx]);
-                }   
+            if(self->lsb_first) {
+                asm volatile("rbit %1,%0" : "=r" (dat) : "r" (data_tx[num_rtx]));
+                dat >>= (32 - self->bits);
+                //nop here?
+                SSIDataPutNonBlocking(self->spi_base, dat);
+            } else {
+                SSIDataPutNonBlocking(self->spi_base, data_tx[num_rtx]);
+            }   
             int a;
-                for(int i = 0; i<100000; i++)
-                {
-                    a++;
-                }
-                SSIDataGetNonBlocking(self->spi_base, &dumm);
-                if(self->lsb_first) {
-                    asm volatile("rbit %1,%0" : "=r" (dumm) : "r" (dumm));
-                    dumm >>= (32 - self->bits);
-                    //nop here?
-                }
-                data_rx[num_rtx] = dumm;
-                num_rtx++;
+            for(int i = 0; i<100000; i++)
+            {
+                a++;
+            }
+            SSIDataGetNonBlocking(self->spi_base, &dumm);
+            if(self->lsb_first) {
+                asm volatile("rbit %1,%0" : "=r" (dumm) : "r" (dumm));
+                dumm >>= (32 - self->bits);
+                //nop here?
+            }
+            data_rx[num_rtx] = dumm;
+            num_rtx++;
         }
 
-            if(!spi_wait_flag_unset(self, SSI_SR_BSY, word_timeout)) {
-                *errcode = MP_ETIMEDOUT;
-                return num_rtx;
-            }
-
-            *errcode = 0;
+        if(!spi_wait_flag_unset(self, SSI_SR_BSY, word_timeout)) {
+            *errcode = MP_ETIMEDOUT;
             return num_rtx;
-            }
+        }
+
+    *errcode = 0;
+    return num_rtx;
+    }
 }
 
 // A transfer of "len" bytes should take len*8*1000/baudrate milliseconds.
@@ -700,7 +702,9 @@ STATIC mp_obj_t machine_hard_spi_init(size_t n_args, const mp_obj_t *args, mp_ma
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(machine_spi_init_obj, 1, machine_hard_spi_init);
 
-
+/**
+ * constructor for SPI object
+ */
 mp_obj_t machine_hard_spi_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *all_args) {
 
     // check arguments
