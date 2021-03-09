@@ -44,7 +44,7 @@ STATIC int i2c_find(mp_obj_t id) {
             #endif
         }
         nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_ValueError,
-            "I2C(%s) doesn't exist", port));
+            MP_ERROR_TEXT("I2C(%s) doesn't exist"), port));
     } else {
         // given an integer id
         int i2c_id = mp_obj_get_int(id);
@@ -52,7 +52,7 @@ STATIC int i2c_find(mp_obj_t id) {
             return i2c_id;
         }
         nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_ValueError,
-            "I2C(%d) doesn't exist", i2c_id));
+            MP_ERROR_TEXT("I2C(%d) doesn't exist"), i2c_id));
     }
 }
 
@@ -329,7 +329,7 @@ STATIC mp_obj_t machine_hard_i2c_init_helper(mp_obj_t *self_in, size_t n_args, c
     machine_hard_i2c_obj_t *self = (machine_hard_i2c_obj_t *)self_in;
     // set the I2C mode value
     if (args[ARG_mode].u_int > I2C_MODE_SLAVE || args[ARG_mode].u_int < I2C_MODE_MASTER) {
-        nlr_raise(mp_obj_new_exception_msg(&mp_type_ValueError, "Mode accepts only MASTER or SLAVE"));
+        nlr_raise(mp_obj_new_exception_msg(&mp_type_ValueError, MP_ERROR_TEXT("Mode accepts only MASTER or SLAVE")));
     }
     self->mode = (uint16_t)(args[ARG_mode].u_int & 0xFFFF);
     ;
@@ -342,7 +342,7 @@ STATIC mp_obj_t machine_hard_i2c_init_helper(mp_obj_t *self_in, size_t n_args, c
 
     // set the I2C mode
     if (!((args[ARG_baudrate].u_int == 100000) || (args[ARG_baudrate].u_int == 400000))) {
-        nlr_raise(mp_obj_new_exception_msg(&mp_type_ValueError, "Available baudrates: 100000 Kbps / 400000 Kbps"));
+        nlr_raise(mp_obj_new_exception_msg(&mp_type_ValueError, MP_ERROR_TEXT("Available baudrates: 100000 Kbps / 400000 Kbps")));
     }
     self->baudrate = args[ARG_baudrate].u_int;
 
@@ -378,7 +378,11 @@ STATIC uint8_t machine_hard_i2c_write(mp_obj_base_t *self_in, uint8_t *buf, size
     if (self->err_reg == I2C_MASTER_ERR_NONE) {
         return num_of_ack + 1;
     } else {
-        ((self->err_reg & I2C_MASTER_ERR_ADDR_ACK) == I2C_MASTER_ERR_ADDR_ACK) ? nlr_raise(mp_obj_new_exception_msg(&mp_type_ValueError, "Device address not found on bus")) : nlr_raise(mp_obj_new_exception_msg(&mp_type_ValueError, "No Data ACK"));
+        if ((self->err_reg & I2C_MASTER_ERR_ADDR_ACK) == I2C_MASTER_ERR_ADDR_ACK) {
+            nlr_raise(mp_obj_new_exception_msg(&mp_type_ValueError, MP_ERROR_TEXT("Device address not found on bus")));
+        }else {
+            nlr_raise(mp_obj_new_exception_msg(&mp_type_ValueError, MP_ERROR_TEXT("No Data ACK")));
+        }
     }
 }
 
@@ -399,7 +403,11 @@ STATIC uint8_t machine_hard_i2c_send(mp_obj_base_t *self_in, uint8_t dev_addr, s
     if (self->err_reg == I2C_MASTER_ERR_NONE) {
         return num_of_ack + 1;
     } else {
-        ((self->err_reg & I2C_MASTER_ERR_ADDR_ACK) == I2C_MASTER_ERR_ADDR_ACK) ? nlr_raise(mp_obj_new_exception_msg(&mp_type_ValueError, "Device address not found on bus")) : nlr_raise(mp_obj_new_exception_msg(&mp_type_ValueError, "No Data ACK"));
+        if ((self->err_reg & I2C_MASTER_ERR_ADDR_ACK) == I2C_MASTER_ERR_ADDR_ACK) {
+            nlr_raise(mp_obj_new_exception_msg(&mp_type_ValueError, MP_ERROR_TEXT("Device address not found on bus")));
+        }else {
+            nlr_raise(mp_obj_new_exception_msg(&mp_type_ValueError, MP_ERROR_TEXT("No Data ACK")));
+        }
     }
 }
 
@@ -421,7 +429,11 @@ STATIC void machine_hard_i2c_mem_write(mp_obj_base_t *self_in, uint8_t dev_addr,
     initialize_i2c_write((mp_obj_t *)self_in, dev_addr);
     machine_hard_i2c_start(self_in);
 
-    (size_mem_addr == 8) ? i2c_write_bytes_to_bus((mp_obj_t *)self_in, &mem_loc_local8bit, 1) : i2c_write_bytes_to_bus((mp_obj_t *)self_in, (uint8_t *)&mem_loc_local16bit, 2);
+    if (size_mem_addr == 8) {
+        i2c_write_bytes_to_bus((mp_obj_t *)self_in, &mem_loc_local8bit, 1);
+    } else { 
+        i2c_write_bytes_to_bus((mp_obj_t *)self_in, (uint8_t *)&mem_loc_local16bit, 2);
+    }
 
     i2c_write_bytes_to_bus((mp_obj_t *)self_in, plocal_buf, size);
     machine_hard_i2c_stop(self_in);
@@ -459,7 +471,11 @@ STATIC void machine_hard_i2c_mem_read(mp_obj_base_t *self_in, uint8_t *buf, uint
     machine_hard_i2c_start(self_in);
 
     // send mem location to either 8 or 16 bit mem location
-    (addr_size == 8) ? i2c_write_bytes_to_bus((mp_obj_t *)self_in, &mem_loc_local8bit, 1) : i2c_write_bytes_to_bus((mp_obj_t *)self_in, (uint8_t *)&mem_loc_local16bit, 2);
+    if (addr_size == 8) {
+        i2c_write_bytes_to_bus((mp_obj_t *)self_in, &mem_loc_local8bit, 1);
+    } else {
+        i2c_write_bytes_to_bus((mp_obj_t *)self_in, (uint8_t *)&mem_loc_local16bit, 2);
+    }
 
     // repeated start for receive
     initialize_i2c_read((mp_obj_t *)self_in, dev_address);
@@ -632,7 +648,7 @@ STATIC mp_obj_t mp_machine_hard_i2c_mem_read(size_t n_args, const mp_obj_t *args
         int_mem_addr_size = mp_obj_get_int(args[5]);
 
         if (!((int_mem_addr_size == 16) || (int_mem_addr_size == 8))) {
-            nlr_raise(mp_obj_new_exception_msg(&mp_type_ValueError, "addr_size can only be 8 or 16 bits"));
+            nlr_raise(mp_obj_new_exception_msg(&mp_type_ValueError, MP_ERROR_TEXT("addr_size can only be 8 or 16 bits")));
         }
     }
 
@@ -687,7 +703,7 @@ STATIC mp_obj_t mp_machine_hard_i2c_mem_write(size_t n_args, const mp_obj_t *arg
         int_mem_addr_size = mp_obj_get_int(args[4]);
 
         if (!((int_mem_addr_size == 16) || (int_mem_addr_size == 8))) {
-            nlr_raise(mp_obj_new_exception_msg(&mp_type_ValueError, "addr_size can only be 8 or 16 bits"));
+            nlr_raise(mp_obj_new_exception_msg(&mp_type_ValueError, MP_ERROR_TEXT("addr_size can only be 8 or 16 bits")));
         }
     }
     // calling I2C-Send Function
