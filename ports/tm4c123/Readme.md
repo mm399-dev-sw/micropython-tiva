@@ -37,13 +37,21 @@
    cd ./ports/tm4c123
    make
    ```
+   
 ### Windows
 
-1. Clone git repo and checkout branch `tiva_from_stable`
-2. Install ARM toolchain from https://developer.arm.com/tools-and-software/open-source-software/developer-tools/gnu-toolchain/gnu-rm/downloads  
+1. Install ARM toolchain from https://developer.arm.com/tools-and-software/open-source-software/developer-tools/gnu-toolchain/gnu-rm/downloads  
       **Make sure it is added to your PATH**
-4. Install GNU Make Tools Setup http://gnuwin32.sourceforge.net/packages/make.htm  
+2. Install GNU Make Tools Setup http://gnuwin32.sourceforge.net/packages/make.htm  
       **Make sure it is added to your PATH**
+3. Download and install TivaWare https://www.ti.com/tool/SW-TM4C 
+4. Clone git repo and checkout branch `tiva_from_stable`
+5. Build:
+   ```bash
+   cd ./ports/tm4c123
+   make TIVAWARE_LIB="C:\ti\TivaWare_2.2.0.XXX" 
+   ```
+   Replace `"C:\ti\TivaWare_2.2.0.XXX" ` with the path you chose during TivaWare installation
    
 ## Flashing
 
@@ -73,7 +81,15 @@
    - Native Debug from WebFreak
    - LinkerScript from ZixuanWang
 
-2. Download & install drivers: http://www.ti.com/tool/STELLARIS_ICDI_DRIVERS
+2. Download & install drivers: https://www.ti.com/lit/zip/slac632  
+   (Windows only, also included in the TivaWare)
+   - connect board
+   - right click Start button and click Device-Manager
+   - there should be 2 unknown devices
+   - Click update drivers and use manual select
+   - navigate to the top level folder containing the drivers
+   - Windows selects the driver on its own
+   - repeat for other device
    
 3. Install OpenOCD
    - Windows: https://gnutoolchains.com/arm-eabi/openocd/  
@@ -83,19 +99,20 @@
 4. In VSCode debugging menu, click new config and replace contents of your `launch.json` with this:
    ```json
    {
-    "version": "0.2.0",
-    "configurations": [
-        {
+      "version": "0.2.0",
+      "configurations": [
+         {
             "name": "Cortex Debug",
             "cwd": "${workspaceRoot}",
             "executable": "./build/firmware.axf",
             "request": "launch",
             "type": "cortex-debug",
             "servertype": "openocd",
+            "runToEntryPoint": "tm4c_main",
             "configFiles": [
                 "board/ek-tm4c123gxl.cfg"
             ]
-        }
+         }
     ]
    }
    ```
