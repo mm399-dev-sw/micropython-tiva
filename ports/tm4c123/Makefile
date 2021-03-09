@@ -334,6 +334,7 @@ $(GEN_CDCINF_FILE): $(CDCINF_TEMPLATE) $(INSERT_USB_IDS) $(USB_IDS_FILE) | $(HEA
 	$(ECHO) "GEN $@"
 	$(Q)$(PYTHON) $(INSERT_USB_IDS) $(USB_IDS_FILE) $< > $@
 
+
 ########################################################
 # Build Targets
 ########################################################
