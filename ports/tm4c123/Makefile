@@ -11,7 +11,7 @@
 # Enables Debugging friendly settings, change requires full rebuild
 DEBUG ?= 1
 # Enables Link Time Optimization, only when not compiling for DEBUG, change requires full rebuild
-LINK_TIME_OPT = 1
+LINK_TIME_OPT = 0
 
 # Location of the TivaWare library
 TIVAWARE_LIB ?= tivaware
@@ -195,9 +195,10 @@ SRC_MOD = $(addprefix mods/,\
 	modutime.c \
 	irq.c \
 	mpthreadport.c \
+	i2c.c \
 	dma.c \
 	extint.c \
-)
+	)
 
 	# modpyb.c \
 	# pendsv.c \
