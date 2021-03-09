@@ -10,7 +10,7 @@
 #define MICROPY_ENABLE_COMPILER     (1)
 
 #define MICROPY_QSTR_BYTES_IN_HASH  (1)
-//#define MICROPY_QSTR_EXTRA_POOL     mp_qstr_frozen_const_pool
+// #define MICROPY_QSTR_EXTRA_POOL     mp_qstr_frozen_const_pool
 #define MICROPY_ALLOC_PATH_MAX      (256)
 #define MICROPY_ALLOC_PARSE_CHUNK_INIT (16)
 #define MICROPY_EMIT_X64            (0)
@@ -33,7 +33,7 @@
 #define MICROPY_ENABLE_SOURCE_LINE  (0)
 #define MICROPY_ENABLE_DOC_STRING   (0)
 #define MICROPY_STREAMS_NON_BLOCK   (1)
-//#define MICROPY_ERROR_REPORTING     (MICROPY_ERROR_REPORTING_TERSE)
+// #define MICROPY_ERROR_REPORTING     (MICROPY_ERROR_REPORTING_TERSE)
 #define MICROPY_BUILTIN_METHOD_CHECK_SELF_ARG (0)
 #define MICROPY_PY_ASYNC_AWAIT      (0)
 #define MICROPY_PY_BUILTINS_BYTEARRAY (1)
@@ -59,7 +59,7 @@
 #define MICROPY_VFS                 (1)
 #define MICROPY_VFS_FAT             (1)
 #define MICROPY_READER_VFS          (1)
-#define MICROPY_MODULE_FROZEN_MPY   (0) //was 1
+#define MICROPY_MODULE_FROZEN_MPY   (0) // was 1
 #define MICROPY_CPYTHON_COMPAT      (0)
 // #define MICROPY_LONGINT_IMPL        (MICROPY_LONGINT_IMPL_NONE)
 // #define MICROPY_FLOAT_IMPL          (MICROPY_FLOAT_IMPL_NONE)
@@ -92,7 +92,7 @@
 
 // fatfs configuration used in ffconf.h
 #define MICROPY_FATFS_ENABLE_LFN       (1)
-#define MICROPY_FATFS_LFN_CODE_PAGE    (437) /* 1=SFN/ANSI 437=LFN/U.S.(OEM) */
+#define MICROPY_FATFS_LFN_CODE_PAGE    437 /* 1=SFN/ANSI 437=LFN/U.S.(OEM) */
 #define MICROPY_FATFS_USE_LABEL        (1)
 #define MICROPY_FATFS_RPATH            (2)
 #define MICROPY_FATFS_MULTI_PARTITION  (1)
@@ -109,7 +109,7 @@
 
 // type definitions for the specific machine
 
-#define MICROPY_MAKE_POINTER_CALLABLE(p) ((void*)((mp_uint_t)(p) | 1))
+#define MICROPY_MAKE_POINTER_CALLABLE(p) ((void *)((mp_uint_t)(p) | 1))
 
 // This port is intended to be 32-bit, but unfortunately, int32_t for
 // different targets may be defined in different ways - either as int
@@ -148,8 +148,8 @@ static inline mp_uint_t disable_irq(void) {
 #if MICROPY_PY_THREAD
 #define MICROPY_EVENT_POLL_HOOK \
     do { \
-        extern void mp_handle_pending(void); \
-        mp_handle_pending(); \
+        extern void mp_handle_pending(bool); \
+        mp_handle_pending(true); \
         if (pyb_thread_enabled) { \
             MP_THREAD_GIL_EXIT(); \
             pyb_thread_yield(); \
@@ -163,8 +163,8 @@ static inline mp_uint_t disable_irq(void) {
 #else
 #define MICROPY_EVENT_POLL_HOOK \
     do { \
-        extern void mp_handle_pending(void); \
-        mp_handle_pending(); \
+        extern void mp_handle_pending(bool); \
+        mp_handle_pending(true); \
         __WFI(); \
     } while (0);
 
@@ -172,9 +172,8 @@ static inline mp_uint_t disable_irq(void) {
 #endif
 
 extern const struct _mp_obj_module_t machine_module;
-extern const struct _mp_obj_module_t pyb_module;
 extern const struct _mp_obj_module_t mp_module_uos;
-//extern const struct _mp_obj_module_t pin_module;
+// extern const struct _mp_obj_module_t pin_module;
 
 // extra built in names to add to the global namespace
 #define MICROPY_PORT_BUILTINS
@@ -186,8 +185,8 @@ extern const struct _mp_obj_module_t mp_module_uos;
 // We need to provide a declaration/definition of alloca()
 #include <alloca.h>
 
-//#define MICROPY_HW_BOARD_NAME "Tiva Launch Pad"
-//#define MICROPY_HW_MCU_NAME "TM4C123G6HPM"
+// #define MICROPY_HW_BOARD_NAME "Tiva Launch Pad"
+// #define MICROPY_HW_MCU_NAME "TM4C123G6HPM"
 
 #ifdef __linux__
 #define MICROPY_MIN_USE_STDOUT (1)
@@ -199,9 +198,8 @@ extern const struct _mp_obj_module_t mp_module_uos;
 #endif
 
 #define MICROPY_PORT_BUILTIN_MODULES \
-        { MP_ROM_QSTR(MP_QSTR_umachine), MP_ROM_PTR(&machine_module) }, \
-        { MP_ROM_QSTR(MP_QSTR_pyb), MP_ROM_PTR(&pyb_module) }, \
-       { MP_ROM_QSTR(MP_QSTR_uos), MP_ROM_PTR(&mp_module_uos) }, 
+    { MP_ROM_QSTR(MP_QSTR_umachine), MP_ROM_PTR(&machine_module) }, \
+    { MP_ROM_QSTR(MP_QSTR_uos), MP_ROM_PTR(&mp_module_uos) },
 
 #define MICROPY_PORT_CONSTANTS \
     { MP_ROM_QSTR(MP_QSTR_umachine), MP_ROM_PTR(&machine_module) }, \
@@ -232,3 +230,5 @@ extern const struct _mp_obj_module_t mp_module_uos;
     struct _machine_uart_obj_t *machine_uart_obj_all[MICROPY_HW_MAX_UART]; \
     struct _machine_hard_spi_obj_t *machine_spi_obj_all[MICROPY_HW_MAX_SPI];\
     struct _machine_hard_i2c_obj_t *machine_i2c_obj_all[MICROPY_HW_MAX_I2C];
+
+// EOF

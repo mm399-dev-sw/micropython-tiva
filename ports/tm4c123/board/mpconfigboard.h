@@ -29,14 +29,14 @@
 
 #define SYS_TICK_DIVIDER            (1000)
 
-// assumption: every GPIO is interrupt capable
-#define PYB_EXTI_NUM_VECTORS (78)
+// assumption: every GPIO Port is interrupt capable
+#define PYB_EXTI_NUM_VECTORS (8)
 
 #define MICROPY_HW_MAX_UART (8)
 #define MICROPY_HW_MAX_SPI (4)
 #define MICROPY_HW_MAX_I2C (4)
 
-#define MICROPY_PY_MACHINE_SPI (1)
+#define MICROPY_PY_MACHINE_SPI (0)
 
 // UART config
 #define MICROPY_HW_UART0_NAME   "0"
@@ -152,4 +152,3 @@
 #ifndef MICROPY_HW_FLASH_FS_LABEL
 #define MICROPY_HW_FLASH_FS_LABEL "pybflash"
 #endif
-

@@ -223,7 +223,7 @@ enum {
 
 #define mp_hal_pin_od_low(p)    mp_hal_pin_low(p)
 #define mp_hal_pin_od_high(p)   mp_hal_pin_high(p)
-#define mp_hal_pin_read(p)      MAP_GPIOPinRead((p)->gpio, (p)->pin_mask)
+#define mp_hal_pin_read(p)      (MAP_GPIOPinRead((p)->gpio, (p)->pin_mask) ? 1 : 0 ) 
 #define mp_hal_pin_write(p, v)  MAP_GPIOPinWrite((p)->gpio, (p)->pin_mask, (v) ? (p)->pin_mask : 0)
 
 #define mp_hal_pin_get_af(p)    (((p)->regs->PCTL >> ((p)->pin_num * 4)) & 0xF)

@@ -42,7 +42,7 @@
 // #include "led.h"
 #include "pin.h"
 // #include "timer.h"
-// #include "extint.h"
+#include "extint.h"
 // #include "usrsw.h"
 // #include "rng.h"
 // #include "rtc.h"
@@ -125,7 +125,7 @@ STATIC mp_obj_t pyb_repl_uart(size_t n_args, const mp_obj_t *args) {
             MP_STATE_PORT(machine_stdio_uart) = args[0];
             uart_attach_to_repl(MP_STATE_PORT(machine_stdio_uart), true);
         } else {
-            mp_raise_ValueError("need a UART object");
+            mp_raise_ValueError(MP_ERROR_TEXT("need a UART object"));
         }
         return mp_const_none;
     }
@@ -190,7 +190,7 @@ STATIC const mp_rom_map_elem_t pyb_module_globals_table[] = {
 #endif
 
     { MP_ROM_QSTR(MP_QSTR_Pin), MP_ROM_PTR(&pin_type) },
-    // { MP_ROM_QSTR(MP_QSTR_ExtInt), MP_ROM_PTR(&extint_type) },
+    //{ MP_ROM_QSTR(MP_QSTR_ExtInt), MP_ROM_PTR(&extint_type) },
 
 #if MICROPY_HW_ENABLE_SERVO
     { MP_ROM_QSTR(MP_QSTR_pwm), MP_ROM_PTR(&pyb_pwm_set_obj) },

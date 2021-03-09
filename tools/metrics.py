@@ -68,6 +68,7 @@ port_data = {
     "3": PortData("esp32", "esp32", "build-GENERIC/application.elf"),
     "r": PortData("nrf", "nrf", "build-pca10040/firmware.elf"),
     "d": PortData("samd", "samd", "build-ADAFRUIT_ITSYBITSY_M4_EXPRESS/firmware.elf"),
+    "t": PortData("tm4c123", "tm4c123", "build/firmware.axf"),
 }
 
 

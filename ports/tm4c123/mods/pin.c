@@ -34,7 +34,9 @@
 #include "extmod/virtpin.h"
 
 #include <pin.h>
-//#include "extint.h"
+
+#include <extint.h>
+#include "extint.h"
 #include "inc/hw_gpio.h"
 #include "inc/hw_ints.h"
 #include "driverlib/gpio.h"
@@ -129,7 +131,7 @@ const pin_obj_t *pin_find(mp_obj_t user_obj) {
         mp_obj_t o = mp_call_function_1(MP_STATE_PORT(pin_class_mapper), user_obj);
         if (o != mp_const_none) {
             if (!MP_OBJ_IS_TYPE(o, &pin_type)) {
-                mp_raise_ValueError("Pin.mapper didn't return a Pin object");
+                mp_raise_ValueError(MP_ERROR_TEXT("Pin.mapper didn't return a Pin object"));
             }
             if (pin_class_debug) {
                 printf("Pin.mapper maps ");
@@ -187,7 +189,7 @@ const pin_obj_t *pin_find(mp_obj_t user_obj) {
 //        return pin_obj;
 //    }
 
-    nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_ValueError, "Pin(%s) doesn't exist", mp_obj_str_get_str(user_obj)));
+    nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_ValueError, MP_ERROR_TEXT("Pin(%s) doesn't exist"), mp_obj_str_get_str(user_obj)));
 }
 
 /// \method __str__()
@@ -349,7 +351,7 @@ STATIC mp_obj_t pin_obj_init_helper(const pin_obj_t *self, size_t n_args, const 
     enum {ARG_mode = 0, ARG_pull, ARG_drive, ARG_af, ARG_value, ARG_alt};
     static const mp_arg_t allowed_args[] = {
         { MP_QSTR_mode, MP_ARG_REQUIRED | MP_ARG_INT },
-        { MP_QSTR_pull, MP_ARG_OBJ, {.u_rom_obj = MP_ROM_PTR(&mp_const_none_obj)}},
+        { MP_QSTR_pull, MP_ARG_OBJ, {.u_rom_obj = MP_ROM_NONE}},
         { MP_QSTR_drive, MP_ARG_OBJ, {.u_obj = MP_OBJ_NULL}},
         { MP_QSTR_af, MP_ARG_INT, {.u_int = -1}}, // legacy
         { MP_QSTR_value, MP_ARG_KW_ONLY | MP_ARG_OBJ, {.u_obj = MP_OBJ_NULL}},
@@ -366,7 +368,7 @@ STATIC mp_obj_t pin_obj_init_helper(const pin_obj_t *self, size_t n_args, const 
         pull = mp_obj_get_int(args[ARG_pull].u_obj);
     }
     if (!IS_GPIO_TYPE(pull)) {
-        nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_ValueError, "invalid pin pull: %d", pull));
+        nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_ValueError, MP_ERROR_TEXT("invalid pin pull: %d"), pull));
     }
 
     // get io mode; if OD, pull is overwritten! for api compat
@@ -375,7 +377,7 @@ STATIC mp_obj_t pin_obj_init_helper(const pin_obj_t *self, size_t n_args, const 
         mode = GPIO_DIR_MODE_OUT;
         pull = GPIO_PIN_TYPE_OD;
     } else if (!IS_GPIO_DIR(mode)) {
-        nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_ValueError, "invalid pin direction: %d", mode));
+        nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_ValueError, MP_ERROR_TEXT("invalid pin direction: %d"), mode));
     }
 
     uint drive = GPIO_STRENGTH_2MA;
@@ -383,7 +385,7 @@ STATIC mp_obj_t pin_obj_init_helper(const pin_obj_t *self, size_t n_args, const 
         drive = mp_obj_get_int(args[2].u_obj);
     }
     if (!IS_GPIO_STRENGTH(drive)) {
-        nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_ValueError, "invalid pin drive: %d", drive));
+        nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_ValueError, MP_ERROR_TEXT("invalid pin drive: %d"), drive));
     }
 
     // get af (alternate function); alt-arg overrides af-arg
@@ -392,7 +394,7 @@ STATIC mp_obj_t pin_obj_init_helper(const pin_obj_t *self, size_t n_args, const 
         af = args[ARG_af].u_int;
     }
     if ((mode == GPIO_DIR_MODE_HW) && !IS_GPIO_AF(af)) {
-        nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_ValueError, "invalid pin af: %d", af));
+        nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_ValueError, MP_ERROR_TEXT("invalid pin af: %d"), af));
     }
 
     // enable the peripheral clock for the port of this pin
@@ -446,22 +448,22 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_1(pin_on_obj, pin_on);
 // pin.irq(handler=None, trigger=IRQ_RISING, hard=False)
 // TODO
 STATIC mp_obj_t pin_irq(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
-//    enum { ARG_handler, ARG_trigger, ARG_hard };
-//    static const mp_arg_t allowed_args[] = {
-//        { MP_QSTR_handler, MP_ARG_OBJ, {.u_rom_obj = MP_ROM_PTR(&mp_const_none_obj)} },
-//        { MP_QSTR_trigger, MP_ARG_INT, {.u_int = GPIO_RISING_EDGE} },
-//        { MP_QSTR_hard, MP_ARG_BOOL, {.u_bool = false} },
-//    };
-//    pin_obj_t *self = MP_OBJ_TO_PTR(pos_args[0]);
-//    mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
-//    mp_arg_parse_all(n_args - 1, pos_args + 1, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
-//
-//    if (n_args > 1 || kw_args->used != 0) {
-//        // configure irq
-//        extint_register_pin(self, args[ARG_trigger].u_int,
-//            args[ARG_hard].u_bool, args[ARG_handler].u_obj);
-//    }
-//
+   enum { ARG_handler, ARG_trigger, ARG_hard };
+   static const mp_arg_t allowed_args[] = {
+       { MP_QSTR_handler, MP_ARG_OBJ, {.u_rom_obj = MP_ROM_NONE} },
+       { MP_QSTR_trigger, MP_ARG_INT, {.u_int = GPIO_RISING_EDGE | GPIO_FALLING_EDGE} },
+       { MP_QSTR_hard, MP_ARG_BOOL, {.u_bool = false} },
+   };
+   pin_obj_t *self = MP_OBJ_TO_PTR(pos_args[0]);
+   mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
+   mp_arg_parse_all(n_args - 1, pos_args + 1, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
+
+   if (n_args > 1 || kw_args->used != 0) {
+       // configure irq
+       extint_register_pin(self, args[ARG_trigger].u_int,
+           args[ARG_hard].u_bool, args[ARG_handler].u_obj);
+   }
+
 //    // TODO should return an IRQ object
     return mp_const_none;
 }
@@ -641,5 +643,3 @@ const mp_obj_type_t pin_type = {
 //    .disable = pin_irq_disable,
 //    .flags = pin_irq_flags,
 //};
-
-

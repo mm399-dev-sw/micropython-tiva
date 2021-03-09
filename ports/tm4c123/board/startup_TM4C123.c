@@ -37,16 +37,16 @@
 /*----------------------------------------------------------------------------
   Linker generated Symbols
  *----------------------------------------------------------------------------*/
-extern uint32_t __etext;
-extern uint32_t __data_start__;
-extern uint32_t __data_end__;
+extern uint32_t _etext;
+extern uint32_t _sdata;
+extern uint32_t _edata;
 extern uint32_t __copy_table_start__;
 extern uint32_t __copy_table_end__;
 extern uint32_t __zero_table_start__;
 extern uint32_t __zero_table_end__;
-extern uint32_t __bss_start__;
-extern uint32_t __bss_end__;
-extern uint32_t __estack;
+extern uint32_t _sbss;
+extern uint32_t _ebss;
+extern uint32_t _estack;
 
 
 /*----------------------------------------------------------------------------
@@ -118,7 +118,7 @@ void Interrupt9_Handler     (void) __attribute__ ((weak, alias("Default_Handler"
  *----------------------------------------------------------------------------*/
 extern const pFunc g_pfnVectors[240];
        const pFunc g_pfnVectors[240] __attribute__ ((section(".vectors"))) = {
-  (pFunc)(&__estack),                     /*     Initial Stack Pointer */
+  (pFunc)(&_estack),                     /*     Initial Stack Pointer */
   Reset_Handler,                            /*     Reset Handler */
   NMI_Handler,                              /* -14 NMI Handler */
   HardFault_Handler,                        /* -13 Hard Fault Handler */
@@ -316,16 +316,16 @@ void Reset_Handler(void) {
 /* Single section scheme.
  *
  * The ranges of copy from/to are specified by following symbols
- *   __etext: LMA of start of the section to copy from. Usually end of text
- *   __data_start__: VMA of start of the section to copy to
- *   __data_end__: VMA of end of the section to copy to
+ *   _etext: LMA of start of the section to copy from. Usually end of text
+ *   _sdata: VMA of start of the section to copy to
+ *   _edata: VMA of end of the section to copy to
  *
  * All addresses must be aligned to 4 bytes boundary.
  */
-  pSrc  = &__etext;
-  pDest = &__data_start__;
+  pSrc  = &_etext;
+  pDest = &_sdata;
 
-  for ( ; pDest < &__data_end__ ; ) {
+  for ( ; pDest < &_edata ; ) {
     *pDest++ = *pSrc++;
   }
 #endif /*__STARTUP_COPY_MULTIPLE */
@@ -336,14 +336,14 @@ void Reset_Handler(void) {
 /* Single BSS section scheme.
  *
  * The BSS section is specified by following symbols
- *   __bss_start__: start of the BSS section.
- *   __bss_end__: end of the BSS section.
+ *   _sbss: start of the BSS section.
+ *   _ebss: end of the BSS section.
  *
  * Both addresses must be aligned to 4 bytes boundary.
  */
-  pDest = &__bss_start__;
+  pDest = &_sbss;
 
-  for ( ; pDest < &__bss_end__ ; ) {
+  for ( ; pDest < &_ebss ; ) {
     *pDest++ = 0UL;
   }
 

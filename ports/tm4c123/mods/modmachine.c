@@ -50,6 +50,7 @@
 //#include "timer.h"
 //#include "usb.h"
 #include "rtc.h"
+#include "extint.h"
 //#include "i2c.h"
 #include "spi.h"
 #include "uart.h"
@@ -100,13 +101,12 @@ STATIC mp_obj_t machine_info(size_t n_args, const mp_obj_t *args) {
     {
         uint32_t id = SYSCTL->DID0;
 
-        printf("ID: CLASS=%02x, v%02u.%02u", (uint8_t)((id >> 16) & 0xff), (uint8_t)((id >> 8) & 0xff), (uint8_t)(id & 0xff));
+        printf("ID: CLASS=%02x, v%02u.%02u\n", (uint8_t)((id >> 16) & 0xff), (uint8_t)((id >> 8) & 0xff), (uint8_t)(id & 0xff));
     }
 
     // get and print clock speeds
-    // SYSCLK=168MHz, HCLK=168MHz, PCLK1=42MHz, PCLK2=84MHz
     {
-        printf("%u Hz", (unsigned int)SysCtlClockGet());
+        printf("%u Hz\n", (unsigned int)SysCtlClockGet());
     }
 
     // to print info about memory
@@ -229,7 +229,7 @@ STATIC mp_obj_t machine_freq(size_t n_args, const mp_obj_t *args) {
         };
         return mp_obj_new_tuple(MP_ARRAY_SIZE(tuple), tuple);
         } else {
-            mp_raise_ValueError("freq change not supported");
+            mp_raise_ValueError(MP_ERROR_TEXT("freq change not supported"));
 
 
 //        // set
@@ -263,7 +263,7 @@ STATIC mp_obj_t machine_freq(size_t n_args, const mp_obj_t *args) {
 //                }
 //            }
 //        }
-//        mp_raise_ValueError("can't make valid freq");
+//        mp_raise_ValueError(MP_ERROR_TEXT("can't make valid freq"));
 //
 //    set_clk:
 //        //printf("%lu %lu %lu %lu %lu\n", sysclk_source, m, n, p, q);
@@ -445,7 +445,7 @@ STATIC const mp_rom_map_elem_t machine_module_globals_table[] = {
 
     { MP_ROM_QSTR(MP_QSTR_Pin),                 MP_ROM_PTR(&pin_type) },
 //    { MP_ROM_QSTR(MP_QSTR_Signal),              MP_ROM_PTR(&machine_signal_type) },
-
+	{ MP_ROM_QSTR(MP_QSTR_ExtInt), MP_ROM_PTR(&extint_type) },
 #if 0
     { MP_ROM_QSTR(MP_QSTR_RTC),                 MP_ROM_PTR(&pyb_rtc_type) },
     { MP_ROM_QSTR(MP_QSTR_ADC),                 MP_ROM_PTR(&pyb_adc_type) },
@@ -461,7 +461,7 @@ STATIC const mp_rom_map_elem_t machine_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_WDT),                 MP_ROM_PTR(&pyb_wdt_type) },
 #endif
 #if MICROPY_HW_HAS_SDCARD
-    { MP_ROM_QSTR(MP_QSTR_SD),                  MP_ROM_PTR(&pyb_sdcard_type) },
+    { MP_ROM_QSTR(MP_QSTR_SDCard),                  MP_ROM_PTR(&pyb_sdcard_type) },
 #endif
 #if 0
     { MP_ROM_QSTR(MP_QSTR_Timer),               MP_ROM_PTR(&pyb_timer_type) },
@@ -490,4 +490,3 @@ const mp_obj_module_t machine_module = {
     .base = { &mp_type_module },
     .globals = (mp_obj_dict_t*)&machine_module_globals,
 };
-

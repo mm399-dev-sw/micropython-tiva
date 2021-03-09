@@ -1,45 +1,109 @@
 # MicroPython Port for Tiva Launchpad
 
-![Micropython](https://github.com/micropython/micropython/blob/8402c26cfa98b4689f5ac4673952a654cfe5b678/logo/logo.jpg)
-![Tiva Launchpad](https://www.ti.com/diagrams/med_ek-tm4c123gxl_tivalp_angle_new.jpg)
+<img src="https://raw.githubusercontent.com/rk-exxec/micropython/tiva_from_stable/logo/trans-logo.png" height="200" /><img src="https://www.ti.com/diagrams/med_ek-tm4c123gxl_tivalp_angle_new.jpg" height="200" />
+
+
+#### Table of contents
+1. [Build](#build)
+   - [Ubuntu](#ubuntu)
+   - [Windows](#windows)
+2. [Flashing](#flashing)
+3. [Debug](#debug)
+   - [TI CodeComposer Studio](#ccs)
+   - [VSCode](#vscode)
+4. [REPL](#connecting-to-repl)
+5. [Usage](#usage)
+   - [SD-Card](#sd-card)
+   - [Pin](#pin)
+   - [UART](#uart)
+   - [SPI](#spi)
+
 
 ## Build
-
-1. Install Toolchain:
-  * On Debian: `sudo apt install gcc-arm-none-eabi`
-  * On Ubuntu: `sudo apt install gcc-arm-embedded`
-  * Other: `gcc-arm-none-eabi` is available on most other distros
-  * On Windows you can install WSL with Debian or Ubuntu for easy setup
-2. Download & install TivaWare:
-   [Here](http://software-dl.ti.com/tiva-c/SW-TM4C/latest/index_FDS.html) 
-   - Workaround if no account:
-   Find Filename for TivaWare and append to "http://software-dl.ti.com/tiva-c/SWTM4C/latest/exports/"
-3. Clone git repo:
+### Ubuntu
+   Works for Ubuntu / Debian / WSL
+1. Clone git repo:
    ```bash
    cd <your target directory>
    git clone https://github.com/rk-exxec/micropython.git && git checkout tiva_from_stable
-   cd micropython/ports/tm4c123
+   cd ./micropython
    ```
-4. Adjust makefile and set the path to your TivaWare
-5. Build:
+2. Install Toolchain:
    ```bash
+   source tools/ci.sh && ci_tm4c123_setup
+   ```
+3. Build:
+   ```bash
+   cd ./ports/tm4c123
    make
    ```
-   
-## Load
+### Windows
 
-1. Download & install LMFlashprogrammer:
-   [http://www.ti.com/tool/lmflashprogrammer](http://www.ti.com/tool/lmflashprogrammer)
-2. Download & install drivers:
-   [http://www.ti.com/general/docs/lit/getliterature.tsp?literatureNumber=spmc016a&fileType=zip](http://www.ti.com/general/docs/lit/getliterature.tsp?literatureNumber=spmc016a&fileType=zip)
-3. Launch Programmer, select "uPY_TM4C123.bin" and load
+1. Clone git repo and checkout branch `tiva_from_stable`
+2. Install ARM toolchain from https://developer.arm.com/tools-and-software/open-source-software/developer-tools/gnu-toolchain/gnu-rm/downloads  
+      **Make sure it is added to your PATH**
+4. Install GNU Make Tools Setup http://gnuwin32.sourceforge.net/packages/make.htm  
+      **Make sure it is added to your PATH**
+   
+## Flashing
+
+1. Download & install UniFlash: https://www.ti.com/tool/UNIFLASH 
+   - Create new Configuration
+   - Device: EK-TM4C123GXL
+   - Connection: Stellaris In-Circuit Debug Interface
+   - Start
+   - Load Flash image: `build/firmware.bin`
+   - Reset Actions: Core Reset, Check `Execute selected reset after program load`
+   - Load Image
 
 ## Debug
 
-* Download CodeComposerStudio and import the source code as external project
-* Configure your debugger to load the uPY_TM4C123.axf
+### CCS
 
-## Connecting
+   * Download CodeComposerStudio and import the source code as external project
+   * Configure the debugger to load the uPY_TM4C123.axf
+
+### VSCode
+
+1. Download and install Visual Studio Code with these extensions:
+   - ARM Code from Dan C Underwood
+   - Cortex-Debug from marus25
+   - Python 
+   - C/C++
+   - Native Debug from WebFreak
+   - LinkerScript from ZixuanWang
+
+2. Download & install drivers: http://www.ti.com/tool/STELLARIS_ICDI_DRIVERS
+   
+3. Install OpenOCD
+   - Windows: https://gnutoolchains.com/arm-eabi/openocd/  
+      **Add it to your PATH**
+   - Ubuntu / Debian: `sudo apt install openocd`
+   
+4. In VSCode debugging menu, click new config and replace contents of your `launch.json` with this:
+   ```json
+   {
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Cortex Debug",
+            "cwd": "${workspaceRoot}",
+            "executable": "./build/firmware.axf",
+            "request": "launch",
+            "type": "cortex-debug",
+            "servertype": "openocd",
+            "configFiles": [
+                "board/ek-tm4c123gxl.cfg"
+            ]
+        }
+    ]
+   }
+   ```
+      **Make sure to set the `configFiles` path correctly.**
+      
+ 5. Start the debugging (after building the project)
+
+## Connecting to REPL
 
 You can connect to the REPL via UART over USB. You need to install the drivers for this to work!
 
@@ -65,19 +129,21 @@ Currently, these Modules are available:
   * SPI
   * UART
   * SDCard
+  * IRQ
+  * DMA
 * uos
 ---
 ### SD-Card
 
 Connect the SD-Card in SPI-mode according to this table:  
 
-| Board Pin | SD-Pin           |
-| --------: | :--------------- |
-|       PB3 | Card Detect (CD) |
-|       PB4 | Clock (SCK)      |
-|       PB5 | Chip Select (CS) |
-|       PB6 | Data Out (DO)    |
-|       PB7 | Data In (DI)     |
+| Board Pin | SD-Pin (SPI / SDIO)    |
+| --------: | :--------------------- |
+|       PB3 | Card Detect (CD / DET) |
+|       PB4 | Clock (SCK / CLK)      |
+|       PB5 | Chip Select (CS / D3)  |
+|       PB6 | Data Out (MISO / D0)   |
+|       PB7 | Data In (MOSI / CMD)   |
 
 ---
 ### Pin
