@@ -254,7 +254,7 @@ STATIC void i2c_read_bytes_from_bus(mp_obj_t *self_in, uint8_t *buf, size_t len,
                 I2CMasterControl(self->i2c_base, I2C_MASTER_CMD_BURST_RECEIVE_ERROR_STOP);
 
                 // return error code
-                nlr_raise(mp_obj_new_exception_msg(&mp_type_ValueError, "data read failed\n"));
+                nlr_raise(mp_obj_new_exception_msg(&mp_type_ValueError, MP_ERROR_TEXT("data read failed\n")));
             }
 
             *buf_local = (uint8_t)I2CMasterDataGet(self->i2c_base);
@@ -276,7 +276,7 @@ STATIC void i2c_read_bytes_from_bus(mp_obj_t *self_in, uint8_t *buf, size_t len,
             I2CMasterControl(self->i2c_base, I2C_MASTER_CMD_BURST_RECEIVE_ERROR_STOP);
 
             // return error code
-            nlr_raise(mp_obj_new_exception_msg(&mp_type_ValueError, "data read failed\n"));
+            nlr_raise(mp_obj_new_exception_msg(&mp_type_ValueError, MP_ERROR_TEXT("data read failed\n")));
         }
 
         // get received byte from initialized I2C port
@@ -336,7 +336,7 @@ STATIC mp_obj_t machine_hard_i2c_init_helper(mp_obj_t *self_in, size_t n_args, c
 
     // set the I2C id value
     if (args[ARG_id].u_int > 3) {
-        nlr_raise(mp_obj_new_exception_msg(&mp_type_ValueError, "Available I2C-Ports: 0 - 3"));
+        nlr_raise(mp_obj_new_exception_msg(&mp_type_ValueError, MP_ERROR_TEXT("Available I2C-Ports: 0 - 3")));
     }
     self->i2c_id = args[ARG_id].u_int;
 
