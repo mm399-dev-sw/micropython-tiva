@@ -197,8 +197,8 @@ SRC_MOD = $(addprefix mods/,\
 	mpthreadport.c \
 	i2c.c \
 	dma.c \
-	extint.c 
-)
+	extint.c \
+	)
 
 	# modpyb.c \
 	# pendsv.c \
