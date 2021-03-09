@@ -11,7 +11,7 @@
 # Enables Debugging friendly settings, change requires full rebuild
 DEBUG ?= 1
 # Enables Link Time Optimization, only when not compiling for DEBUG, change requires full rebuild
-LINK_TIME_OPT = 1
+LINK_TIME_OPT = 0
 
 # Location of the TivaWare library
 # Can be pointed to a newer version if desired
@@ -195,6 +195,8 @@ MODS_SRC_C = $(addprefix mods/,\
 	modutime.c \
 	irq.c \
 	mpthreadport.c \
+	fatfs_port.c \
+	i2c.c \
 )
 	# fatfs_port.c \
 	# irq.c \
@@ -333,7 +335,6 @@ $(GEN_CDCINF_HEADER): $(GEN_CDCINF_FILE) $(FILE2H) | $(HEADER_BUILD)
 $(GEN_CDCINF_FILE): $(CDCINF_TEMPLATE) $(INSERT_USB_IDS) $(USB_IDS_FILE) | $(HEADER_BUILD)
 	$(ECHO) "GEN $@"
 	$(Q)$(PYTHON) $(INSERT_USB_IDS) $(USB_IDS_FILE) $< > $@
-
 
 ########################################################
 # Build Targets

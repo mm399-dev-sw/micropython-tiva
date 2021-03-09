@@ -34,6 +34,7 @@
 
 #define MICROPY_HW_MAX_UART (8)
 #define MICROPY_HW_MAX_SPI (4)
+#define MICROPY_HW_MAX_I2C (4)
 
 #define MICROPY_PY_MACHINE_SPI (1)
 
@@ -96,6 +97,22 @@
 #define MICROPY_HW_SPI3_FSS     (pin_PD1)
 #define MICROPY_HW_SPI3_MISO    (pin_PD2)
 #define MICROPY_HW_SPI3_MOSI    (pin_PD3)
+
+#define MICROPY_HW_I2C0_NAME	"0"
+#define MICROPY_HW_I2C0_SCL	(pin_PB2)
+#define MICROPY_HW_I2C0_SDA	(pin_PB3)
+
+#define MICROPY_HW_I2C1_NAME	"1"
+#define MICROPY_HW_I2C1_SCL	(pin_PA6)
+#define MICROPY_HW_I2C1_SDA	(pin_PA7)
+
+#define MICROPY_HW_I2C2_NAME	"2"
+#define MICROPY_HW_I2C2_SCL	(pin_PE4)
+#define MICROPY_HW_I2C2_SDA	(pin_PE5)
+
+#define MICROPY_HW_I2C3_NAME	"3"
+#define MICROPY_HW_I2C3_SCL	(pin_PD0)
+#define MICROPY_HW_I2C3_SDA	(pin_PD1)
 
 
 // TODO

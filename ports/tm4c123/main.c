@@ -52,7 +52,7 @@
 #include "pybthread.h"
 #include "gccollect.h"
 #include "modmachine.h"
-//#include "i2c.h"
+#include "mods/i2c.h"
 #include "spi.h"
 #include "uart.h"
 #include "timer.h"
@@ -438,7 +438,8 @@ int tm4c_main(int reset_mode) {
     // disable_irq();
     // TODO 
 //     #if MICROPY_HW_ENABLE_HW_I2C
-//     i2c_init0();
+    i2c_init0();
+    //InitI2C0();
 //     #endif
     #if MICROPY_HW_HAS_SDCARD
     sdcard_init();
