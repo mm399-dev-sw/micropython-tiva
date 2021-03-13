@@ -156,11 +156,11 @@ Connect the SD-Card in SPI-mode according to this table:
 
 | Board Pin | SD-Pin (SPI / SDIO)    |
 | --------: | :--------------------- |
-|       PB3 | Card Detect (CD / DET) |
-|       PB4 | Clock (SCK / CLK)      |
-|       PB5 | Chip Select (CS / D3)  |
-|       PB6 | Data Out (MISO / D0)   |
-|       PB7 | Data In (MOSI / CMD)   |
+|       PE4 | Card Detect (CD / DET) |
+|       PA2 | Clock (SCK / CLK)      |
+|       PA3 | Chip Select (CS / D3)  |
+|       PA4 | Data Out (MISO / D0)   |
+|       PA5 | Data In (MOSI / CMD)   |
 
 ---
 ### Pin
