@@ -70,16 +70,20 @@
 #define CMD58    (0x40+58)    /* READ_OCR */
 
 // SSI port
-#define SDC_SSI_BASE            SSI2_BASE
-#define SDC_SSI_SYSCTL_PERIPH   SYSCTL_PERIPH_SSI2
+// pin_find_af_by_index(pin, af_id)
+#define SDC_SSI_BASE            SSI0_BASE
+#define SDC_SSI_SYSCTL_PERIPH   SYSCTL_PERIPH_SSI0
 
 // GPIO for SSI pins
-#define SDC_GPIO_PORT_BASE      GPIO_PORTB_AHB_BASE
-#define SDC_GPIO_SYSCTL_PERIPH  SYSCTL_PERIPH_GPIOB
-#define SDC_SSI_CLK             GPIO_PIN_4
-#define SDC_SSI_TX              GPIO_PIN_7
-#define SDC_SSI_RX              GPIO_PIN_6
-#define SDC_SSI_FSS             GPIO_PIN_5
+#define SDC_GPIO_PORT_BASE      GPIO_PORTA_AHB_BASE
+#define SDC_GPIO_SYSCTL_PERIPH  SYSCTL_PERIPH_GPIOA
+#define SDC_SSI_CLK             GPIO_PIN_2
+#define SDC_SSI_TX              GPIO_PIN_5
+#define SDC_SSI_RX              GPIO_PIN_4
+#define SDC_SSI_FSS             GPIO_PIN_3
+#define SDC_CD                  MICROPY_HW_SDCARD_DETECT_PIN->pin_mask
+#define SDC_CD_PORT_PERIPH      MICROPY_HW_SDCARD_DETECT_PIN->periph
+#define SDC_CD_PORT_BASE        MICROPY_HW_SDCARD_DETECT_PIN->gpio
 #define SDC_SSI_PINS            (SDC_SSI_TX | SDC_SSI_RX | SDC_SSI_CLK |      \
                                  SDC_SSI_FSS)
 
@@ -87,13 +91,13 @@
 // asserts the CS pin to the card
 
 void sd_assert_cs (void) {
-    ROM_GPIOPinWrite(SDC_GPIO_PORT_BASE, SDC_SSI_FSS, 0);
+    GPIOPinWrite(SDC_GPIO_PORT_BASE, SDC_SSI_FSS, 0);
 }
 
 // de-asserts the CS pin to the card
 
 void sd_deassert_cs (void) {
-    ROM_GPIOPinWrite(SDC_GPIO_PORT_BASE, SDC_SSI_FSS, SDC_SSI_FSS);
+    GPIOPinWrite(SDC_GPIO_PORT_BASE, SDC_SSI_FSS, SDC_SSI_FSS);
 }
 
 /*--------------------------------------------------------------------------
@@ -102,18 +106,18 @@ void sd_deassert_cs (void) {
 
 ---------------------------------------------------------------------------*/
 
-volatile DSTATUS Stat = STA_NOINIT;    /* Disk status */
-uint8_t CardType;            /* b0:MMC, b1:SDC, b2:Block addressing */
-uint8_t PowerFlag = 0;     /* indicates if "power" is on */
+static volatile DSTATUS Stat = STA_NOINIT;    /* Disk status */
+static uint8_t CardType;            /* b0:MMC, b1:SDC, b2:Block addressing */
+static uint8_t PowerFlag = 0;     /* indicates if "power" is on */
 
 /*-----------------------------------------------------------------------*/
 /* Transmit a byte to MMC via SPI  (Platform dependent)                  */
 /*-----------------------------------------------------------------------*/
 void sd_spi_send_byte(uint8_t dat) {
     uint32_t ui32RcvDat;
-    while(SSIBusy(SDC_SSI_BASE)){};
+    // while(SSIBusy(SDC_SSI_BASE)){};
     ROM_SSIDataPut(SDC_SSI_BASE, dat); /* Write the data to the tx fifo */
-    while(SSIBusy(SDC_SSI_BASE)){};
+    // while(SSIBusy(SDC_SSI_BASE)){};
     ROM_SSIDataGet(SDC_SSI_BASE, &ui32RcvDat); /* flush data read during the write */
 }
 
@@ -123,10 +127,8 @@ void sd_spi_send_byte(uint8_t dat) {
 /*-----------------------------------------------------------------------*/
 uint8_t sd_spi_recieve_byte (void) {
     uint32_t ui32RcvDat;
-    while(SSIBusy(SDC_SSI_BASE)){};
-    ROM_SSIDataPut(SDC_SSI_BASE, 0xFF); /* write dummy data */
-    while(SSIBusy(SDC_SSI_BASE)){};
-    ROM_SSIDataGet(SDC_SSI_BASE, &ui32RcvDat); /* read data frm rx fifo */
+    SSIDataPut(SDC_SSI_BASE, 0xFF); /* write dummy data */
+    SSIDataGet(SDC_SSI_BASE, &ui32RcvDat); /* read data frm rx fifo */
     return (uint8_t)ui32RcvDat;
 }
 
@@ -159,9 +161,8 @@ void sd_sel_spi_mode(void) {
     sd_deassert_cs();
 
     // /* Switch the SSI TX line to a GPIO and drive it high too. */
-    // ROM_GPIOPinTypeGPIOOutput(SDC_GPIO_PORT_BASE, SDC_SSI_TX);
-    // ROM_GPIOPinWrite(SDC_GPIO_PORT_BASE, SDC_SSI_TX, SDC_SSI_TX);
-    while(SSIBusy(SDC_SSI_BASE)){};
+    GPIOPinTypeGPIOOutput(SDC_GPIO_PORT_BASE, SDC_SSI_TX);
+    GPIOPinWrite(SDC_GPIO_PORT_BASE, SDC_SSI_TX, SDC_SSI_TX);
 
     /* Send 10 bytes over the SSI. This causes the clock to wiggle the */
     /* required number of times. */
@@ -169,14 +170,14 @@ void sd_sel_spi_mode(void) {
     {
         /* Write DUMMY data. SSIDataPut() waits until there is room in the */
         /* FIFO. */
-        ROM_SSIDataPut(SDC_SSI_BASE, 0xFF);
+        SSIDataPut(SDC_SSI_BASE, 0xFF);
 
         /* Flush data read during data write. */
-        ROM_SSIDataGet(SDC_SSI_BASE, &ui32Dat);
+        SSIDataGet(SDC_SSI_BASE, &ui32Dat);
     }
 
     // /* Revert to hardware control of the SSI TX line. */
-    // ROM_GPIOPinTypeSSI(SDC_GPIO_PORT_BASE, SDC_SSI_TX);
+    GPIOPinTypeSSI(SDC_GPIO_PORT_BASE, SDC_SSI_TX);
     
 }
 
@@ -192,47 +193,43 @@ void sd_power_on (void) {
      */
 
     /* Enable the peripherals used to drive the SDC on SSI */
-    // ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB);
     ROM_SysCtlPeripheralEnable(SDC_SSI_SYSCTL_PERIPH);
     ROM_SysCtlPeripheralEnable(SDC_GPIO_SYSCTL_PERIPH);
+    ROM_SysCtlPeripheralEnable(SDC_CD_PORT_PERIPH);
 
     /*
      * Configure the appropriate pins to be SSI instead of GPIO. The FSS (CS)
      * signal is directly driven to ensure that we can hold it low through a
      * complete transaction with the SD card.
      */
-
-    GPIOPinConfigure(GPIO_PB4_SSI2CLK);
-    // GPIOPinConfigure(GPIO_PB5_SSI2FSS);
-    GPIOPinConfigure(GPIO_PB6_SSI2RX);
-    GPIOPinConfigure(GPIO_PB7_SSI2TX);
-    // ROM_GPIOPinTypeSSI(SDC_GPIO_PORT_BASE, SDC_SSI_TX | SDC_SSI_RX | SDC_SSI_CLK);
-    // ROM_GPIOPinTypeGPIOOutput(SDC_GPIO_PORT_BASE, SDC_SSI_FSS);
-    // ROM_GPIOPinTypeGPIOOutput(SDC_GPIO_PORT_BASE, MICROPY_HW_SDCARD_DETECT_PIN->pin_mask);
+    GPIOPinConfigure(GPIO_PA2_SSI0CLK);
+    GPIOPinConfigure(GPIO_PA4_SSI0RX);
+    GPIOPinConfigure(GPIO_PA5_SSI0TX);
     ROM_GPIOPinTypeSSI(SDC_GPIO_PORT_BASE, SDC_SSI_TX | SDC_SSI_RX | SDC_SSI_CLK);
     ROM_GPIOPinTypeGPIOOutput(SDC_GPIO_PORT_BASE, SDC_SSI_FSS);
-    GPIOPinTypeGPIOInput(SDC_GPIO_PORT_BASE, MICROPY_HW_SDCARD_DETECT_PIN->pin_mask);
-    GPIOPadConfigSet(SDC_GPIO_PORT_BASE, MICROPY_HW_SDCARD_DETECT_PIN->pin_mask, GPIO_STRENGTH_2MA, GPIO_PIN_TYPE_STD_WPU);
-
+    ROM_GPIOPinTypeGPIOOutput(SDC_CD_PORT_BASE, SDC_CD);
+    
     /*
      * Set the SSI output pins to 4MA drive strength and engage the
      * pull-up on the receive line.
      */
-    MAP_GPIOPadConfigSet(SDC_GPIO_PORT_BASE, SDC_SSI_RX, GPIO_STRENGTH_2MA,
+    MAP_GPIOPadConfigSet(SDC_GPIO_PORT_BASE, SDC_SSI_RX, GPIO_STRENGTH_4MA,
                          GPIO_PIN_TYPE_STD_WPU);
     MAP_GPIOPadConfigSet(SDC_GPIO_PORT_BASE, SDC_SSI_CLK | SDC_SSI_TX | SDC_SSI_FSS,
-                         GPIO_STRENGTH_2MA, GPIO_PIN_TYPE_STD);
+                         GPIO_STRENGTH_4MA, GPIO_PIN_TYPE_STD);
+    MAP_GPIOPadConfigSet(SDC_CD_PORT_BASE, SDC_CD,
+                         GPIO_STRENGTH_4MA, MP_HAL_PIN_PULL_UP);
     
 
+    ROM_SSIClockSourceSet(SDC_SSI_BASE, SSI_CLOCK_SYSTEM);
     /* Configure the SSI0 port */
     ROM_SSIConfigSetExpClk(SDC_SSI_BASE, ROM_SysCtlClockGet(),
-                           SSI_FRF_MOTO_MODE_0, SSI_MODE_MASTER, 200000, 8);
+                           SSI_FRF_MOTO_MODE_0, SSI_MODE_MASTER, 400000, 8);
     ROM_SSIEnable(SDC_SSI_BASE);
 
     /* Set DI and CS high and apply more than 74 pulses to SCLK for the card */
     /* to be able to accept a native command. */
     sd_sel_spi_mode();
-    // sd_deassert_cs();
 
     PowerFlag = 1;
 }
@@ -245,15 +242,15 @@ void sd_spi_set_max_speed(void) {
     /* Disable the SSI */
     ROM_SSIDisable(SDC_SSI_BASE);
 
-    /* Set the maximum speed as half the system clock, with a max of 20 MHz. */
+    /* Set the maximum speed as half the system clock, with a max of 12.5 MHz. */
     i = ROM_SysCtlClockGet() / 2;
-    if(i > 12000000)
+    if(i > 12500000)
     {
-        i = 12000000;
+        i = 12500000;
     }
 
     /* Configure the SSI0 port to run at 12.5MHz */
-    SSIConfigSetExpClk(SDC_SSI_BASE, ROM_SysCtlClockGet(),
+    ROM_SSIConfigSetExpClk(SDC_SSI_BASE, ROM_SysCtlClockGet(),
                            SSI_FRF_MOTO_MODE_0, SSI_MODE_MASTER, i, 8);
 
     /* Enable the SSI */
@@ -262,7 +259,7 @@ void sd_spi_set_max_speed(void) {
 
 
 void sd_power_off (void) {
-    MAP_SysCtlPeripheralDisable(SDC_SSI_SYSCTL_PERIPH);
+    // MAP_SysCtlPeripheralDisable(SDC_SSI_SYSCTL_PERIPH);
     PowerFlag = 0;
 }
 
@@ -418,27 +415,27 @@ DSTATUS sd_disk_init (
     uint8_t n, ty, ocr[4];
     mp_uint_t start;
 
+    // if(!(Stat & STA_NOINIT)) return Stat;
+
     if (drv) return STA_NOINIT;            /* Supports only single drive */
-
-    if(PowerFlag==0) sd_power_on();                            /* Force socket power on */
-
+    sd_power_on();                            /* Force socket power on */
     if (!sdcard_is_present()) return Stat;    /* No card in the socket */
- 
+    
     sd_sel_spi_mode();            /* Ensure the card is in SPI mode */
 
     sd_assert_cs();                /* CS = L */
     ty = 0;
     if (sd_spi_send_cmd(CMD0, 0) == 1) {            /* Enter Idle state */
-    sd_deassert_cs();
-    sd_wait_ready();
-    sd_assert_cs();
+    // sd_deassert_cs();
+    // sd_wait_ready();
+    // sd_assert_cs();
         if (sd_spi_send_cmd(CMD8, 0x1AA) == 1) {    /* SDC Ver2+ */
             for (n = 0; n < 4; n++) ocr[n] = sd_spi_recieve_byte();
             if (ocr[2] == 0x01 && ocr[3] == 0xAA) {    /* The card can work at vdd range of 2.7-3.6V */
                 start = mp_hal_ticks_ms();                      /* Initialization timeout of 1000 msec */
                 do {
                     sd_wait_ready(); // Prevent command banging
-                    if (sd_spi_send_cmd(CMD55, 0) <= 1 && sd_spi_send_cmd(CMD41, 0x40000000) == 0) {
+                    if ((sd_spi_send_cmd(CMD55, 0) <= 1) && (sd_spi_send_cmd(CMD41, 0x40000000) == 0)) {
                         break;
                     }     /* ACMD41 with HCS bit */
                 } while ((mp_hal_ticks_ms() - start) < 1000);
@@ -760,7 +757,7 @@ void sdcard_init(void) {
 // }
 
 bool sdcard_is_present(void) {
-    if(mp_hal_pin_read(MICROPY_HW_SDCARD_DETECT_PIN)) {
+    if(!mp_hal_pin_read(MICROPY_HW_SDCARD_DETECT_PIN)) {
         Stat &= ~STA_NODISK;
         return true;
     } else {
@@ -1090,7 +1087,7 @@ STATIC mp_obj_t pyb_sdcard_ioctl(mp_obj_t self, mp_obj_t cmd_in, mp_obj_t arg_in
     mp_int_t cmd = mp_obj_get_int(cmd_in);
     switch (cmd) {
         case MP_BLOCKDEV_IOCTL_INIT:
-            if (!sd_disk_init(0)) {
+            if (sd_disk_init(0) & STA_NOINIT) {
                 return MP_OBJ_NEW_SMALL_INT(-1); // error
             }
             return MP_OBJ_NEW_SMALL_INT(0); // success
@@ -1140,7 +1137,9 @@ void sdcard_init_vfs(fs_user_mount_t *vfs, int part) {
     vfs->base.type = &mp_fat_vfs_type;
     vfs->blockdev.flags |= MP_BLOCKDEV_FLAG_NATIVE | MP_BLOCKDEV_FLAG_HAVE_IOCTL;
     vfs->fatfs.drv = vfs;
+    #if MICROPY_FATFS_MULTI_PARTITION
     vfs->fatfs.part = part;
+    #endif
     vfs->blockdev.readblocks[0] = MP_OBJ_FROM_PTR(&pyb_sdcard_readblocks_obj);
     vfs->blockdev.readblocks[1] = MP_OBJ_FROM_PTR(&pyb_sdcard_obj);
     vfs->blockdev.readblocks[2] = MP_OBJ_FROM_PTR(sdcard_read_blocks); // native version
