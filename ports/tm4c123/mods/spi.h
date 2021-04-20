@@ -27,10 +27,12 @@
 #define MICROPY_INCLUDED_TM4C_SPI_H
 
 #include <stdint.h>
+#include CMSIS_HEADER
 //#include "dma.h"
 #include "inc/hw_ssi.h"
 //#include "inc/hw_memmap.h"
 #include "driverlib/ssi.h"
+
 
 //extern const mp_obj_type_ttypedef struct _spi_t {
 //     spi_obj_t *spi;
@@ -61,20 +63,22 @@ typedef enum {
  *  SPI register struct for easy access 
  *  for register description, see datasheet
 */
-typedef struct  {
-    volatile uint32_t CR0;
-    volatile uint32_t CR1;
-    volatile uint32_t DR;
-    volatile uint32_t SR;
-    volatile uint32_t CPSR;
-    volatile uint32_t IM;
-    volatile uint32_t RIS;
-    volatile uint32_t MIS;
-    volatile uint32_t ICR;
-    volatile uint32_t DMACTL;
-    uint32_t _1[1000];
-    volatile uint32_t CC;
+
+typedef struct {                                    /*!< SSI0 Structure                                                        */
+  __IO uint32_t  CR0;                               /*!< SSI Control 0                                                         */
+  __IO uint32_t  CR1;                               /*!< SSI Control 1                                                         */
+  __IO uint32_t  DR;                                /*!< SSI Data                                                              */
+  __IO uint32_t  SR;                                /*!< SSI Status                                                            */
+  __IO uint32_t  CPSR;                              /*!< SSI Clock Prescale                                                    */
+  __IO uint32_t  IM;                                /*!< SSI Interrupt Mask                                                    */
+  __IO uint32_t  RIS;                               /*!< SSI Raw Interrupt Status                                              */
+  __IO uint32_t  MIS;                               /*!< SSI Masked Interrupt Status                                           */
+  __O  uint32_t  ICR;                               /*!< SSI Interrupt Clear                                                   */
+  __IO uint32_t  DMACTL;                            /*!< SSI DMA Control                                                       */
+  __I  uint32_t  RESERVED[1000];
+  __IO uint32_t  CC;                                /*!< SSI Clock Configuration                                               */
 } periph_spi_t;
+
 
 /**
  * spi config object type
