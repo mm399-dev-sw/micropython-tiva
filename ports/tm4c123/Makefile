@@ -62,13 +62,13 @@ USBDEV_DIR=usbdev
 INC += -I.
 INC += -I./mods
 INC += -I./misc
-INC += -I./cmsis
 INC += -I./board
 INC += -I$(BUILD)
 INC += -I$(BUILD)/genhdr
 INC += -I$(TIVAWARE_LIB)
 INC += -I$(TIVAWARE_LIB)/driverlib
 INC += -I$(TOP)/extmod
+INC += -I$(TOP)/lib/cmsis/inc
 INC += -I$(TOP)
 INC += -I$(PY_SRC)
 

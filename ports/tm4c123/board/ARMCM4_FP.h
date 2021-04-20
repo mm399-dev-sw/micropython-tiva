@@ -1,7 +1,7 @@
 /**************************************************************************//**
- * @file     ARMCM4.h
+ * @file     ARMCM4_FP.h
  * @brief    CMSIS Core Peripheral Access Layer Header File for
- *           ARMCM4 Device (configured for CM4 without FPU)
+ *           ARMCM4 Device (configured for CM4 with FPU)
  * @version  V5.3.1
  * @date     09. July 2018
  ******************************************************************************/
@@ -23,8 +23,8 @@
  * limitations under the License.
  */
 
-#ifndef ARMCM4_H
-#define ARMCM4_H
+#ifndef ARMCM4_FP_H
+#define ARMCM4_FP_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -94,10 +94,10 @@ typedef enum IRQn
 #define __VTOR_PRESENT            1U        /* VTOR present */
 #define __NVIC_PRIO_BITS          3U        /* Number of Bits used for Priority Levels */
 #define __Vendor_SysTickConfig    0U        /* Set to 1 if different SysTick Config is used */
-#define __FPU_PRESENT             0U        /* no FPU present */
+#define __FPU_PRESENT             1U        /* FPU present */
 
 #include "core_cm4.h"                       /* Processor and core peripherals */
-#include "system_ARMCM4.h"                  /* System Header */
+#include "system_TM4C123.h"                  /* System Header */
 
 
 /* --------  End of section using anonymous unions and disabling warnings  -------- */
@@ -124,4 +124,4 @@ typedef enum IRQn
 }
 #endif
 
-#endif  /* ARMCM4_H */
+#endif  /* ARMCM4_FP_H */
