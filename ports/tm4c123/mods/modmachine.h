@@ -27,7 +27,7 @@
 #define MICROPY_INCLUDED_TM4C_MODMACHINE_H
 
 #include "py/obj.h"
-#include "ARMCM4_FP.h"
+#include CMSIS_HEADER
 
 void machine_init(void);
 void machine_deinit(void);
