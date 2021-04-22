@@ -164,6 +164,8 @@ Connect the SD-Card in SPI-mode according to this table:
 |       PA4 | Data Out (MISO / D0)   |
 |       PA5 | Data In (MOSI / CMD)   |
 
+If your SD Card adaptor does not have a CD Pin, you need to connect it to Ground.
+
 ---
 ### Pin
 
