@@ -45,7 +45,8 @@ user.props
 ######################
 genrst/
 
-
+# DS-Flash files
+*.DS_Store
 
 ports/tm4c123/\.directory
 
