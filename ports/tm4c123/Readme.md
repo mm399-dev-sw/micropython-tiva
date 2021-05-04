@@ -21,7 +21,7 @@
 
 ## Build
 ### Ubuntu
-   Works for Ubuntu / Debian / WSL
+   Works for Ubuntu / Debian
 1. Clone git repo:
    ```bash
    cd <your target directory>
@@ -37,13 +37,23 @@
    cd ./ports/tm4c123
    make
    ```
+   
 ### Windows
 
-1. Clone git repo and checkout branch `tiva_from_stable`
-2. Install ARM toolchain from https://developer.arm.com/tools-and-software/open-source-software/developer-tools/gnu-toolchain/gnu-rm/downloads  
+1. Install [MinGW]( https://sourceforge.net/projects/mingw-w64/files/Toolchains%20targetting%20Win32/Personal%20Builds/mingw-builds/installer/mingw-w64-install.exe/download)  
+      **Make sure it is added to your PATH**  
+   **OR** install [WSL](https://docs.microsoft.com/de-de/windows/wsl/install-win10#manual-installation-steps)
+2. Install [ARM toolchain](https://developer.arm.com/tools-and-software/open-source-software/developer-tools/gnu-toolchain/gnu-rm/downloads)  
       **Make sure it is added to your PATH**
-4. Install GNU Make Tools Setup http://gnuwin32.sourceforge.net/packages/make.htm  
-      **Make sure it is added to your PATH**
+3. Clone git repo and checkout branch `tiva_from_stable`
+4. Download and install [TivaWare](https://www.ti.com/tool/SW-TM4C) or extract contents to `micropython/ports/tm4c123/tivaware`  
+   **OR** if you are using WSL, do Step 2 of [Ubuntu Instructions](#ubuntu)  
+5. Build using WSL or MinGW terminal:
+   ```bash
+   cd ./ports/tm4c123
+   make
+   ```
+   Use param `TIVAWARE_LIB="C:\ti\TivaWare_2.2.0.XXX" ` with make if you installed TivaWare
    
 ## Flashing
 
@@ -73,29 +83,38 @@
    - Native Debug from WebFreak
    - LinkerScript from ZixuanWang
 
-2. Download & install drivers: http://www.ti.com/tool/STELLARIS_ICDI_DRIVERS
+2. Download & install drivers: https://www.ti.com/lit/zip/slac632  
+   (Windows only, also included in the TivaWare)
+   - connect board
+   - right click Start button and click Device-Manager
+   - there should be 2 unknown devices
+   - Click update drivers and use manual select
+   - navigate to the top level folder containing the drivers
+   - Windows selects the driver on its own
+   - repeat for other device
    
 3. Install OpenOCD
-   - Windows: https://gnutoolchains.com/arm-eabi/openocd/  
+   - Windows/WSL: https://gnutoolchains.com/arm-eabi/openocd/  
       **Add it to your PATH**
-   - Ubuntu / Debian: `sudo apt install openocd`
+   - Ubuntu/Debian: `sudo apt install openocd`
    
 4. In VSCode debugging menu, click new config and replace contents of your `launch.json` with this:
    ```json
    {
-    "version": "0.2.0",
-    "configurations": [
-        {
+      "version": "0.2.0",
+      "configurations": [
+         {
             "name": "Cortex Debug",
             "cwd": "${workspaceRoot}",
             "executable": "./build/firmware.axf",
             "request": "launch",
             "type": "cortex-debug",
             "servertype": "openocd",
+            "runToEntryPoint": "tm4c_main",
             "configFiles": [
                 "board/ek-tm4c123gxl.cfg"
             ]
-        }
+         }
     ]
    }
    ```
@@ -139,11 +158,13 @@ Connect the SD-Card in SPI-mode according to this table:
 
 | Board Pin | SD-Pin (SPI / SDIO)    |
 | --------: | :--------------------- |
-|       PB3 | Card Detect (CD / DET) |
-|       PB4 | Clock (SCK / CLK)      |
-|       PB5 | Chip Select (CS / D3)  |
-|       PB6 | Data Out (MISO / D0)   |
-|       PB7 | Data In (MOSI / CMD)   |
+|       PE4 | Card Detect (CD / DET) |
+|       PA2 | Clock (SCK / CLK)      |
+|       PA3 | Chip Select (CS / D3)  |
+|       PA4 | Data Out (MISO / D0)   |
+|       PA5 | Data In (MOSI / CMD)   |
+
+If your SD Card adaptor does not have a CD Pin, you need to connect it to Ground.
 
 ---
 ### Pin

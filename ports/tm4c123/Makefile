@@ -11,7 +11,7 @@
 # Enables Debugging friendly settings, change requires full rebuild
 DEBUG ?= 1
 # Enables Link Time Optimization, only when not compiling for DEBUG, change requires full rebuild
-LINK_TIME_OPT = 1
+LINK_TIME_OPT = 0
 
 # Location of the TivaWare library
 TIVAWARE_LIB ?= tivaware
@@ -62,15 +62,17 @@ USBDEV_DIR=usbdev
 INC += -I.
 INC += -I./mods
 INC += -I./misc
-INC += -I./cmsis
-INC += -I$(TOP)
+INC += -I./board
 INC += -I$(BUILD)
 INC += -I$(BUILD)/genhdr
 INC += -I$(TIVAWARE_LIB)
 INC += -I$(TIVAWARE_LIB)/driverlib
+INC += -I$(TOP)/extmod
+INC += -I$(TOP)/lib/cmsis/inc
+INC += -I$(TOP)
 INC += -I$(PY_SRC)
-INC += -I./board
-INC += -I../../
+
+
 INC += -I$(USBDEV_DIR)/core/inc -I$(USBDEV_DIR)/class/inc
 
 DFU = $(TOP)/tools/dfu.py
@@ -88,7 +90,7 @@ CFLAGS_CORTEX_M4 = -mthumb -mtune=cortex-m4 -mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -m
 CFLAGS = -Wall -Werror -Wpointer-arith -Wno-missing-attributes
 
 # Misc flags
-CFLAGS += $(INC) -std=gnu99 -nostdlib $(CFLAGS_CORTEX_M4) $(COPT) -fshort-enums -fdata-sections -ffunction-sections 
+CFLAGS += $(INC) -std=gnu99 -nostdlib $(CFLAGS_CORTEX_M4) $(COPT) -fshort-enums -fdata-sections -ffunction-sections
 
 # Preprocessor Flags
 CFLAGS += $(addprefix -D, \
@@ -195,9 +197,10 @@ SRC_MOD = $(addprefix mods/,\
 	modutime.c \
 	irq.c \
 	mpthreadport.c \
+	i2c.c \
 	dma.c \
 	extint.c \
-)
+	)
 
 	# modpyb.c \
 	# pendsv.c \

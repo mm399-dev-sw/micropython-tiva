@@ -89,13 +89,15 @@
 
 // sd card
 #define MICROPY_HW_HAS_SDCARD       (1)
+#define MICROPY_PY_MACHINE_HW_SPI      (1)
+#define MICROPY_PY_MACHINE_HW_I2C      (1)
 
 // fatfs configuration used in ffconf.h
 #define MICROPY_FATFS_ENABLE_LFN       (1)
 #define MICROPY_FATFS_LFN_CODE_PAGE    437 /* 1=SFN/ANSI 437=LFN/U.S.(OEM) */
 #define MICROPY_FATFS_USE_LABEL        (1)
 #define MICROPY_FATFS_RPATH            (2)
-#define MICROPY_FATFS_MULTI_PARTITION  (1)
+#define MICROPY_FATFS_MULTI_PARTITION  (0)
 
 // TODO these should be generic, not bound to fatfs
 #define mp_type_fileio fatfs_type_fileio
@@ -228,6 +230,7 @@ extern const struct _mp_obj_module_t mp_module_uos;
     \
     /* pointers to all UART objects (if they have been created) */ \
     struct _machine_uart_obj_t *machine_uart_obj_all[MICROPY_HW_MAX_UART]; \
-    struct _machine_hard_spi_obj_t *machine_spi_obj_all[MICROPY_HW_MAX_SPI]; \
+    struct _machine_hard_spi_obj_t *machine_spi_obj_all[MICROPY_HW_MAX_SPI];\
+    struct _machine_hard_i2c_obj_t *machine_i2c_obj_all[MICROPY_HW_MAX_I2C];
 
 // EOF

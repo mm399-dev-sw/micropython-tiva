@@ -38,17 +38,17 @@
 #include "uart.h"
 
 // prevent clash between driverlib and CMSIS
-#ifdef NVIC_BASE
-#undef NVIC_BASE
-#endif
+// #ifdef NVIC_BASE
+// #undef NVIC_BASE
+// #endif
 
-#ifdef DWT_BASE
-#undef DWT_BASE
-#endif
+// #ifdef DWT_BASE
+// #undef DWT_BASE
+// #endif
 
-#ifdef ITM_BASE
-#undef ITM_BASE
-#endif
+// #ifdef ITM_BASE
+// #undef ITM_BASE
+// #endif
 
 #include CMSIS_HEADER
 

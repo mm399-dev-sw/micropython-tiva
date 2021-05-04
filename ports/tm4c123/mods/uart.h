@@ -26,28 +26,36 @@
 #ifndef MICROPY_INCLUDED_TM4C_UART_H
 #define MICROPY_INCLUDED_TM4C_UART_H
 
-typedef struct {
-    volatile uint32_t DR; // Data Register 0x00
-    volatile uint32_t RSR; // Status Register 0x04
-    uint32_t _1[4];
-    volatile uint32_t FR; // Flag Register 0x18
-    uint32_t _2;
-    volatile uint32_t ILPR; // IrDA Low-Power Register 0x20
-    volatile uint32_t IBRD; // Integer Baud Rate Divisor 0x24
-    volatile uint32_t FBRD; // Fractional Baud Rate divisor 0x28
-    volatile uint32_t LCRH;
-    volatile uint32_t CTL;
-    volatile uint32_t IFLS;
-    volatile uint32_t IM;
-    volatile uint32_t RIS;
-    volatile uint32_t MIS;
-    volatile uint32_t ICR;
-    volatile uint32_t DMACTL;
-    uint32_t _3[16];
-    volatile uint32_t _9BITADDR;
-    volatile uint32_t _9BITAMASK;
-    volatile uint32_t PP;
-    volatile uint32_t CC;
+#include CMSIS_HEADER
+
+typedef struct {                                    /*!< UART0 Structure                                                       */
+  __IO uint32_t  DR;                                /*!< UART Data                                                             */
+  
+  union {
+    __IO uint32_t  ECR_UART_ALT;                    /*!< UART Receive Status/Error Clear                                       */
+    __IO uint32_t  RSR;                             /*!< UART Receive Status/Error Clear                                       */
+  };
+  __I  uint32_t  RESERVED[4];
+  __IO uint32_t  FR;                                /*!< UART Flag                                                             */
+  __I  uint32_t  RESERVED1;
+  __IO uint32_t  ILPR;                              /*!< UART IrDA Low-Power Register                                          */
+  __IO uint32_t  IBRD;                              /*!< UART Integer Baud-Rate Divisor                                        */
+  __IO uint32_t  FBRD;                              /*!< UART Fractional Baud-Rate Divisor                                     */
+  __IO uint32_t  LCRH;                              /*!< UART Line Control                                                     */
+  __IO uint32_t  CTL;                               /*!< UART Control                                                          */
+  __IO uint32_t  IFLS;                              /*!< UART Interrupt FIFO Level Select                                      */
+  __IO uint32_t  IM;                                /*!< UART Interrupt Mask                                                   */
+  __IO uint32_t  RIS;                               /*!< UART Raw Interrupt Status                                             */
+  __IO uint32_t  MIS;                               /*!< UART Masked Interrupt Status                                          */
+  __O  uint32_t  ICR;                               /*!< UART Interrupt Clear                                                  */
+  __IO uint32_t  DMACTL;                            /*!< UART DMA Control                                                      */
+  __I  uint32_t  RESERVED2[22];
+  __IO uint32_t  _9BITADDR;                         /*!< UART 9-Bit Self Address                                               */
+  __IO uint32_t  _9BITAMASK;                        /*!< UART 9-Bit Self Address Mask                                          */
+  __I  uint32_t  RESERVED3[965];
+  __IO uint32_t  PP;                                /*!< UART Peripheral Properties                                            */
+  __I  uint32_t  RESERVED4;
+  __IO uint32_t  CC;                                /*!< UART Clock Configuration                                              */
 } periph_uart_t;
 
 typedef enum {
