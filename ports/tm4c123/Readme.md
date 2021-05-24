@@ -25,8 +25,9 @@
 1. Clone git repo:
    ```bash
    cd <your target directory>
-   git clone https://github.com/rk-exxec/micropython.git && git checkout tiva_from_stable
+   git clone https://github.com/rk-exxec/micropython.git 
    cd ./micropython
+   git checkout tiva_from_stable
    ```
 2. Install Toolchain:
    ```bash
