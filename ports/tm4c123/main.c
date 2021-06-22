@@ -71,6 +71,7 @@
 // #include "can.h"
 // #include "modnetwork.h"
 #include "dma.h"
+#include "usb_dev_msc.h"
 
 // prevent clash between driverlib and CMSIS
 #ifdef NVIC_BASE
@@ -435,17 +436,18 @@ int tm4c_main(int reset_mode) {
     #if MICROPY_HW_ENABLE_RTC
     rtc_init_start(false);
     #endif
-    spi_init0();
+    // spi_init0();
     // disable_irq();
     // TODO
 //     #if MICROPY_HW_ENABLE_HW_I2C
-    i2c_init0();
+    //i2c_init0();
     //InitI2C0();
 //     #endif
     #if MICROPY_HW_HAS_SDCARD
     sdcard_init();
     #endif
 //     storage_init();
+    usb_msc_device_main();
 
 soft_reset:
 

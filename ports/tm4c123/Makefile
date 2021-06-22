@@ -14,7 +14,7 @@ DEBUG ?= 1
 LINK_TIME_OPT = 0
 
 # Location of the TivaWare library
-TIVAWARE_LIB ?= tivaware
+TIVAWARE_LIB ?= /Users/danielhorber/Documents/MicroPython/tivaware
 
 ## NOT YET IMPLEMENTED, USE LMFLASHER 
 # OpenOCD paths
@@ -67,10 +67,18 @@ INC += -I$(BUILD)
 INC += -I$(BUILD)/genhdr
 INC += -I$(TIVAWARE_LIB)
 INC += -I$(TIVAWARE_LIB)/driverlib
+INC += -I$(TIVAWARE_LIB)/third_party
 INC += -I$(TOP)/extmod
 INC += -I$(TOP)/lib/cmsis/inc
 INC += -I$(TOP)
 INC += -I$(PY_SRC)
+
+#
+# Where to find header files that do not live in the source directory.
+#
+#IPATH=..
+#IPATH+=../../../..
+#IPATH+=../../../../third_party
 
 
 INC += -I$(USBDEV_DIR)/core/inc -I$(USBDEV_DIR)/class/inc
@@ -145,6 +153,7 @@ LDFLAGS = -Wl,-nostdlib,-T,$(LINKER_FILE),-Map=$(BUILD)/ld_output.map,--cref,--g
 
 # Libraries
 LIBS = $(TIVAWARE_LIB)/driverlib/gcc/libdriver.a
+LIBS += $(TIVAWARE_LIB)/usblib/gcc/libusb.a
 LIBGCC := ${shell $(CC) $(CFLAGS) --print-libgcc-file-name}
 LIBC := ${shell ${CC} ${CFLAGS} --print-file-name=libc.a}
 LIBM := ${shell ${CC} ${CFLAGS} --print-file-name=libm.a}
@@ -188,7 +197,6 @@ SRC_MOD = $(addprefix mods/,\
 	rtc.c \
 	systick.c \
 	handlers.c \
-	spi.c \
 	sdcard.c \
 	moduos.c \
 	fatfs_port.c \
@@ -197,17 +205,23 @@ SRC_MOD = $(addprefix mods/,\
 	modutime.c \
 	irq.c \
 	mpthreadport.c \
-	i2c.c \
 	dma.c \
 	extint.c \
+	usbdsdcard.c \
+	usb_dev_msc.c \
 	)
 
+	#i2c.c \
+	#spi.c \
 	# modpyb.c \
 	# pendsv.c \
 	# flashbdev.c \
 	# storage.c \
 	# flash.c \
 	# )
+
+# USB Sources
+SRC_USB = $(wildcard $(TIVAWARE_LIB)/usblib/device/*.c ) 
 
 # Core sources
 SRC_CORE = \
@@ -232,7 +246,7 @@ endif
 # SRC_ADD = 
 # 	drivers/bus/softspi.c 
 		
-SRC_C = $(SRC_CORE) $(SRC_MOD) $(SRC_LIB) $(SRC_LIBF) $(SRC_ADD) $(GEN_PINS_SRC)
+SRC_C = $(SRC_CORE) $(SRC_MOD) $(SRC_USB) $(SRC_LIB) $(SRC_LIBF) $(SRC_ADD) $(GEN_PINS_SRC)
 
 ASM_OBJ = $(addprefix $(BUILD)/, $(SRC_ASM:.s=.o))
 
@@ -343,12 +357,13 @@ $(BUILD)/firmware.axf: $(OBJ)
 	$(ECHO)
 	$(ECHO) Making driverlib
 	$(Q)$(MAKE) -C ${TIVAWARE_LIB}/driverlib/
+	#$(Q)$(MAKE) -C ${TIVAWARE_LIB}/usblib/
 	$(ECHO)
 	$(ECHO) Linking...
 	$(ECHO) " >" $(BUILD)/firmware.axf
 	$(Q)$(LD) $(LDFLAGS) -o $(BUILD)/firmware.axf $(OBJ) $(LIBS) $(LIBM) $(LIBC) $(LIBGCC)
-	# $(ECHO) " >" $(BUILD)/firmware.elf
-	# $(Q)$(LD) $(LDFLAGS) -o $(BUILD)/firmware.elf $(OBJ) $(LIBS) $(LIBM) $(LIBC) $(LIBGCC)
+	$(ECHO) " >" $(BUILD)/firmware.elf
+	$(Q)$(LD) $(LDFLAGS) -o $(BUILD)/firmware.elf $(OBJ) $(LIBS) $(LIBM) $(LIBC) $(LIBGCC)
 
 # Extract pure binary from firmware
 $(BUILD)/firmware.bin: $(BUILD)/firmware.axf
