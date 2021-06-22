@@ -25,6 +25,8 @@
 // #include "lib/oofatfs/ff.h"
 #include "usbdsdcard.h"
 #include "sdcard.h"
+#include "mpconfigboard.h"
+#include "mphalport.h"
 
 //*****************************************************************************
 //

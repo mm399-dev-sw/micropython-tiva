@@ -497,12 +497,20 @@ int usb_msc_device_main(void)
     //
     ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB);
     ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);
-    GPIOPinConfigure(GPIO_PF4_USB0EPEN);
-    ROM_GPIOPinTypeUSBDigital(GPIO_PORTF_BASE, GPIO_PIN_4);
+    //GPIOPinConfigure(GPIO_PF4_USB0EPEN);
+    //ROM_GPIOPinTypeUSBDigital(GPIO_PORTF_BASE, GPIO_PIN_4);
+    mp_hal_pin_config_alt(MICROPY_HW_USB0_EPEN, PIN_FN_USB, 0);
+    //GPIOPinTypeUSBDigital(GPIO_PORTF_BASE, GPIO_PIN_4);
     ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOD);
-    GPIOPinTypeUSBAnalog(GPIO_PORTD_BASE, GPIO_PIN_4 | GPIO_PIN_5);     // bei TM4C123G: PL6, PL7; USB0DM=PD4, USB0DP=PD5
-    ROM_GPIOPinTypeUSBAnalog(GPIO_PORTB_BASE, GPIO_PIN_0 | GPIO_PIN_1);     // gleich wie bei TM4C123G
+
+    // GPIOPinTypeUSBAnalog(GPIO_PORTD_BASE, GPIO_PIN_4 | GPIO_PIN_5);     // bei TM4C123G: PL6, PL7; USB0DM=PD4, USB0DP=PD5
+    mp_hal_pin_config_alt(MICROPY_HW_USB0_DM, PIN_FN_USB, 0);
+    mp_hal_pin_config_alt(MICROPY_HW_USB0_DP, PIN_FN_USB, 0);
+
+    //ROM_GPIOPinTypeUSBAnalog(GPIO_PORTB_BASE, GPIO_PIN_0 | GPIO_PIN_1);     // gleich wie bei TM4C123G
                                                                             // PB0 = USB0ID; PB1 = USB0VBUS
+    mp_hal_pin_config_alt(MICROPY_HW_USB0_ID, PIN_FN_USB, 0);
+    mp_hal_pin_config_alt(MICROPY_HW_USB0_VBUS, PIN_FN_USB, 0);
 
     //
     // Set the USB stack mode to Device mode WITHOUT (!) VBUS monitoring.
