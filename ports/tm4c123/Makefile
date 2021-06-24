@@ -152,8 +152,8 @@ LD = $(CC)
 LDFLAGS = -Wl,-nostdlib,-T,$(LINKER_FILE),-Map=$(BUILD)/ld_output.map,--cref,--gc-sections $(CFLAGS)
 
 # Libraries
-LIBS = $(TIVAWARE_LIB)/driverlib/gcc/libdriver.a
-LIBS += $(TIVAWARE_LIB)/usblib/gcc/libusb.a
+LIBS = $(TIVAWARE_LIB)/usblib/gcc/libusb.a
+LIBS += $(TIVAWARE_LIB)/driverlib/gcc/libdriver.a
 LIBGCC := ${shell $(CC) $(CFLAGS) --print-libgcc-file-name}
 LIBC := ${shell ${CC} ${CFLAGS} --print-file-name=libc.a}
 LIBM := ${shell ${CC} ${CFLAGS} --print-file-name=libm.a}
@@ -221,7 +221,7 @@ SRC_MOD = $(addprefix mods/,\
 	# )
 
 # USB Sources
-SRC_USB = $(wildcard $(TIVAWARE_LIB)/usblib/device/*.c ) 
+#SRC_USB = $(wildcard $(TIVAWARE_LIB)/usblib/device/*.c ) 
 
 # Core sources
 SRC_CORE = \

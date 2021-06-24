@@ -45,6 +45,7 @@
 // #include "usbdsdcard.h"
 // #include "sdcard.h"
 #include "usb_dev_msc.h"
+#include "rom_map.h"
 
 
 //*****************************************************************************
@@ -448,7 +449,7 @@ USBDMSCEventCallback(void *pvCBData, uint32_t ui32Event, uint32_t ui32MsgParam,
 //*****************************************************************************
 int usb_msc_device_main(void)
 {
-    uint_fast32_t ui32Retcode;
+    //uint_fast32_t ui32Retcode;
 
     // Set the system clock to run at 50MHz from the PLL.
     // ROM_SysCtlClockSet(SYSCTL_SYSDIV_4 | SYSCTL_USE_PLL | SYSCTL_OSC_MAIN | SYSCTL_XTAL_16MHZ);
@@ -527,17 +528,17 @@ int usb_msc_device_main(void)
     // Determine whether or not an SDCard is installed.  If not, print a
     // warning and have the user install one and restart.
     //
-    ui32Retcode = sd_disk_init(0);
+    //ui32Retcode = sd_disk_init(0);
 
-    if(ui32Retcode != RES_OK) 
-    {
-        // not found
-    }
-    else
-    {
-        // found
-        //BlinkIfFound(1, 1);
-    }
+    // if(ui32Retcode != RES_OK) 
+    // {
+    //     // not found
+    // }
+    // else
+    // {
+    //     // found
+    //     //BlinkIfFound(1, 1);
+    // }
 
     //
     // Drop into the main loop.
