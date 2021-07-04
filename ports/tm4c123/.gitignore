@@ -1,0 +1,5 @@
+.directory/
+.vscode/
+.settings/
+/tivaware*
+TM4C123GH6PM.svd.xml
