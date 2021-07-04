@@ -1,3 +1,6 @@
+*.axf
+*.lst
+
 .directory/
 .vscode/
 .settings/
