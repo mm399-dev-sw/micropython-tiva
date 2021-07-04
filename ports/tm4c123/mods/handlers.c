@@ -83,13 +83,13 @@
 #include "pybthread.h"
 #include "gccollect.h"
 #include "extint.h"
-// #include "timer.h"
+#include "timer.h"
 #include "uart.h"
 #include "storage.h"
 // #include "can.h"
 // #include "dma.h"
 // #include "i2c.h"
-#include "usb.h"
+// #include "usb.h"
 #include "inc/hw_memmap.h"
 #include "extint.h"
 
@@ -534,6 +534,64 @@ void GPIOH_Handler(void)
     GPIOIntClear(GPIO_PORTH_AHB_BASE, intStat);
     Handle_EXTI_Irq(GPIOH_IntHndl);
 }
+
+void TIMER0AIntHandler(void) 
+{
+    TIMERGenericIntHandler(TIMER0_BASE, TIMER_A);
+}
+void TIMER0BIntHandler(void) 
+{
+    TIMERGenericIntHandler(TIMER0_BASE, TIMER_B);
+}
+void TIMER1AIntHandler(void) 
+{
+    TIMERGenericIntHandler(TIMER1_BASE, TIMER_A);
+}
+void TIMER1BIntHandler(void) 
+{
+    TIMERGenericIntHandler(TIMER1_BASE, TIMER_B);
+}
+void TIMER2AIntHandler(void) 
+{
+    TIMERGenericIntHandler(TIMER2_BASE, TIMER_A);
+}
+void TIMER2BIntHandler(void) 
+{
+    TIMERGenericIntHandler(TIMER2_BASE, TIMER_B);
+}
+void TIMER3AIntHandler(void) 
+{
+    TIMERGenericIntHandler(TIMER3_BASE, TIMER_A);
+}
+void TIMER3BIntHandler(void) 
+{
+    TIMERGenericIntHandler(TIMER3_BASE, TIMER_B);
+}
+void TIMER4AIntHandler(void) 
+{
+    TIMERGenericIntHandler(TIMER4_BASE, TIMER_A);
+}
+void TIMER4BIntHandler(void) 
+{
+    TIMERGenericIntHandler(TIMER4_BASE, TIMER_B);
+}
+void TIMER5AIntHandler(void) 
+{
+    TIMERGenericIntHandler(TIMER5_BASE, TIMER_A);
+}
+void TIMER5BIntHandler(void) 
+{
+    TIMERGenericIntHandler(TIMER5_BASE, TIMER_B);
+}
+
+
+#if defined(TIM6) // STM32F401 doesn't have TIM6
+void TIM6_DAC_IRQHandler(void) {
+    IRQ_ENTER(TIM6_DAC_IRQn);
+    timer_irq_handler(6);
+    IRQ_EXIT(TIM6_DAC_IRQn);
+}
+#endif
 
 #ifdef MOREINTS
 /**

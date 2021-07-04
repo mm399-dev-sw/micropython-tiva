@@ -71,6 +71,7 @@
 // #include "can.h"
 // #include "modnetwork.h"
 #include "dma.h"
+#include "mpirq.h"
 
 // prevent clash between driverlib and CMSIS
 #ifdef NVIC_BASE
@@ -440,6 +441,8 @@ int tm4c_main(int reset_mode) {
     // TODO
 //     #if MICROPY_HW_ENABLE_HW_I2C
     i2c_init0();
+    // irq_init0();
+    // timer_init0();
     //InitI2C0();
 //     #endif
     #if MICROPY_HW_HAS_SDCARD
@@ -481,6 +484,10 @@ soft_reset:
     uart_init0();
 
     dma_hw_init();
+
+    timer_init0();
+    irq_init0();
+
 
     // TODO Missing Repl Config
 

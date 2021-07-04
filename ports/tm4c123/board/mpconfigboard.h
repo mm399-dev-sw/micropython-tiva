@@ -35,6 +35,7 @@
 #define MICROPY_HW_MAX_UART (8)
 #define MICROPY_HW_MAX_SPI (4)
 #define MICROPY_HW_MAX_I2C (4)
+#define MICROPY_HW_MAX_TIMER (6)
 
 #define MICROPY_PY_MACHINE_SPI (0)
 
@@ -113,6 +114,13 @@
 #define MICROPY_HW_I2C3_NAME	"3"
 #define MICROPY_HW_I2C3_SCL	(pin_PD0)
 #define MICROPY_HW_I2C3_SDA	(pin_PD1)
+
+#define MICROPY_HW_TIMER0_NAME    "0"
+#define MICROPY_HW_TIMER1_NAME    "1"
+#define MICROPY_HW_TIMER2_NAME    "2"
+#define MICROPY_HW_TIMER3_NAME    "3"
+#define MICROPY_HW_TIMER4_NAME    "4"
+#define MICROPY_HW_TIMER5_NAME    "5"
 
 
 // TODO

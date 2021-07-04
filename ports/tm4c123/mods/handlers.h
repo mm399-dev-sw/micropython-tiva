@@ -89,4 +89,20 @@ void GPIOF_Handler(void);
 void GPIOG_Handler(void);
 void GPIOH_Handler(void);
 
+
+void TIMER0AIntHandler(void);
+void TIMER0BIntHandler(void);
+void TIMER1AIntHandler(void);
+void TIMER1BIntHandler(void);
+void TIMER2AIntHandler(void);
+void TIMER2BIntHandler(void);
+void TIMER3AIntHandler(void);
+void TIMER3BIntHandler(void);
+void TIMER4AIntHandler(void);
+void TIMER4BIntHandler(void);
+void TIMER5AIntHandler(void);
+void TIMER5BIntHandler(void);
+
+
+
 #endif // MICROPY_INCLUDED_TM4C_STM32_IT_H

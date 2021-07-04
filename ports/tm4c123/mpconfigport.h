@@ -90,6 +90,7 @@
 // sd card
 #define MICROPY_HW_HAS_SDCARD       (1)
 #define MICROPY_PY_MACHINE_HW_SPI      (1)
+#define MICROPY_PY_MACHINE_HW_TIMER    (1)
 #define MICROPY_PY_MACHINE_HW_I2C      (1)
 
 // fatfs configuration used in ffconf.h
@@ -225,12 +226,14 @@ extern const struct _mp_obj_module_t mp_module_uos;
     mp_obj_t pin_class_map_dict; \
     \
     mp_obj_t test_callback_obj; \
+    mp_obj_list_t mp_irq_obj_list; \
+    mp_obj_list_t mp_timer_channel_obj_list; \
     /* stdio is repeated on this UART object if it's not null */ \
     struct _machine_uart_obj_t *machine_stdio_uart; \
     \
     /* pointers to all UART objects (if they have been created) */ \
     struct _machine_uart_obj_t *machine_uart_obj_all[MICROPY_HW_MAX_UART]; \
     struct _machine_hard_spi_obj_t *machine_spi_obj_all[MICROPY_HW_MAX_SPI];\
-    struct _machine_hard_i2c_obj_t *machine_i2c_obj_all[MICROPY_HW_MAX_I2C];
-
+    struct _machine_hard_i2c_obj_t *machine_i2c_obj_all[MICROPY_HW_MAX_I2C];\
+    struct _machine_timer_obj_t *machine_timer_obj_all[MICROPY_HW_MAX_TIMER];\
 // EOF
