@@ -45,7 +45,7 @@
 1. Install [MinGW]( https://sourceforge.net/projects/mingw-w64/files/Toolchains%20targetting%20Win32/Personal%20Builds/mingw-builds/installer/mingw-w64-install.exe/download)  
       **Make sure it is added to your PATH**  
    **OR** install [WSL](https://docs.microsoft.com/de-de/windows/wsl/install-win10#manual-installation-steps)
-2. Install [ARM toolchain](https://developer.arm.com/tools-and-software/open-source-software/developer-tools/gnu-toolchain/gnu-rm/downloads)  
+2. Install [ARM toolchain](https://developer.arm.com/tools-and-software/open-source-software/developer-tools/gnu-toolchain/gnu-rm/downloads) for Windows to debug and MinGW to compile  
       **Make sure it is added to your PATH**
 3. Clone git repo and checkout branch `tiva_from_stable`
 4. Download and install [TivaWare](https://www.ti.com/tool/SW-TM4C) or extract contents to `micropython/ports/tm4c123/tivaware`  
