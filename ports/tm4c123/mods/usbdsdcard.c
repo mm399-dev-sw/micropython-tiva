@@ -87,7 +87,7 @@ USBDMSCStorageOpen(uint_fast32_t ui32Drive)
     //
     // Initialize the drive if it is present.
     //
-    ui32Temp = sd_disk_init(0);
+    ui32Temp = sd_disk_staus(0);
 
     if(ui32Temp == RES_OK)
     {

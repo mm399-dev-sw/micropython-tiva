@@ -22,30 +22,38 @@
 //
 //*****************************************************************************
 
-//#include <stdbool.h>
-//#include <stdint.h>
-// #include "inc/hw_ints.h"
-// #include "inc/hw_memmap.h"
-// #include "inc/hw_types.h"
-// #include "driverlib/debug.h"
-// #include "driverlib/sysctl.h"
-// #include "driverlib/rom.h"
-// #include "driverlib/systick.h"
-// #include "driverlib/usb.h"
-// #include "driverlib/gpio.h"
-// #include "driverlib/udma.h"
-// #include "driverlib/pin_map.h"
-// #include "grlib/grlib.h"
-// #include "usblib/usblib.h"
-// #include "usblib/usb-ids.h"
-// #include "usblib/device/usbdevice.h"
-// #include "usblib/device/usbdmsc.h"
-// #include "usb_dev_msc.h"
-// #include "lib/oofatfs/diskio.h" // ersetzt
-// #include "usbdsdcard.h"
-// #include "sdcard.h"
 #include "usb_dev_msc.h"
+#include "stdint.h"
+#include "stdbool.h"
+#include "inc/hw_ints.h"
+#include "inc/hw_memmap.h"
+#include "inc/hw_types.h"
+#include "driverlib/debug.h"
+#include "driverlib/sysctl.h"
+#include "driverlib/rom.h"
+#include "driverlib/systick.h"
+#include "driverlib/usb.h"
+#include "driverlib/gpio.h"
+#include "driverlib/udma.h"
+#include "driverlib/pin_map.h"
+#include "grlib/grlib.h"
+//#include "usblib/usblib.h"
+#include "usblib/usb-ids.h"
+//#include "usblib/device/usbdevice.h"
+//#include "usblib/device/usbdmsc.h"
+//#include "lib/oofatfs/diskio.h" // ersetzt
+// #include "lib/oofatfs/ff.h"
+#include "usbdsdcard.h"
+#include "sdcard.h"
+#include "mpconfigboard.h"
+#include "mphalport.h"
 #include "rom_map.h"
+#include "pin.h"
+
+
+#define USB_EPEN            GPIO_PIN_4
+#define USB_EPEN_GPIO_BASE  GPIO_PORTF_BASE
+#define USB_EPEN_PERIPH     SYSCTL_PERIPH_GPIOF
 
 
 //*****************************************************************************
@@ -447,7 +455,7 @@ USBDMSCEventCallback(void *pvCBData, uint32_t ui32Event, uint32_t ui32MsgParam,
 // This is the main loop that runs the application.
 //
 //*****************************************************************************
-int usb_msc_device_main(void)
+int usb_msc_device(void)
 {
     //uint_fast32_t ui32Retcode;
 
@@ -466,7 +474,7 @@ int usb_msc_device_main(void)
     ROM_uDMAControlBaseSet(&sDMAControlTable[0]);
     ROM_uDMAEnable();
 
-    
+    //mp_printf(MP_PYTHON_PRINTER, "Anfang USB DEV MSC");
     //
     // Initialize the idle timeout and reset all flags.
     //
@@ -480,38 +488,51 @@ int usb_msc_device_main(void)
 
 
     //
-    // Enable the GPIO peripheral used for USB, and configure the USB
-    // pins.
+    // Init USB module
     //
-    // ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOD);
-    // SysCtlGPIOAHBEnable(SYSCTL_PERIPH_GPIOD);
-    // ROM_GPIOPinTypeUSBAnalog(GPIO_PORTD_AHB_BASE, GPIO_PIN_4 | GPIO_PIN_5);
 
-
-    //
-    // Enable the USB controller.
-    //
-    ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_USB0);
+    // disable USB module
+    SysCtlPeripheralDisable(SYSCTL_PERIPH_USB0);
+    // reset module
+    SysCtlPeripheralReset(SYSCTL_PERIPH_USB0);
+    // Enable the USB controller. (SYSCTL->RCGCUSB)
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_USB0);
+    // Wait until ready
+    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_USB0))
+    {
+    }
 
     //
     // Set the USB pins to be controlled by the USB controller.
     //
     ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB);
+    ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOD);
     ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);
-    //GPIOPinConfigure(GPIO_PF4_USB0EPEN);
-    //ROM_GPIOPinTypeUSBDigital(GPIO_PORTF_BASE, GPIO_PIN_4);
+
+    //
+    // PF4 als USB0 EPEN konfigurieren
+    //
+    GPIOPinConfigure(GPIO_PF4_USB0EPEN);
     mp_hal_pin_config_alt(MICROPY_HW_USB0_EPEN, PIN_FN_USB, 0);
     //GPIOPinTypeUSBDigital(GPIO_PORTF_BASE, GPIO_PIN_4);
-    ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOD);
 
+    //
+    // PD4 als USB0 DM; PD5 als USB0 DP konfigurieren
+    //
     // GPIOPinTypeUSBAnalog(GPIO_PORTD_BASE, GPIO_PIN_4 | GPIO_PIN_5);     // bei TM4C123G: PL6, PL7; USB0DM=PD4, USB0DP=PD5
     mp_hal_pin_config_alt(MICROPY_HW_USB0_DM, PIN_FN_USB, 0);
     mp_hal_pin_config_alt(MICROPY_HW_USB0_DP, PIN_FN_USB, 0);
 
-    //ROM_GPIOPinTypeUSBAnalog(GPIO_PORTB_BASE, GPIO_PIN_0 | GPIO_PIN_1);     // gleich wie bei TM4C123G
+
+    //
+    // PB0 als USB0 ID; PB1 als USB0 VBUS konfigurieren
+    //
+    //GPIOPinTypeUSBAnalog(GPIO_PORTB_BASE, GPIO_PIN_0 | GPIO_PIN_1);     // gleich wie bei TM4C123G
                                                                             // PB0 = USB0ID; PB1 = USB0VBUS
     mp_hal_pin_config_alt(MICROPY_HW_USB0_ID, PIN_FN_USB, 0);
     mp_hal_pin_config_alt(MICROPY_HW_USB0_VBUS, PIN_FN_USB, 0);
+
+    // mp_printf(MP_PYTHON_PRINTER, "Pin Konfig done");
 
     //
     // Set the USB stack mode to Device mode WITHOUT (!) VBUS monitoring.
@@ -523,6 +544,14 @@ int usb_msc_device_main(void)
     // on the bus.
     //
     USBDMSCInit(0, &g_sMSCDevice);
+
+    // uint32_t *MY_GPIO;
+    // MY_GPIO = (uint32_t *) (GPIO_PORTF_BASE | GPIO_O_AFSEL);
+    // uint32_t MY_GPIO_Content = *MY_GPIO;
+    // int *ptr;
+    // ptr=(int *)0x12345678;
+    
+    //mp_printf(MP_PYTHON_PRINTER, "Das steht im Register %i", MY_GPIO_Content);
 
     //
     // Determine whether or not an SDCard is installed.  If not, print a
@@ -540,10 +569,11 @@ int usb_msc_device_main(void)
     //     //BlinkIfFound(1, 1);
     // }
 
+    //mp_printf(MP_PYTHON_PRINTER, "Alles bis zur Schleife done %u", g_eMSCState);
     //
     // Drop into the main loop.
     //
-    while(1)
+    for (;;)
     {
         switch(g_eMSCState)
         {
@@ -619,6 +649,44 @@ int usb_msc_device_main(void)
     }
 }
 
+//*****************************************************************************
+//
+// MicroPython Binding
+//
+//*****************************************************************************
+
+
+STATIC mp_obj_t mp_machine_usb_device_msc() {
+    // if (machine_hard_i2c_is_ready((mp_obj_base_t *)self, addr) == true) {
+    //     return mp_const_true;
+    // } else {
+    //     return mp_const_false;
+    // }
+    usb_msc_device();
+
+    return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(mp_machine_usb_msc_device_obj, mp_machine_usb_device_msc);
+
+/*
+        Table with all globals
+*/
+STATIC const mp_map_elem_t usb_dev_globals_table[]= { 
+{ MP_OBJ_NEW_QSTR(MP_QSTR___name__), MP_OBJ_NEW_QSTR(MP_QSTR_usbmsc) }, 
+{ MP_OBJ_NEW_QSTR(MP_QSTR_mscdev), (mp_obj_t)&mp_machine_usb_msc_device_obj }, 
+}; 
+
+
+/*
+        Define all globals as uPy-globals
+*/
+STATIC MP_DEFINE_CONST_DICT(usb_msc_globals, usb_dev_globals_table); 
+
+
+const mp_obj_module_t usb_msc_module = { 
+.base = { &mp_type_module }, 
+.globals = (mp_obj_dict_t*)&usb_msc_globals, 
+}; 
 //*****************************************************************************
 //
 // The error routine that is called if the driver library encounters an error.

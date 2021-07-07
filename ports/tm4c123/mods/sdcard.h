@@ -38,6 +38,7 @@ bool sdcard_power_on(void);
 void sdcard_power_off(void);
 uint64_t sdcard_get_capacity_in_bytes(void);
 DSTATUS sd_disk_init(uint8_t drv);
+DSTATUS sd_disk_staus (uint8_t drv);
 
 // these return 0 on success, non-zero on error
 mp_uint_t sdcard_read_blocks(uint8_t *dest, uint32_t block_num, uint32_t num_blocks);

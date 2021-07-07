@@ -114,6 +114,7 @@
 #define MICROPY_HW_I2C3_SCL	(pin_PD0)
 #define MICROPY_HW_I2C3_SDA	(pin_PD1)
 
+#define MICROPY_HW_USB0_NAME    "0"
 #define MICROPY_HW_USB0_EPEN    (pin_PF4)
 #define MICROPY_HW_USB0_DM      (pin_PD4)
 #define MICROPY_HW_USB0_DP      (pin_PD5)

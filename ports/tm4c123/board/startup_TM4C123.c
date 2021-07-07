@@ -100,6 +100,8 @@ void DebugMon_Handler       (void) __attribute__ ((weak, alias("Default_Handler"
 void PendSV_Handler         (void) __attribute__ ((weak, alias("Default_Handler")));
 void SysTick_Handler        (void) __attribute__ ((weak, alias("Default_Handler")));
 extern void FLASH_IRQHandler       (void);
+extern void USB_IRQHandler         (void);
+//extern void USB0DeviceIntHandler   (void);
 
 void Interrupt0_Handler     (void) __attribute__ ((weak, alias("Default_Handler")));
 void Interrupt1_Handler     (void) __attribute__ ((weak, alias("Default_Handler")));
@@ -180,7 +182,7 @@ extern const pFunc g_pfnVectors[240];
   0,                                      // Reserved
   0,                                      // Reserved
   Default_Handler,                      // Hibernate
-  Default_Handler,                      // USB0
+  USB_IRQHandler,                   // USB0
   Default_Handler,                      // PWM Generator 3
   Default_Handler,                      // uDMA Software Transfer
   Default_Handler,                      // uDMA Error

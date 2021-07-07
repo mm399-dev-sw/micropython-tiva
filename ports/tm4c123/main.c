@@ -31,6 +31,10 @@
 
 #include CMSIS_HEADER
 
+#ifndef PART_TM4C123GH6PM
+#define PART_TM4C123GH6PM
+#endif
+
 #include "system_TM4C123.h"
 
 #include "py/runtime.h"
@@ -439,15 +443,14 @@ int tm4c_main(int reset_mode) {
     // spi_init0();
     // disable_irq();
     // TODO
-//     #if MICROPY_HW_ENABLE_HW_I2C
-    //i2c_init0();
+    #if MICROPY_PY_MACHINE_HW_I2C
+    i2c_init0();
     //InitI2C0();
-//     #endif
+    #endif
     #if MICROPY_HW_HAS_SDCARD
     sdcard_init();
     #endif
 //     storage_init();
-    usb_msc_device_main();
 
 soft_reset:
 
@@ -486,9 +489,9 @@ soft_reset:
 
     // TODO Missing Repl Config
 
-//     #if MICROPY_HW_ENABLE_USB
-//     pyb_usb_init0();
-//     #endif
+    #if MICROPY_PY_USB_DEV_MSC 
+    // usb_msc_device();
+    #endif
 
     // Initialise the local flash filesystem.
     // Create it if needed, mount in on /flash, and set it as current dir.

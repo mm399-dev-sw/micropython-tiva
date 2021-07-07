@@ -4,29 +4,29 @@
 
 #include "stdint.h"
 #include "stdbool.h"
-#include "inc/hw_ints.h"
-#include "inc/hw_memmap.h"
-#include "inc/hw_types.h"
-#include "driverlib/debug.h"
-#include "driverlib/sysctl.h"
-#include "driverlib/rom.h"
-#include "driverlib/systick.h"
-#include "driverlib/usb.h"
-#include "driverlib/gpio.h"
-#include "driverlib/udma.h"
-#include "driverlib/pin_map.h"
-#include "grlib/grlib.h"
-#include "usblib/usblib.h"
-#include "usblib/usb-ids.h"
+// #include "inc/hw_ints.h"
+// #include "inc/hw_memmap.h"
+// #include "inc/hw_types.h"
+// #include "driverlib/debug.h"
+// #include "driverlib/sysctl.h"
+// #include "driverlib/rom.h"
+// #include "driverlib/systick.h"
+// #include "driverlib/usb.h"
+// #include "driverlib/gpio.h"
+// #include "driverlib/udma.h"
+// #include "driverlib/pin_map.h"
+// #include "grlib/grlib.h"
+ #include "usblib/usblib.h"
+//#include "usblib/usb-ids.h"
 #include "usblib/device/usbdevice.h"
 #include "usblib/device/usbdmsc.h"
-#include "usb_dev_msc.h"
+// #include "usb_dev_msc.h"
 //#include "lib/oofatfs/diskio.h" // ersetzt
 // #include "lib/oofatfs/ff.h"
-#include "usbdsdcard.h"
-#include "sdcard.h"
-#include "mpconfigboard.h"
-#include "mphalport.h"
+// #include "usbdsdcard.h"
+// #include "sdcard.h"
+// #include "mpconfigboard.h"
+// #include "mphalport.h"
 
 //*****************************************************************************
 //
@@ -49,7 +49,7 @@ extern uint32_t USBDMSCEventCallback(void *pvCBData, uint32_t ui32Event,
 //
 //*****************************************************************************
 
-int usb_msc_device_main(void);
+int usb_msc_device(void);
 
 
 #endif

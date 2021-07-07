@@ -72,6 +72,7 @@
 
 // define to just leave everything as is 
 #define FLASH_IRQn INT_FLASH
+#define USB_IRQn   INT_USB0
 
 #include CMSIS_HEADER
 
@@ -92,6 +93,7 @@
 #include "usb.h"
 #include "inc/hw_memmap.h"
 #include "extint.h"
+#include "usb_dev_msc.h"
 
 extern void __fatal_error(const char*);
 // extern PCD_HandleTypeDef pcd_fs_handle;
@@ -469,6 +471,14 @@ void FLASH_IRQHandler(void) {
     // storage_irq_handler();
     IRQ_EXIT(FLASH_IRQn);
 }
+
+#if defined(MICROPY_PY_USB_DEV_MSC)
+void USB_IRQHandler(void) {
+    IRQ_ENTER(USB_IRQn);
+    USB0DeviceIntHandler();
+    IRQ_EXIT(USB_IRQn);
+}
+#endif // defined(MICROPY_PY_USB_DEV_MSC)
 
 
 void GPIOA_Handler(void)
@@ -908,3 +918,5 @@ void I2C4_ER_IRQHandler(void) {
 } 
 #endif
 #endif // defined(MICROPY_HW_I2C4_SCL)
+
+
