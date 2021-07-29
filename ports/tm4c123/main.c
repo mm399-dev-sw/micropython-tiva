@@ -489,9 +489,6 @@ soft_reset:
 
     // TODO Missing Repl Config
 
-    #if MICROPY_PY_USB_DEV_MSC 
-    // usb_msc_device();
-    #endif
 
     // Initialise the local flash filesystem.
     // Create it if needed, mount in on /flash, and set it as current dir.
@@ -499,7 +496,7 @@ soft_reset:
 
     bool mounted_sdcard = false;
     #if MICROPY_HW_HAS_SDCARD
-    // if an SD card is present then mount it on /sd/
+    //if an SD card is present then mount it on /sd/
     if (sdcard_is_present()) {
         // if there is a file in the flash called "SKIPSD", then we don't mount the SD card
         if (!mounted_flash || f_stat(&fs_user_mount_flash.fatfs, "/SKIPSD", NULL) != FR_OK) {
@@ -565,6 +562,11 @@ soft_reset:
 //         pyb_usb_dev_init(USBD_VID, USBD_PID_CDC_MSC, USBD_MODE_CDC_MSC, NULL);
 //     }
 //     #endif
+
+    #if MICROPY_PY_USB_DEV_MSC 
+    usb_msc_device();
+    #endif
+
 // // At this point everything is fully configured and initialised.
 
     // Run the main script from the current directory.

@@ -72,7 +72,7 @@
 
 // define to just leave everything as is 
 #define FLASH_IRQn INT_FLASH
-#define USB_IRQn   INT_USB0
+#define USB_IRQn   INT_USB0_TM4C123
 
 #include CMSIS_HEADER
 

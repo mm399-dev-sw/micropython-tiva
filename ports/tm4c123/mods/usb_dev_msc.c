@@ -49,11 +49,14 @@
 #include "mphalport.h"
 #include "rom_map.h"
 #include "pin.h"
+#include "irq.h"
 
 
 #define USB_EPEN            GPIO_PIN_4
 #define USB_EPEN_GPIO_BASE  GPIO_PORTF_BASE
 #define USB_EPEN_PERIPH     SYSCTL_PERIPH_GPIOF
+
+#define USB_IRQn            INT_USB0
 
 
 //*****************************************************************************
@@ -474,6 +477,11 @@ int usb_msc_device(void)
     ROM_uDMAControlBaseSet(&sDMAControlTable[0]);
     ROM_uDMAEnable();
 
+    // Configure USB Interrupt 
+    NVIC_SetPriority(USB_IRQn, IRQ_PRI_USB_MSC);
+    //IntEnable(USB_IRQn);
+    //NVIC_EnableIRQ(USB_IRQn);
+
     //mp_printf(MP_PYTHON_PRINTER, "Anfang USB DEV MSC");
     //
     // Initialize the idle timeout and reset all flags.
@@ -506,8 +514,17 @@ int usb_msc_device(void)
     // Set the USB pins to be controlled by the USB controller.
     //
     ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB);
+    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOB))
+    {
+    }
     ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOD);
+    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOD))
+    {
+    }
     ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);
+    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOF))
+    {
+    }
 
     //
     // PF4 als USB0 EPEN konfigurieren
@@ -544,12 +561,6 @@ int usb_msc_device(void)
     // on the bus.
     //
     USBDMSCInit(0, &g_sMSCDevice);
-
-    // uint32_t *MY_GPIO;
-    // MY_GPIO = (uint32_t *) (GPIO_PORTF_BASE | GPIO_O_AFSEL);
-    // uint32_t MY_GPIO_Content = *MY_GPIO;
-    // int *ptr;
-    // ptr=(int *)0x12345678;
     
     //mp_printf(MP_PYTHON_PRINTER, "Das steht im Register %i", MY_GPIO_Content);
 
