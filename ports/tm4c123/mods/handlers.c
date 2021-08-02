@@ -94,6 +94,12 @@
 #include "inc/hw_memmap.h"
 #include "extint.h"
 #include "usb_dev_msc.h"
+#include "driverlib/usb.h"
+#include "usblib/usblib.h"
+#include "usblib/usblibpriv.h"
+#include "usblib/device/usbdevice.h"
+#include "usblib/device/usbdevicepriv.h"
+#include "usblib/usblibpriv.h"
 
 extern void __fatal_error(const char*);
 // extern PCD_HandleTypeDef pcd_fs_handle;
@@ -475,7 +481,20 @@ void FLASH_IRQHandler(void) {
 #if defined(MICROPY_PY_USB_DEV_MSC)
 void USB_IRQHandler(void) {
     IRQ_ENTER(USB_IRQn);
-    USB0DeviceIntHandler();
+
+    uint32_t ui32Status = 0;
+    //
+    // Get the controller interrupt status.
+    //
+    ui32Status = HWREGB(USB0_BASE + 0x0000000A);
+    if (ui32Status != 0){
+    ui32Status = USBIntStatusControl(USB0_BASE);
+    }
+    //
+    // Call the internal handler.
+    //
+    USBDeviceIntHandlerInternal(0, ui32Status);
+
     IRQ_EXIT(USB_IRQn);
 }
 #endif // defined(MICROPY_PY_USB_DEV_MSC)

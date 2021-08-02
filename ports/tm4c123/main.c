@@ -564,7 +564,7 @@ soft_reset:
 //     #endif
 
     #if MICROPY_PY_USB_DEV_MSC 
-    usb_msc_device();
+    //usb_msc_device();
     #endif
 
 // // At this point everything is fully configured and initialised.

@@ -146,7 +146,7 @@ USBDMSCStorageClose(void * pvDrive)
     //
     // Turn off the power to the card.
     //
-    disk_ioctl(0, CTRL_POWER, &ui8Power);
+    sd_disk_ioctl(0, CTRL_POWER, &ui8Power);
 }
 
 //*****************************************************************************
@@ -173,7 +173,7 @@ uint32_t USBDMSCStorageRead(void * pvDrive,
 {
     ASSERT(pvDrive != 0);
 
-    if(disk_read (0, pui8Data, ui32Sector, ui32NumBlocks) == RES_OK)
+    if(sd_disk_read (0, pui8Data, ui32Sector, ui32NumBlocks) == RES_OK)
     {
         // TODO remove fixed 512
         return(ui32NumBlocks * 512);
@@ -206,7 +206,7 @@ uint32_t USBDMSCStorageWrite(void * pvDrive,
 {
     ASSERT(pvDrive != 0);
 
-    if(disk_write(0, pui8Data, ui32Sector, ui32NumBlocks) == RES_OK)
+    if(sd_disk_write(0, pui8Data, ui32Sector, ui32NumBlocks) == RES_OK)
     {
         return(ui32NumBlocks * 512);
     }
@@ -234,7 +234,7 @@ USBDMSCStorageNumBlocks(void * pvDrive)
     //
     // Read the number of sectors.
     //
-    disk_ioctl(0, GET_SECTOR_COUNT, &ui32SectorCount);
+    sd_disk_ioctl(0, GET_SECTOR_COUNT, &ui32SectorCount);
 
     return(ui32SectorCount);
 }
