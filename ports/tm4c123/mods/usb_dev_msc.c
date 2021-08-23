@@ -50,13 +50,16 @@
 #include "rom_map.h"
 #include "pin.h"
 #include "irq.h"
+#include "dma.h"
 
 
 #define USB_EPEN            GPIO_PIN_4
 #define USB_EPEN_GPIO_BASE  GPIO_PORTF_BASE
 #define USB_EPEN_PERIPH     SYSCTL_PERIPH_GPIOF
 
-#define USB_IRQn            INT_USB0
+#define USB_IRQn            INT_USB0_TM4C123
+
+//uint32_t DMA_RX32Buffer[0x1000>>2];
 
 
 //*****************************************************************************
@@ -208,11 +211,11 @@ tUSBDMSCDevice g_sMSCDevice =
     g_ppui8StringDescriptors,
     NUM_STRING_DESCRIPTORS,
     {
-        USBDMSCStorageOpen,
-        USBDMSCStorageClose,
-        USBDMSCStorageRead,
-        USBDMSCStorageWrite,
-        USBDMSCStorageNumBlocks,
+        USB_MSCStorageOpen,
+        USB_MSCStorageClose,
+        USB_MSCStorageRead,
+        USB_MSCStorageWrite,
+        USB_MSCStorageNumBlocks,
         0,
     },
     USBDMSCEventCallback
@@ -296,15 +299,9 @@ static uint32_t g_ui32IdleTimeout;
 // The DMA control structure table.
 //
 //******************************************************************************
-#ifdef ewarm
-#pragma data_alignment=1024
-tDMAControlTable sDMAControlTable[64];
-#elif defined(ccs)
-#pragma DATA_ALIGN(sDMAControlTable, 1024)
-tDMAControlTable sDMAControlTable[64];
-#else
+
 tDMAControlTable sDMAControlTable[64] __attribute__ ((aligned(1024)));
-#endif
+
 
 //*****************************************************************************
 //
@@ -460,44 +457,43 @@ USBDMSCEventCallback(void *pvCBData, uint32_t ui32Event, uint32_t ui32MsgParam,
 //*****************************************************************************
 int usb_msc_device(void)
 {
-    //uint_fast32_t ui32Retcode;
-
-    // Set the system clock to run at 50MHz from the PLL.
-    // ROM_SysCtlClockSet(SYSCTL_SYSDIV_4 | SYSCTL_USE_PLL | SYSCTL_OSC_MAIN | SYSCTL_XTAL_16MHZ);
+    uint_fast32_t ui32Retcode;
 
     // Configure SysTick for a 100Hz interrupt.  The FatFs driver wants a 10 ms
     // tick.
-    ROM_SysTickPeriodSet(ROM_SysCtlClockGet() / 100);
-    ROM_SysTickEnable();
-    ROM_SysTickIntEnable();
+    // ROM_SysTickPeriodSet(ROM_SysCtlClockGet() / 100);
+    // ROM_SysTickEnable();
+    // ROM_SysTickIntEnable();
 
     // Configure and enable uDMA
-    ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_UDMA);
-    SysCtlDelay(10);
-    ROM_uDMAControlBaseSet(&sDMAControlTable[0]);
-    ROM_uDMAEnable();
+    // ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_UDMA);  //BEREITS AUFGERUFEN DURCH MAIN.C
+    // SysCtlDelay(10);
+    // uDMAControlBaseSet(&sDMAControlTable[0]);        //BEREITS AUFGERUFEN VON DMA.C -> dma_init(...)
+    // ROM_uDMAEnable();                                //BEREITS AUFGERUFEN VON DMA.C -> dma_hw_init(...)
+    
+    // Own config of uDMA for USB0
+    dma_init(UDMA_CHANNEL_USBEP1RX, DMA_CHANNEL_RX);
+    dma_init(UDMA_CHANNEL_USBEP1TX, DMA_CHANNEL_TX);
+    //usb_dma_tx(UDMA_CHANNEL_USBEP1TX);
+    //usb_dma_rx(UDMA_CHANNEL_USBEP1RX);
+
+
 
     // Configure USB Interrupt 
-    NVIC_SetPriority(USB_IRQn, IRQ_PRI_USB_MSC);
-    //IntEnable(USB_IRQn);
-    //NVIC_EnableIRQ(USB_IRQn);
+    // NVIC_SetPriority(USB_IRQn, IRQ_PRI_USB_MSC);
+    IntEnable(USB_IRQn);
+    // NVIC_EnableIRQ(USB_IRQn);
 
-    //mp_printf(MP_PYTHON_PRINTER, "Anfang USB DEV MSC");
-    //
     // Initialize the idle timeout and reset all flags.
-    //
     g_ui32IdleTimeout = 0;
     g_ui32Flags = 0;
 
-    //
     // Initialize the state to idle.
-    //
     g_eMSCState = MSC_DEV_DISCONNECTED;
 
 
-    //
+
     // Init USB module
-    //
 
     // disable USB module
     SysCtlPeripheralDisable(SYSCTL_PERIPH_USB0);
@@ -510,9 +506,7 @@ int usb_msc_device(void)
     {
     }
 
-    //
     // Set the USB pins to be controlled by the USB controller.
-    //
     ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB);
     while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOB))
     {
@@ -526,138 +520,111 @@ int usb_msc_device(void)
     {
     }
 
-    //
-    // PF4 als USB0 EPEN konfigurieren
-    //
+    // configure PF4 as USB0 EPEN 
     GPIOPinConfigure(GPIO_PF4_USB0EPEN);
     mp_hal_pin_config_alt(MICROPY_HW_USB0_EPEN, PIN_FN_USB, 0);
-    //GPIOPinTypeUSBDigital(GPIO_PORTF_BASE, GPIO_PIN_4);
 
-    //
-    // PD4 als USB0 DM; PD5 als USB0 DP konfigurieren
-    //
-    // GPIOPinTypeUSBAnalog(GPIO_PORTD_BASE, GPIO_PIN_4 | GPIO_PIN_5);     // bei TM4C123G: PL6, PL7; USB0DM=PD4, USB0DP=PD5
-    mp_hal_pin_config_alt(MICROPY_HW_USB0_DM, PIN_FN_USB, 0);
+    // configure PD4 as USB0 DM; PD5 as USB0 DP
+    mp_hal_pin_config_alt(MICROPY_HW_USB0_DM, PIN_FN_USB, 0);   // bei TM4C123G: PL6, PL7; USB0DM=PD4, USB0DP=PD5
     mp_hal_pin_config_alt(MICROPY_HW_USB0_DP, PIN_FN_USB, 0);
 
-
-    //
-    // PB0 als USB0 ID; PB1 als USB0 VBUS konfigurieren
-    //
-    //GPIOPinTypeUSBAnalog(GPIO_PORTB_BASE, GPIO_PIN_0 | GPIO_PIN_1);     // gleich wie bei TM4C123G
-                                                                            // PB0 = USB0ID; PB1 = USB0VBUS
+    // configure PB0 as USB0 ID; PB1 as USB0 VBUS 
+    // gleich wie bei TM4C123G: PB0 = USB0ID; PB1 = USB0VBUS
     mp_hal_pin_config_alt(MICROPY_HW_USB0_ID, PIN_FN_USB, 0);
     mp_hal_pin_config_alt(MICROPY_HW_USB0_VBUS, PIN_FN_USB, 0);
 
-    // mp_printf(MP_PYTHON_PRINTER, "Pin Konfig done");
-
-    //
     // Set the USB stack mode to Device mode WITHOUT (!) VBUS monitoring.
-    //
     USBStackModeSet(0, eUSBModeForceDevice, 0);
 
-    //
     // Pass our device information to the USB library and place the device
     // on the bus.
-    //
     USBDMSCInit(0, &g_sMSCDevice);
-    
-    //mp_printf(MP_PYTHON_PRINTER, "Das steht im Register %i", MY_GPIO_Content);
 
-    //
     // Determine whether or not an SDCard is installed.  If not, print a
     // warning and have the user install one and restart.
-    //
-    //ui32Retcode = sd_disk_init(0);
+    ui32Retcode = sd_disk_init(0);
 
-    // if(ui32Retcode != RES_OK) 
-    // {
-    //     // not found
-    // }
-    // else
-    // {
-    //     // found
-    //     //BlinkIfFound(1, 1);
-    // }
+    if(ui32Retcode != RES_OK) 
+    {
+        // not found
+        mp_printf(MP_PYTHON_PRINTER, "SD Card not found.\nInstall one and reset board.\n");
+    }
+    else
+    {
+        // found
+        mp_printf(MP_PYTHON_PRINTER, "SD Card has no Problems.\nTo exit MSC mode reset the board.\n");
+    }
+    // uint32_t USBIRQ_Prio, DMAIRQ_Prio, FLASHIRQ_Prio;
+
+    // USBIRQ_Prio = NVIC_GetPriority(INT_USB0_TM4C123);
+    // DMAIRQ_Prio = NVIC_GetPriority(INT_UDMA_TM4C123);
+    // FLASHIRQ_Prio = NVIC_GetPriority(INT_FLASH);
+
+    // mp_printf(MP_PYTHON_PRINTER, "USBIRQ_Prio: %d, DMAIRQ_Prio: %d, FLASHIRQ_Prio: %d\n",USBIRQ_Prio,DMAIRQ_Prio,FLASHIRQ_Prio);
 
     //mp_printf(MP_PYTHON_PRINTER, "Alles bis zur Schleife done %u", g_eMSCState);
     //
     // Drop into the main loop.
     //
-    for (;;)
-    {
-        switch(g_eMSCState)
-        {
-            case MSC_DEV_READ:
-            {
-                //
-                // Update the screen if necessary.
-                //
-                if(g_ui32Flags & FLAG_UPDATE_STATUS)
-                {
-                    //UpdateStatus("Reading", 0);
-                    g_ui32Flags &= ~FLAG_UPDATE_STATUS;
-                }
 
-                //
-                // If there is no activity then return to the idle state.
-                //
-                if(g_ui32IdleTimeout == 0)
-                {
-                    //UpdateStatus("Idle", 0);
-                    g_eMSCState = MSC_DEV_IDLE;
-                }
+    // for (;;)
+    // {
+    //     switch(g_eMSCState)
+    //     {
+    //         case MSC_DEV_READ:
+    //         {
+    //             // Update the screen if necessary.
+    //             if(g_ui32Flags & FLAG_UPDATE_STATUS)
+    //             {
+    //                 g_ui32Flags &= ~FLAG_UPDATE_STATUS;
+    //             }
 
-                break;
-            }
-            case MSC_DEV_WRITE:
-            {
-                //
-                // Update the screen if necessary.
-                //
-                if(g_ui32Flags & FLAG_UPDATE_STATUS)
-                {
-                    //UpdateStatus("Writing", 0);
-                    g_ui32Flags &= ~FLAG_UPDATE_STATUS;
-                }
+    //             // If there is no activity then return to the idle state.
+    //             if(g_ui32IdleTimeout == 0)
+    //             {
+    //                 g_eMSCState = MSC_DEV_IDLE;
+    //             }
 
-                //
-                // If there is no activity then return to the idle state.
-                //
-                if(g_ui32IdleTimeout == 0)
-                {
-                    //UpdateStatus("Idle", 0);
-                    g_eMSCState = MSC_DEV_IDLE;
-                }
-                break;
-            }
-            case MSC_DEV_DISCONNECTED:
-            {   
-                //
-                // Blink blue for not connected
-                // 
-                //BlinkIfFound(0, 2);
-                //
-                // Update the screen if necessary.
-                //
-                if(g_ui32Flags & FLAG_UPDATE_STATUS)
-                {
-                    //UpdateStatus("Disconnected", 0);
-                    g_ui32Flags &= ~FLAG_UPDATE_STATUS;
-                }
-                break;
-            }
-            case MSC_DEV_IDLE:
-            {   
+    //             break;
+    //         }
+    //         case MSC_DEV_WRITE:
+    //         {
+    //             // Update the screen if necessary.
+    //             if(g_ui32Flags & FLAG_UPDATE_STATUS)
+    //             {
+    //                 g_ui32Flags &= ~FLAG_UPDATE_STATUS;
+    //             }
+
+    //             //
+    //             // If there is no activity then return to the idle state.
+    //             //
+    //             if(g_ui32IdleTimeout == 0)
+    //             {
+    //                 g_eMSCState = MSC_DEV_IDLE;
+    //             }
+    //             break;
+    //         }
+    //         case MSC_DEV_DISCONNECTED:
+    //         {   
+    //             // Update the screen if necessary.
+    //             if(g_ui32Flags & FLAG_UPDATE_STATUS)
+    //             {
+    //                 g_ui32Flags &= ~FLAG_UPDATE_STATUS;
+    //             }
+    //             break;
+    //         }
+    //         case MSC_DEV_IDLE:
+    //         {   
                 
-                break;
-            }
-            default:
-            {
-                break;
-            }
-        }
-    }
+    //             break;
+    //         }
+    //         default:
+    //         {
+    //             break;
+    //         }
+    //     }
+    // }
+    return 0;
 }
 
 //*****************************************************************************

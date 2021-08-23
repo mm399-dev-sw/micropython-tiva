@@ -41,7 +41,6 @@
 #include "usblib/device/usbdmsc.h"
 // #include "usb_msc_structs.h"
 #include "third_party/fatfs/src/diskio.h"
-//#include "drivers/cfal96x64x16.h"
 #include "sdcard.h"
 
 #define SDCARD_PRESENT          0x00000001
@@ -70,7 +69,7 @@ g_sDriveInformation;
 //
 //*****************************************************************************
 void *
-USBDMSCStorageOpen(uint_fast32_t ui32Drive)
+USB_MSCStorageOpen(uint_fast32_t ui32Drive)
 {
     uint_fast32_t ui32Temp;
 
@@ -127,7 +126,7 @@ USBDMSCStorageOpen(uint_fast32_t ui32Drive)
 //
 //*****************************************************************************
 void
-USBDMSCStorageClose(void * pvDrive)
+USB_MSCStorageClose(void * pvDrive)
 {
     uint_fast8_t ui8Power;
 
@@ -166,14 +165,13 @@ USBDMSCStorageClose(void * pvDrive)
 // /return Returns the number of bytes that were read from the device.
 //
 //*****************************************************************************
-uint32_t USBDMSCStorageRead(void * pvDrive,
+uint32_t USB_MSCStorageRead(void * pvDrive,
                                  uint8_t *pui8Data,
                                  uint_fast32_t ui32Sector,
                                  uint_fast32_t ui32NumBlocks)
-{
-    ASSERT(pvDrive != 0);
+{    ASSERT(pvDrive != 0);
 
-    if(sd_disk_read (0, pui8Data, ui32Sector, ui32NumBlocks) == RES_OK)
+    if(sd_disk_read_dma (0, pui8Data, ui32Sector, ui32NumBlocks) == RES_OK)
     {
         // TODO remove fixed 512
         return(ui32NumBlocks * 512);
@@ -199,14 +197,14 @@ uint32_t USBDMSCStorageRead(void * pvDrive,
 // /return Returns the number of bytes that were written to the device.
 //
 //*****************************************************************************
-uint32_t USBDMSCStorageWrite(void * pvDrive,
+uint32_t USB_MSCStorageWrite(void * pvDrive,
                                   uint8_t *pui8Data,
                                   uint_fast32_t ui32Sector,
                                   uint_fast32_t ui32NumBlocks)
 {
     ASSERT(pvDrive != 0);
 
-    if(sd_disk_write(0, pui8Data, ui32Sector, ui32NumBlocks) == RES_OK)
+    if(sd_disk_write_dma (0, pui8Data, ui32Sector, ui32NumBlocks) == RES_OK)
     {
         return(ui32NumBlocks * 512);
     }
@@ -227,7 +225,7 @@ uint32_t USBDMSCStorageWrite(void * pvDrive,
 //
 //*****************************************************************************
 uint32_t
-USBDMSCStorageNumBlocks(void * pvDrive)
+USB_MSCStorageNumBlocks(void * pvDrive)
 {
     uint_fast32_t ui32SectorCount;
 
@@ -255,4 +253,4 @@ USBDMSCStorageNumBlocks(void * pvDrive)
 //*****************************************************************************
 #define USBDMSC_IDLE            0x00000000
 #define USBDMSC_NOT_PRESENT     0x00000001
-uint32_t USBDMSCStorageStatus(void * pvDrive);
+uint32_t USB_MSCStorageStatus(void * pvDrive);

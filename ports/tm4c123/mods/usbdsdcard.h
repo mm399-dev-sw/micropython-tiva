@@ -31,10 +31,10 @@
 //
 //
 //*****************************************************************************
-extern void * USBDMSCStorageOpen(uint32_t ui32Drive);
-extern void USBDMSCStorageClose(void * pvDrive);
-extern uint32_t USBDMSCStorageRead(void * pvDrive, uint8_t *pui8Data, uint32_t ui32Sector, uint32_t ui32NumBlocks);
-extern uint32_t USBDMSCStorageWrite(void * pvDrive, uint8_t *pui8Data, uint32_t ui32Sector, uint32_t ui32NumBlocks);
-uint32_t USBDMSCStorageNumBlocks(void * pvDrive);
+extern void * USB_MSCStorageOpen(uint32_t ui32Drive);
+extern void USB_MSCStorageClose(void * pvDrive);
+extern uint32_t USB_MSCStorageRead(void * pvDrive, uint8_t *pui8Data, uint32_t ui32Sector, uint32_t ui32NumBlocks);
+extern uint32_t USB_MSCStorageWrite(void * pvDrive, uint8_t *pui8Data, uint32_t ui32Sector, uint32_t ui32NumBlocks);
+uint32_t USB_MSCStorageNumBlocks(void * pvDrive);
 
 #endif
