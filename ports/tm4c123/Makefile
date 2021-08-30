@@ -208,7 +208,7 @@ SRC_MOD = $(addprefix mods/,\
 	dma.c \
 	extint.c \
 	usbdsdcard.c \
-	usb_dev_msc.c \
+	usb.c \
 	i2c.c \
 	spi.c \
 	)

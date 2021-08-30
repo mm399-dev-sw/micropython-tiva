@@ -100,6 +100,7 @@
 #include "usblib/device/usbdevice.h"
 #include "usblib/device/usbdevicepriv.h"
 #include "usblib/usblibpriv.h"
+#include "driverlib/interrupt.h"
 
 extern void __fatal_error(const char*);
 // extern PCD_HandleTypeDef pcd_fs_handle;
@@ -478,26 +479,25 @@ void FLASH_IRQHandler(void) {
     IRQ_EXIT(FLASH_IRQn);
 }
 
-#if defined(MICROPY_PY_USB_DEV_MSC)
+//#if defined(MICROPY_PY_USB_DEV_MSC)
 void USB_IRQHandler(void) {
     IRQ_ENTER(USB_IRQn);
-
+    uint32_t basepri_store;
+    basepri_store = raise_irq_pri(1);
     uint32_t ui32Status = 0;
     //
     // Get the controller interrupt status.
     //
-    ui32Status = HWREGB(USB0_BASE + 0x0000000A);
-    if (ui32Status != 0){
-    ui32Status = USBIntStatusControl(USB0_BASE);
-    }
+    ui32Status = MAP_USBIntStatusControl(USB0_BASE);
+    // }
     //
     // Call the internal handler.
     //
     USBDeviceIntHandlerInternal(0, ui32Status);
-
+    restore_irq_pri(basepri_store);
     IRQ_EXIT(USB_IRQn);
 }
-#endif // defined(MICROPY_PY_USB_DEV_MSC)
+//#endif // defined(MICROPY_PY_USB_DEV_MSC)
 
 
 void GPIOA_Handler(void)

@@ -91,7 +91,7 @@
 #define MICROPY_HW_HAS_SDCARD          (1)
 #define MICROPY_PY_MACHINE_HW_SPI      (1)
 #define MICROPY_PY_MACHINE_HW_I2C      (0)
-#define MICROPY_PY_USB_DEV_MSC         (1)
+#define MICROPY_HW_ENABLE_USB          (1)
 
 // fatfs configuration used in ffconf.h
 #define MICROPY_FATFS_ENABLE_LFN       (1)
@@ -176,7 +176,7 @@ static inline mp_uint_t disable_irq(void) {
 
 extern const struct _mp_obj_module_t machine_module;
 extern const struct _mp_obj_module_t mp_module_uos;
-extern const struct _mp_obj_module_t usb_msc_module;
+// extern const struct _mp_obj_module_t usb_msc_module;
 // extern const struct _mp_obj_module_t pin_module;
 
 // extra built in names to add to the global namespace
@@ -203,8 +203,8 @@ extern const struct _mp_obj_module_t usb_msc_module;
 
 #define MICROPY_PORT_BUILTIN_MODULES \
     { MP_ROM_QSTR(MP_QSTR_umachine), MP_ROM_PTR(&machine_module) }, \
-    { MP_ROM_QSTR(MP_QSTR_uos), MP_ROM_PTR(&mp_module_uos) }, \
-    { MP_ROM_QSTR(MP_QSTR_usb), MP_ROM_PTR(&usb_msc_module) },
+    { MP_ROM_QSTR(MP_QSTR_uos), MP_ROM_PTR(&mp_module_uos) },
+    //{ MP_ROM_QSTR(MP_QSTR_usb), MP_ROM_PTR(&usb_msc_module) },
 
 #define MICROPY_PORT_CONSTANTS \
     { MP_ROM_QSTR(MP_QSTR_umachine), MP_ROM_PTR(&machine_module) }, \

@@ -75,7 +75,7 @@
 // #include "can.h"
 // #include "modnetwork.h"
 #include "dma.h"
-#include "usb_dev_msc.h"
+//#include "usb_dev_msc.h"
 
 // prevent clash between driverlib and CMSIS
 #ifdef NVIC_BASE

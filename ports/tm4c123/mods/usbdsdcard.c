@@ -171,7 +171,7 @@ uint32_t USB_MSCStorageRead(void * pvDrive,
                                  uint_fast32_t ui32NumBlocks)
 {    ASSERT(pvDrive != 0);
 
-    if(sd_disk_read_dma (0, pui8Data, ui32Sector, ui32NumBlocks) == RES_OK)
+    if(sd_disk_read (0, pui8Data, ui32Sector, ui32NumBlocks) == RES_OK)
     {
         // TODO remove fixed 512
         return(ui32NumBlocks * 512);
@@ -204,7 +204,7 @@ uint32_t USB_MSCStorageWrite(void * pvDrive,
 {
     ASSERT(pvDrive != 0);
 
-    if(sd_disk_write_dma (0, pui8Data, ui32Sector, ui32NumBlocks) == RES_OK)
+    if(sd_disk_write (0, pui8Data, ui32Sector, ui32NumBlocks) == RES_OK)
     {
         return(ui32NumBlocks * 512);
     }

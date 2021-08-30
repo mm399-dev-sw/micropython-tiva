@@ -48,7 +48,7 @@
 // #include "storage.h"
 #include "pin.h"
 //#include "timer.h"
-//#include "usb.h"
+#include "usb.h"
 #include "rtc.h"
 #include "extint.h"
 #include "i2c.h"
@@ -463,6 +463,9 @@ STATIC const mp_rom_map_elem_t machine_module_globals_table[] = {
 #if MICROPY_HW_HAS_SDCARD
     { MP_ROM_QSTR(MP_QSTR_SDCard),                  MP_ROM_PTR(&pyb_sdcard_type) },
 #endif
+#if MICROPY_HW_ENABLE_USB
+    { MP_ROM_QSTR(MP_QSTR_USB),                 MP_ROM_PTR(&pyb_usb_msc_type) },
+#endif 
 #if 0
     { MP_ROM_QSTR(MP_QSTR_Timer),               MP_ROM_PTR(&pyb_timer_type) },
     { MP_ROM_QSTR(MP_QSTR_HeartBeat),           MP_ROM_PTR(&pyb_heartbeat_type) },
