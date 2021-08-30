@@ -89,7 +89,7 @@
 
 // sd card
 #define MICROPY_HW_HAS_SDCARD          (1)
-#define MICROPY_PY_MACHINE_HW_SPI      (0)
+#define MICROPY_PY_MACHINE_HW_SPI      (1)
 #define MICROPY_PY_MACHINE_HW_I2C      (0)
 #define MICROPY_PY_USB_DEV_MSC         (1)
 

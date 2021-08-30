@@ -210,10 +210,11 @@ SRC_MOD = $(addprefix mods/,\
 	usbdsdcard.c \
 	usb_dev_msc.c \
 	i2c.c \
+	spi.c \
 	)
 
 	
-	#spi.c \
+	#
 	# modpyb.c \
 	# pendsv.c \
 	# flashbdev.c \
