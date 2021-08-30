@@ -114,6 +114,7 @@
 #define MICROPY_HW_I2C3_SCL	(pin_PD0)
 #define MICROPY_HW_I2C3_SDA	(pin_PD1)
 
+<<<<<<< HEAD
 #define MICROPY_HW_USB0_NAME    "0"
 #define MICROPY_HW_USB0_EPEN    (pin_PF4)
 #define MICROPY_HW_USB0_DM      (pin_PD4)
@@ -121,6 +122,8 @@
 #define MICROPY_HW_USB0_ID      (pin_PB0)
 #define MICROPY_HW_USB0_VBUS    (pin_PB1)
 
+=======
+>>>>>>> 5504223c2a79b976361b607a4c02f050b23d2c59
 
 // TODO
 // #define MICROPY_HW_ENABLE_INTERNAL_FLASH_STORAGE (1)
