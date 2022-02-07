@@ -103,6 +103,8 @@ void TIMER4BIntHandler(void);
 void TIMER5AIntHandler(void);
 void TIMER5BIntHandler(void);
 
+void CAN0_IRQHandler(void);
+void CAN1_IRQHandler(void);
 
 
 #endif // MICROPY_INCLUDED_TM4C_STM32_IT_H

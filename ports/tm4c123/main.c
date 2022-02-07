@@ -68,7 +68,7 @@
 // #include "accel.h"
 // #include "servo.h"
 // #include "dac.h"
-// #include "can.h"
+#include "can.h"
 // #include "modnetwork.h"
 #include "dma.h"
 #include "mpirq.h"

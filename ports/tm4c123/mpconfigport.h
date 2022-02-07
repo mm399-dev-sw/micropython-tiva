@@ -236,4 +236,6 @@ extern const struct _mp_obj_module_t mp_module_uos;
     struct _machine_hard_spi_obj_t *machine_spi_obj_all[MICROPY_HW_MAX_SPI];\
     struct _machine_hard_i2c_obj_t *machine_i2c_obj_all[MICROPY_HW_MAX_I2C];\
     struct _machine_timer_obj_t *machine_timer_obj_all[MICROPY_HW_MAX_TIMER];\
+    struct _machine_hard_can_obj_t *machine_can_obj_all[MICROPY_HW_MAX_CAN];
+
 // EOF

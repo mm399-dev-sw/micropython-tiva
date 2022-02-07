@@ -54,6 +54,8 @@
 #include "i2c.h"
 #include "spi.h"
 #include "uart.h"
+
+#include "can.h"
 //#include "wdt.h"
 //#include "genhdr/pllfreqtable.h"
 
@@ -463,6 +465,7 @@ STATIC const mp_rom_map_elem_t machine_module_globals_table[] = {
 #if MICROPY_HW_HAS_SDCARD
     { MP_ROM_QSTR(MP_QSTR_SDCard),                  MP_ROM_PTR(&pyb_sdcard_type) },
 #endif
+    { MP_ROM_QSTR(MP_QSTR_CAN),                  MP_ROM_PTR(&machine_hard_can_type) },
 #if MICROPY_PY_MACHINE_HW_TIMER
     { MP_ROM_QSTR(MP_QSTR_Timer),                 MP_ROM_PTR(&machine_timer_type) },
 #endif

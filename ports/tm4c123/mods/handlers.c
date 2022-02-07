@@ -86,7 +86,7 @@
 #include "timer.h"
 #include "uart.h"
 #include "storage.h"
-// #include "can.h"
+#include "can.h"
 // #include "dma.h"
 // #include "i2c.h"
 // #include "usb.h"
@@ -584,6 +584,13 @@ void TIMER5BIntHandler(void)
     TIMERGenericIntHandler(TIMER5_BASE, TIMER_B);
 }
 
+void CAN0_IRQHandler(void){
+    CANGenericIntHandler(CAN0_BASE);
+}
+
+void CAN1_IRQHandler(void){
+    CANGenericIntHandler(CAN1_BASE);
+}
 
 #if defined(TIM6) // STM32F401 doesn't have TIM6
 void TIM6_DAC_IRQHandler(void) {

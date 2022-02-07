@@ -36,6 +36,7 @@
 #define MICROPY_HW_MAX_SPI (4)
 #define MICROPY_HW_MAX_I2C (4)
 #define MICROPY_HW_MAX_TIMER (6)
+#define MICROPY_HW_MAX_CAN (2)
 
 #define MICROPY_PY_MACHINE_SPI (0)
 
@@ -121,6 +122,13 @@
 #define MICROPY_HW_TIMER3_NAME    "3"
 #define MICROPY_HW_TIMER4_NAME    "4"
 #define MICROPY_HW_TIMER5_NAME    "5"
+#define MICROPY_HW_CAN0_NAME "0"
+#define MICROPY_HW_CAN0_RX  (pin_PB4)
+#define MICROPY_HW_CAN0_TX  (pin_PB5)
+
+#define MICROPY_HW_CAN1_NAME "1"
+#define MICROPY_HW_CAN1_RX  (pin_PA0)
+#define MICROPY_HW_CAN1_TX  (pin_PA1)
 
 
 // TODO
