@@ -239,7 +239,7 @@ function ci_tm4c123_setup {
     wget -O ./tivaware_drl.exe https://software-dl.ti.com/tiva-c/SW-TM4C/2.2.0.295/exports/SW-TM4C-DRL-2.2.0.295.exe
     unzip -d ports/tm4c123/tivaware tivaware_drl.exe 
     wget -O ./tivaware_usbl.exe https://software-dl.ti.com/tiva-c/SW-TM4C/2.2.0.295/exports/SW-TM4C-USBL-2.2.0.295.exe
-    unzip -f -d ports/tm4c123/tivaware tivaware_usbl.exe
+    unzip -o -d ports/tm4c123/tivaware tivaware_usbl.exe
 }
 
 function ci_tm4c123_build {
