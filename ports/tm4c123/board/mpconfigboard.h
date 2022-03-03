@@ -116,6 +116,15 @@
 #define MICROPY_HW_I2C3_SCL	(pin_PD0)
 #define MICROPY_HW_I2C3_SDA	(pin_PD1)
 
+// USB defines
+#if MICROPY_HW_ENABLE_USB
+#define MICROPY_HW_USB0_NAME    "0"
+#define MICROPY_HW_USB0_EPEN    (pin_PF4)
+#define MICROPY_HW_USB0_DM      (pin_PD4)
+#define MICROPY_HW_USB0_DP      (pin_PD5)
+#define MICROPY_HW_USB0_ID      (pin_PB0)
+#define MICROPY_HW_USB0_VBUS    (pin_PB1)
+#endif
 #define MICROPY_HW_TIMER0_NAME    "0"
 #define MICROPY_HW_TIMER1_NAME    "1"
 #define MICROPY_HW_TIMER2_NAME    "2"
@@ -137,7 +146,7 @@
 // #define MICROPY_HW_HAS_FLASH        (1)
 // #define MICROPY_HW_ENABLE_RNG       (0)
 // #define MICROPY_HW_ENABLE_RTC       (1)
-// #define MICROPY_HW_ENABLE_USB       (0)
+
 
 
 // SPI defines for SD card

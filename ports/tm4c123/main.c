@@ -31,6 +31,10 @@
 
 #include CMSIS_HEADER
 
+#ifndef PART_TM4C123GH6PM
+#define PART_TM4C123GH6PM
+#endif
+
 #include "system_TM4C123.h"
 
 #include "py/runtime.h"
@@ -72,6 +76,7 @@
 // #include "modnetwork.h"
 #include "dma.h"
 #include "mpirq.h"
+//#include "usb_dev_msc.h"
 
 // prevent clash between driverlib and CMSIS
 #ifdef NVIC_BASE
@@ -436,7 +441,7 @@ int tm4c_main(int reset_mode) {
     #if MICROPY_HW_ENABLE_RTC
     rtc_init_start(false);
     #endif
-    spi_init0();
+    // spi_init0();
     // disable_irq();
     // TODO
 //     #if MICROPY_HW_ENABLE_HW_I2C
@@ -491,9 +496,6 @@ soft_reset:
 
     // TODO Missing Repl Config
 
-//     #if MICROPY_HW_ENABLE_USB
-//     pyb_usb_init0();
-//     #endif
 
     // Initialise the local flash filesystem.
     // Create it if needed, mount in on /flash, and set it as current dir.
@@ -501,7 +503,7 @@ soft_reset:
 
     bool mounted_sdcard = false;
     #if MICROPY_HW_HAS_SDCARD
-    // if an SD card is present then mount it on /sd/
+    //if an SD card is present then mount it on /sd/
     if (sdcard_is_present()) {
         // if there is a file in the flash called "SKIPSD", then we don't mount the SD card
         if (!mounted_flash || f_stat(&fs_user_mount_flash.fatfs, "/SKIPSD", NULL) != FR_OK) {
@@ -567,6 +569,11 @@ soft_reset:
 //         pyb_usb_dev_init(USBD_VID, USBD_PID_CDC_MSC, USBD_MODE_CDC_MSC, NULL);
 //     }
 //     #endif
+
+    #if MICROPY_PY_USB_DEV_MSC 
+    //usb_msc_device();
+    #endif
+
 // // At this point everything is fully configured and initialised.
 
     // Run the main script from the current directory.

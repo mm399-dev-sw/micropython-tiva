@@ -1,6 +1,6 @@
 *.axf
 *.lst
-
+*.DS_Store
 .directory/
 .vscode/
 .settings/
