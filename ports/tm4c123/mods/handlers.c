@@ -72,6 +72,7 @@
 
 // define to just leave everything as is 
 #define FLASH_IRQn INT_FLASH
+#define USB_IRQn   INT_USB0_TM4C123
 
 #include CMSIS_HEADER
 
@@ -92,6 +93,14 @@
 // #include "usb.h"
 #include "inc/hw_memmap.h"
 #include "extint.h"
+#include "usb_dev_msc.h"
+#include "driverlib/usb.h"
+#include "usblib/usblib.h"
+#include "usblib/usblibpriv.h"
+#include "usblib/device/usbdevice.h"
+#include "usblib/device/usbdevicepriv.h"
+#include "usblib/usblibpriv.h"
+#include "driverlib/interrupt.h"
 
 extern void __fatal_error(const char*);
 // extern PCD_HandleTypeDef pcd_fs_handle;
@@ -469,6 +478,26 @@ void FLASH_IRQHandler(void) {
     // storage_irq_handler();
     IRQ_EXIT(FLASH_IRQn);
 }
+
+//#if defined(MICROPY_PY_USB_DEV_MSC)
+void USB_IRQHandler(void) {
+    IRQ_ENTER(USB_IRQn);
+    uint32_t basepri_store;
+    basepri_store = raise_irq_pri(1);
+    uint32_t ui32Status = 0;
+    //
+    // Get the controller interrupt status.
+    //
+    ui32Status = MAP_USBIntStatusControl(USB0_BASE);
+    // }
+    //
+    // Call the internal handler.
+    //
+    USBDeviceIntHandlerInternal(0, ui32Status);
+    restore_irq_pri(basepri_store);
+    IRQ_EXIT(USB_IRQn);
+}
+//#endif // defined(MICROPY_PY_USB_DEV_MSC)
 
 
 void GPIOA_Handler(void)
@@ -973,3 +1002,5 @@ void I2C4_ER_IRQHandler(void) {
 } 
 #endif
 #endif // defined(MICROPY_HW_I2C4_SCL)
+
+

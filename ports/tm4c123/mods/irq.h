@@ -140,4 +140,7 @@ MP_DECLARE_CONST_FUN_OBJ_0(pyb_irq_stats_obj);
 #define IRQ_PRI_PENDSV          NVIC_EncodePriority(NVIC_APINT_PRIGROUP_4_4, 15, 0)
 #define IRQ_PRI_RTC_WKUP        NVIC_EncodePriority(NVIC_APINT_PRIGROUP_4_4, 15, 0)
 
+// USB Mass Storage Interrupt should have a higher priority than everything except Flash
+#define IRQ_PRI_USB_MSC         NVIC_EncodePriority(NVIC_APINT_PRIGROUP_4_4, 8, 0)
+
 #endif // MICROPY_INCLUDED_TM4C123_IRQ_H

@@ -8,7 +8,7 @@ MEMORY
 	SRAM (rwx) : ORIGIN = 0x20000000, LENGTH = 0x00008000
 }
 
-heap_size = 0x6000; /* 2K */
+heap_size = 0x4000; /* 2K */
 
 ENTRY(Reset_Handler)
 

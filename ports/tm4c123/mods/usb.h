@@ -26,6 +26,39 @@
 #ifndef MICROPY_INCLUDED_TM4C_USB_H
 #define MICROPY_INCLUDED_TM4C_USB_H
 
+#include "stdint.h"
+#include "stdbool.h"
+#include "usblib/usblib.h"
+#include "usblib/device/usbdevice.h"
+#include "usblib/device/usbdmsc.h"
+
+
+//*****************************************************************************
+//
+// The mass storage class device structure.
+//
+//*****************************************************************************
+extern tUSBDMSCDevice g_sMSCDevice;
+
+//*****************************************************************************
+//
+// The externally provided mass storage class event call back function.
+//
+//*****************************************************************************
+extern uint32_t USBDMSCEventCallback(void *pvCBData, uint32_t ui32Event,
+                                     uint32_t ui32MsgParam, void *pvMsgData);
+
+//*****************************************************************************
+//
+// The externally provided mass storage class event call back function.
+//
+//*****************************************************************************
+
+// int usb_msc_device(void);
+
+#define PYB_USB_FLAG_USB_MODE_CALLED    (0x0002)
+
+    
 #include "usbd_cdc_msc_hid0.h"
 
 #define PYB_USB_FLAG_USB_MODE_CALLED    (0x0002)
@@ -35,7 +68,7 @@
 #define USBD_PID_CDC_MSC (0x9800)
 #define USBD_PID_CDC_HID (0x9801)
 #define USBD_PID_CDC     (0x9802)
-#define USBD_PID_MSC     (0x9803)
+#define USBD_PID_MSC     (0x0005)
 
 typedef enum {
     PYB_USB_STORAGE_MEDIUM_NONE = 0,
@@ -50,23 +83,24 @@ typedef enum {
 
 extern mp_uint_t pyb_usb_flags;
 extern pyb_usb_storage_medium_t pyb_usb_storage_medium;
-extern const struct _mp_obj_tuple_t pyb_usb_hid_mouse_obj;
-extern const struct _mp_obj_tuple_t pyb_usb_hid_keyboard_obj;
-extern const mp_obj_type_t pyb_usb_vcp_type;
-extern const mp_obj_type_t pyb_usb_hid_type;
+// extern const struct _mp_obj_tuple_t pyb_usb_hid_mouse_obj;
+// extern const struct _mp_obj_tuple_t pyb_usb_hid_keyboard_obj;
+extern const mp_obj_type_t pyb_usb_msc_type;
+//extern const mp_obj_type_t pyb_usb_hid_type;
 MP_DECLARE_CONST_FUN_OBJ_KW(pyb_usb_mode_obj);
-MP_DECLARE_CONST_FUN_OBJ_0(pyb_have_cdc_obj); // deprecated
-MP_DECLARE_CONST_FUN_OBJ_1(pyb_hid_send_report_obj); // deprecated
+//MP_DECLARE_CONST_FUN_OBJ_0(pyb_have_cdc_obj); // deprecated
+//MP_DECLARE_CONST_FUN_OBJ_1(pyb_hid_send_report_obj); // deprecated
 
 void pyb_usb_init0(void);
-bool pyb_usb_dev_init(uint16_t vid, uint16_t pid, usb_device_mode_t mode, USBD_HID_ModeInfoTypeDef *hid_info);
+//  vorherige Argumente uint16_t vid, uint16_t pid, usb_device_mode_t mode, USBD_HID_ModeInfoTypeDef *hid_info
+bool pyb_usb_dev_init(usb_device_mode_t mode);
 void pyb_usb_dev_deinit(void);
 bool usb_vcp_is_enabled(void);
-int usb_vcp_recv_byte(uint8_t *c); // if a byte is available, return 1 and put the byte in *c, else return 0
-void usb_vcp_send_strn(const char* str, int len);
+//int usb_vcp_recv_byte(uint8_t *c); // if a byte is available, return 1 and put the byte in *c, else return 0
+//void usb_vcp_send_strn(const char* str, int len);
 
-void pyb_usb_host_init(void);
-void pyb_usb_host_process(void);
-uint pyb_usb_host_get_keyboard(void);
+// void pyb_usb_host_init(void);
+// void pyb_usb_host_process(void);
+// uint pyb_usb_host_get_keyboard(void);
 
 #endif // MICROPY_INCLUDED_TM4C_USB_H

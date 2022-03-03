@@ -47,6 +47,8 @@
 //#include "rng.h"
 // #include "storage.h"
 #include "pin.h"
+//#include "timer.h"
+#include "usb.h"
 #include "timer.h"
 //#include "usb.h"
 #include "rtc.h"
@@ -455,7 +457,7 @@ STATIC const mp_rom_map_elem_t machine_module_globals_table[] = {
 #if MICROPY_PY_MACHINE_HW_I2C
     { MP_ROM_QSTR(MP_QSTR_I2C),                 MP_ROM_PTR(&machine_hard_i2c_type) },
 #endif
-#ifdef MICROPY_PY_MACHINE_HW_SPI
+#if MICROPY_PY_MACHINE_HW_SPI
     { MP_ROM_QSTR(MP_QSTR_SPI),                 MP_ROM_PTR(&machine_hard_spi_type) },
 #endif
     { MP_ROM_QSTR(MP_QSTR_UART),                MP_ROM_PTR(&machine_uart_type) },
@@ -465,6 +467,9 @@ STATIC const mp_rom_map_elem_t machine_module_globals_table[] = {
 #if MICROPY_HW_HAS_SDCARD
     { MP_ROM_QSTR(MP_QSTR_SDCard),                  MP_ROM_PTR(&pyb_sdcard_type) },
 #endif
+#if MICROPY_HW_ENABLE_USB
+    { MP_ROM_QSTR(MP_QSTR_USB),                 MP_ROM_PTR(&pyb_usb_msc_type) },
+#endif 
     { MP_ROM_QSTR(MP_QSTR_CAN),                  MP_ROM_PTR(&machine_hard_can_type) },
 #if MICROPY_PY_MACHINE_HW_TIMER
     { MP_ROM_QSTR(MP_QSTR_Timer),                 MP_ROM_PTR(&machine_timer_type) },
