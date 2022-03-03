@@ -11,10 +11,10 @@
 # Enables Debugging friendly settings, change requires full rebuild
 DEBUG ?= 1
 # Enables Link Time Optimization, only when not compiling for DEBUG, change requires full rebuild
-LINK_TIME_OPT = 0
+LINK_TIME_OPT = 1
 
 # Location of the TivaWare library
-TIVAWARE_LIB ?= /Users/danielhorber/Documents/MicroPython/tivaware
+TIVAWARE_LIB ?= ./tivaware
 
 ## NOT YET IMPLEMENTED, USE LMFLASHER 
 # OpenOCD paths
@@ -73,13 +73,6 @@ INC += -I$(TOP)/lib/cmsis/inc
 INC += -I$(TOP)
 INC += -I$(PY_SRC)
 
-#
-# Where to find header files that do not live in the source directory.
-#
-#IPATH=..
-#IPATH+=../../../..
-#IPATH+=../../../../third_party
-
 
 INC += -I$(USBDEV_DIR)/core/inc -I$(USBDEV_DIR)/class/inc
 
@@ -109,6 +102,7 @@ CFLAGS += $(addprefix -D, \
 		TARGET_IS_TM4C123_RB1 \
 		MICROPY_PIN_DEFS_PORT_H=\"mods/pin_defs_tm4c123.h\" \
 		FFCONF_H=\"lib/oofatfs/ffconf.h\" \
+		gcc \
 		)
 
 # CFLAGS += -DMICROPY_MPHALPORT_H=\"mphalport.h\"
@@ -263,8 +257,13 @@ OBJ = $(PY_O) $(ASM_OBJ) $(C_OBJ)
 # Optimization
 ########################################################
 
-# Always compile floating point lib with Optimizations to save space
+# Always compile floating point lib with optimizations to save space
 $(addprefix $(BUILD)/, $(SRC_LIBF:.c=.o)): COPT += -Os
+
+# Compile these files always optimized for size
+$(addprefix $(BUILD)/, $(SRC_LIB:.c=.o)): COPT += -Os
+$(wildcard $(PY_BUILD)/*.o): COPT += -Os
+$(wildcard $(BUILD)/extmod/*.o): COPT += -Os
 
 # This file contains performance critical functions so turn up the optimisation
 # level.  It doesn't add much to the code size and improves performance a bit.
@@ -362,7 +361,7 @@ $(BUILD)/firmware.axf: $(OBJ)
 	$(ECHO)
 	$(ECHO) Making driverlib
 	$(Q)$(MAKE) -C ${TIVAWARE_LIB}/driverlib/
-	#$(Q)$(MAKE) -C ${TIVAWARE_LIB}/usblib/
+	$(Q)$(MAKE) -C ${TIVAWARE_LIB}/usblib/
 	$(ECHO)
 	$(ECHO) Linking...
 	$(ECHO) " >" $(BUILD)/firmware.axf

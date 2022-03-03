@@ -93,7 +93,7 @@
 // #include "usb.h"
 #include "inc/hw_memmap.h"
 #include "extint.h"
-#include "usb_dev_msc.h"
+#include "usb.h"
 #include "driverlib/usb.h"
 #include "usblib/usblib.h"
 #include "usblib/usblibpriv.h"
@@ -1002,5 +1002,3 @@ void I2C4_ER_IRQHandler(void) {
 } 
 #endif
 #endif // defined(MICROPY_HW_I2C4_SCL)
-
-

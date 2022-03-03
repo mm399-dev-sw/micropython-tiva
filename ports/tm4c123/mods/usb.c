@@ -40,7 +40,7 @@
 // Modified Version of MSC Example - tivaware
 #if MICROPY_HW_ENABLE_USB
 
-#include "usb_dev_msc.h"
+// #include "usb_dev_msc.h"
 #include "stdint.h"
 #include "stdbool.h"
 #include "inc/hw_ints.h"
@@ -54,7 +54,7 @@
 #include "driverlib/gpio.h"
 #include "driverlib/udma.h"
 #include "driverlib/pin_map.h"
-#include "grlib/grlib.h"
+//#include "grlib/grlib.h"
 #include "usblib/usb-ids.h"
 #include "usbdsdcard.h"
 #include "sdcard.h"
