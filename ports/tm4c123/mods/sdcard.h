@@ -32,13 +32,17 @@
 // this is a fixed size and should not be changed
 #define SDCARD_BLOCK_SIZE (512)
 
+#if MICROPY_HW_HAS_SDCARD
+#define MICROPY_HW_SDCARD_DETECT_PRESENT ((int)sdcard_is_present())
+#endif
+
 void sdcard_init(void);
 bool sdcard_is_present(void);
 bool sdcard_power_on(void);
 void sdcard_power_off(void);
 uint64_t sdcard_get_capacity_in_bytes(void);
 DSTATUS sd_disk_init(uint8_t drv);
-DSTATUS sd_disk_staus (uint8_t drv);
+DSTATUS sd_disk_status (uint8_t drv);
 DRESULT sd_disk_ioctl(uint8_t drv, uint8_t ctrl, void *buff);
 DRESULT sd_disk_read(uint8_t drv, uint8_t *buff, uint32_t sector, uint8_t count);
 DRESULT sd_disk_write (uint8_t drv, const uint8_t *buff, uint32_t sector, uint8_t count);

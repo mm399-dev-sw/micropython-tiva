@@ -50,8 +50,6 @@
 
 #if MICROPY_HW_HAS_SDCARD
 
-#define MICROPY_HW_SDCARD_DETECT_PRESENT (1)
-
 /* Definitions for MMC/SDC command */
 #define CMD0    (0x40+0)    /* GO_IDLE_STATE */
 #define CMD1    (0x40+1)    /* SEND_OP_COND */
@@ -477,7 +475,7 @@ DSTATUS sd_disk_init (
 /*-----------------------------------------------------------------------*/
 /* Get Disk Status                                                       */
 /*-----------------------------------------------------------------------*/
-DSTATUS sd_disk_staus (
+DSTATUS sd_disk_status (
     uint8_t drv        /* Physical drive nmuber (0) */
 ) {
     if (drv) return STA_NOINIT;        /* Supports only single drive */
