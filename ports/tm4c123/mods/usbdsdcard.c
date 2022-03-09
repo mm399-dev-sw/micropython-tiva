@@ -1,27 +1,29 @@
-//*****************************************************************************
-//
-// usbdsdcard.c - Routines supplied for use by the mass storage class device
-// class.
-//
-// Copyright (c) 2012-2017 Texas Instruments Incorporated.  All rights reserved.
-// Software License Agreement
-// 
-// Texas Instruments (TI) is supplying this software for use solely and
-// exclusively on TI's microcontroller products. The software is owned by
-// TI and/or its suppliers, and is protected under applicable copyright
-// laws. You may not combine this software with "viral" open-source
-// software in order to form a larger program.
-// 
-// THIS SOFTWARE IS PROVIDED "AS IS" AND WITH ALL FAULTS.
-// NO WARRANTIES, WHETHER EXPRESS, IMPLIED OR STATUTORY, INCLUDING, BUT
-// NOT LIMITED TO, IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE APPLY TO THIS SOFTWARE. TI SHALL NOT, UNDER ANY
-// CIRCUMSTANCES, BE LIABLE FOR SPECIAL, INCIDENTAL, OR CONSEQUENTIAL
-// DAMAGES, FOR ANY REASON WHATSOEVER.
-// 
-// This is part of revision 2.1.4.178 of the DK-TM4C123G Firmware Package.
-//
-//*****************************************************************************
+/*
+ * This file is part of the MicroPython project, http://micropython.org/
+ *
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2013-2019 Damien P. George
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
+
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -43,7 +45,7 @@
 #include "third_party/fatfs/src/diskio.h"
 #include "sdcard.h"
 
-#define SDCARD_PRESENT          0x00000001
+#define SDCARD_PRESENT          MICROPY_HW_SDCARD_DETECT_PRESENT
 #define SDCARD_IN_USE           0x00000002
 struct
 {
@@ -69,7 +71,7 @@ g_sDriveInformation;
 //
 //*****************************************************************************
 void *
-USB_MSCStorageOpen(uint_fast32_t ui32Drive)
+usb_mcs_storage_open(uint_fast32_t ui32Drive)
 {
     uint_fast32_t ui32Temp;
 
@@ -126,7 +128,7 @@ USB_MSCStorageOpen(uint_fast32_t ui32Drive)
 //
 //*****************************************************************************
 void
-USB_MSCStorageClose(void * pvDrive)
+usb_mcs_storage_close(void * pvDrive)
 {
     uint_fast8_t ui8Power;
 
@@ -165,7 +167,7 @@ USB_MSCStorageClose(void * pvDrive)
 // /return Returns the number of bytes that were read from the device.
 //
 //*****************************************************************************
-uint32_t USB_MSCStorageRead(void * pvDrive,
+uint32_t usb_msc_storage_read(void * pvDrive,
                                  uint8_t *pui8Data,
                                  uint_fast32_t ui32Sector,
                                  uint_fast32_t ui32NumBlocks)
@@ -197,7 +199,7 @@ uint32_t USB_MSCStorageRead(void * pvDrive,
 // /return Returns the number of bytes that were written to the device.
 //
 //*****************************************************************************
-uint32_t USB_MSCStorageWrite(void * pvDrive,
+uint32_t usb_msc_storage_write(void * pvDrive,
                                   uint8_t *pui8Data,
                                   uint_fast32_t ui32Sector,
                                   uint_fast32_t ui32NumBlocks)
@@ -225,7 +227,7 @@ uint32_t USB_MSCStorageWrite(void * pvDrive,
 //
 //*****************************************************************************
 uint32_t
-USB_MSCStorageNumBlocks(void * pvDrive)
+usb_mcs_storage_enum_blocks(void * pvDrive)
 {
     uint_fast32_t ui32SectorCount;
 
