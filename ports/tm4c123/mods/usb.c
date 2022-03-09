@@ -54,13 +54,13 @@
 #include "driverlib/gpio.h"
 #include "driverlib/udma.h"
 #include "driverlib/pin_map.h"
-//#include "grlib/grlib.h"
+// #include "grlib/grlib.h"
 #include "usblib/usb-ids.h"
 #include "usbdsdcard.h"
 #include "sdcard.h"
 #include "mpconfigboard.h"
 #include "mphalport.h"
-#include "rom_map.h"
+#include "driverlib/rom_map.h"
 #include "pin.h"
 #include "irq.h"
 #include "dma.h"
@@ -220,14 +220,14 @@ tUSBDMSCDevice t_MSCDevice =
     g_ppui8StringDescriptors,
     NUM_STRING_DESCRIPTORS,
     {
-        USB_MSCStorageOpen,
-        USB_MSCStorageClose,
-        USB_MSCStorageRead,
-        USB_MSCStorageWrite,
-        USB_MSCStorageNumBlocks,
+        usb_mcs_storage_open,
+        usb_mcs_storage_close,
+        usb_msc_storage_read,
+        usb_msc_storage_write,
+        usb_mcs_storage_enum_blocks,
         0,
     },
-    USBDMSCEventCallback
+    usb_msc_callback
 };
  
 //*****************************************************************************
@@ -283,56 +283,6 @@ static uint32_t g_ui32Flags;
 static uint32_t g_ui32IdleTimeout;
 
 
-
-//*****************************************************************************
-//
-// Handles bulk driver notifications related to the receive channel (data from
-// the USB host).
-//
-// \param pvCBData is the client-supplied callback pointer for this channel.
-// \param ui32Event identifies the event we are being notified about.
-// \param ui32MsgValue is an event-specific value.
-// \param pvMsgData is an event-specific pointer.
-//
-// This function is called by the bulk driver to notify us of any events
-// related to operation of the receive data channel (the OUT channel carrying
-// data from the USB host).
-//
-// \return The return value is event-specific.
-//
-//*****************************************************************************
-uint32_t
-RxHandler(void *pvCBData, uint_fast32_t ui32Event,
-               uint_fast32_t ui32MsgValue, void *pvMsgData)
-{
-    return(0);
-}
-
-//*****************************************************************************
-//
-// Handles bulk driver notifications related to the transmit channel (data to
-// the USB host).
-//
-// \param pvCBData is the client-supplied callback pointer for this channel.
-// \param ui32Event identifies the event we are being notified about.
-// \param ui32MsgValue is an event-specific value.
-// \param pvMsgData is an event-specific pointer.
-//
-// This function is called by the bulk driver to notify us of any events
-// related to operation of the transmit data channel (the IN channel carrying
-// data to the USB host).
-//
-// \return The return value is event-specific.
-//
-//*****************************************************************************
-uint32_t
-TxHandler(void *pvCBData, uint_fast32_t ui32Event, uint_fast32_t ui32MsgValue,
-          void *pvMsgData)
-{
-    return(0);
-}
-
-
 //*****************************************************************************
 //
 // This function is the call back notification function provided to the USB
@@ -340,7 +290,7 @@ TxHandler(void *pvCBData, uint_fast32_t ui32Event, uint_fast32_t ui32MsgValue,
 //
 //*****************************************************************************
 uint32_t
-USBDMSCEventCallback(void *pvCBData, uint32_t ui32Event, uint32_t ui32MsgParam,
+usb_msc_callback(void *pvCBData, uint32_t ui32Event, uint32_t ui32MsgParam,
                      void *pvMsgData)
 {
     //

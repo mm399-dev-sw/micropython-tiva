@@ -45,7 +45,7 @@ extern tUSBDMSCDevice g_sMSCDevice;
 // The externally provided mass storage class event call back function.
 //
 //*****************************************************************************
-extern uint32_t USBDMSCEventCallback(void *pvCBData, uint32_t ui32Event,
+extern uint32_t usb_msc_callback(void *pvCBData, uint32_t ui32Event,
                                      uint32_t ui32MsgParam, void *pvMsgData);
 
 //*****************************************************************************
@@ -59,7 +59,7 @@ extern uint32_t USBDMSCEventCallback(void *pvCBData, uint32_t ui32Event,
 #define PYB_USB_FLAG_USB_MODE_CALLED    (0x0002)
 
     
-#include "usbd_cdc_msc_hid0.h"
+#include "usbdev/class/inc/usbd_cdc_msc_hid0.h"
 
 #define PYB_USB_FLAG_USB_MODE_CALLED    (0x0002)
 
