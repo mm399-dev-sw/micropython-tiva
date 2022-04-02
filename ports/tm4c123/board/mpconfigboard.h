@@ -125,12 +125,14 @@
 #define MICROPY_HW_USB0_ID      (pin_PB0)
 #define MICROPY_HW_USB0_VBUS    (pin_PB1)
 #endif
+
 #define MICROPY_HW_TIMER0_NAME    "0"
 #define MICROPY_HW_TIMER1_NAME    "1"
 #define MICROPY_HW_TIMER2_NAME    "2"
 #define MICROPY_HW_TIMER3_NAME    "3"
 #define MICROPY_HW_TIMER4_NAME    "4"
 #define MICROPY_HW_TIMER5_NAME    "5"
+
 #define MICROPY_HW_CAN0_NAME "0"
 #define MICROPY_HW_CAN0_RX  (pin_PB4)
 #define MICROPY_HW_CAN0_TX  (pin_PB5)

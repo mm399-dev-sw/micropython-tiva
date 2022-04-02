@@ -23,8 +23,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-
-
+#include "mpconfigport.h"
+#if MICROPY_HW_ENABLE_USB
 #include <stdint.h>
 #include <stdbool.h>
 #include "inc/hw_ints.h"
@@ -88,7 +88,15 @@ usb_mcs_storage_open(uint_fast32_t ui32Drive)
     //
     // Initialize the drive if it is present.
     //
-    ui32Temp = sd_disk_init(0);
+    if (!sdcard_is_initialized())
+    {
+        ui32Temp = sd_disk_init(0);
+    }
+    else
+    {
+        g_sDriveInformation.ui32Flags = SDCARD_PRESENT | SDCARD_IN_USE;
+        return (0);
+    }
 
     if(ui32Temp == RES_OK)
     {
@@ -256,3 +264,5 @@ usb_mcs_storage_enum_blocks(void * pvDrive)
 #define USBDMSC_IDLE            0x00000000
 #define USBDMSC_NOT_PRESENT     0x00000001
 uint32_t USB_MSCStorageStatus(void * pvDrive);
+
+#endif // MICROPY_HW_ENABLE_USB

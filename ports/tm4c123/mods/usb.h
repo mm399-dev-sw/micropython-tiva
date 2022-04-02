@@ -26,8 +26,8 @@
 #ifndef MICROPY_INCLUDED_TM4C_USB_H
 #define MICROPY_INCLUDED_TM4C_USB_H
 
-#include "stdint.h"
-#include "stdbool.h"
+#include <stdint.h>
+#include <stdbool.h>
 #include "usblib/usblib.h"
 #include "usblib/device/usbdevice.h"
 #include "usblib/device/usbdmsc.h"

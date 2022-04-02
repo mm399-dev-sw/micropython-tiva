@@ -404,6 +404,11 @@ uint8_t sd_spi_send_cmd12 (void) {
     return res;            /* Return with the response value */
 }
 
+bool sdcard_is_initialized(void)
+{
+    return !(Stat & STA_NOINIT);
+}
+
 /*-----------------------------------------------------------------------*/
 /* Initialize Disk Drive                                                 */
 /*-----------------------------------------------------------------------*/

@@ -24,6 +24,11 @@
  * THE SOFTWARE.
  */
 
+
+
+#include "mpconfigport.h"
+// Modified Version of MSC Example - tivaware
+#if MICROPY_HW_ENABLE_USB
 #include <stdarg.h>
 #include <string.h>
 
@@ -35,11 +40,6 @@
 #include "py/mphal.h"
 #include "bufhelper.h"
 #include "usb.h"
-
-
-// Modified Version of MSC Example - tivaware
-#if MICROPY_HW_ENABLE_USB
-
 // #include "usb_dev_msc.h"
 #include "stdint.h"
 #include "stdbool.h"
@@ -388,7 +388,7 @@ usb_device_t mp_usb_device;
 
 int usb_msc_device(void)
 {
-    uint_fast32_t ui32Retcode;
+    // uint_fast32_t ui32Retcode;
     usb_device_t *usb_dev = &mp_usb_device;
     usb_dev->MSCDevice = &t_MSCDevice;
 
@@ -456,18 +456,18 @@ int usb_msc_device(void)
 
     // Determine whether or not an SDCard is installed.  If not, print a
     // warning and have the user install one and restart.
-    ui32Retcode = sd_disk_init(0);
+    // ui32Retcode = sd_disk_init(0);
 
-    if(ui32Retcode != RES_OK) 
-    {
-        // SD not found
-        mp_printf(MP_PYTHON_PRINTER, "SD Card not found.\nInstall one and reset board.\n");
-    }
-    else
-    {
-        // SD found
-        mp_printf(MP_PYTHON_PRINTER, "SD Card has no Problems.\nTo exit MSC mode reset the board.\n");
-    }
+    // if(ui32Retcode != RES_OK) 
+    // {
+    //     // SD not found
+    //     mp_printf(MP_PYTHON_PRINTER, "SD Card not found.\nInstall one and reset board.\n");
+    // }
+    // else
+    // {
+    //     // SD found
+    //     mp_printf(MP_PYTHON_PRINTER, "SD Card has no Problems.\nTo exit MSC mode reset the board.\n");
+    // }
     
     return 0;
 }

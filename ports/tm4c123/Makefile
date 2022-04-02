@@ -11,7 +11,7 @@
 # Enables Debugging friendly settings, change requires full rebuild
 DEBUG ?= 1
 # Enables Link Time Optimization, only when not compiling for DEBUG, change requires full rebuild
-LINK_TIME_OPT = 1
+LINK_TIME_OPT = 0
 
 # Location of the TivaWare library
 TIVAWARE_LIB ?= ./tivaware
@@ -122,6 +122,11 @@ else
 CFLAGE += -DMICROPY_FLOAT_IMPL=MICROPY_FLOAT_IMPL_NONE
 endif
 
+# Flags for Link Time Optimization
+ifeq ($(LINK_TIME_OPT), 1)
+CFLAGS += -flto -fuse-linker-plugin
+endif
+
 # Tune for Debugging or Optimization
 ifeq ($(DEBUG), 1)
 CFLAGS += -ggdb -DDEBUG -DPENDSV_DEBUG
@@ -129,10 +134,6 @@ COPT += -Og
 else
 CFLAGS += -DNDEBUG
 COPT += -Os
-# Flags for Link Time Optimization
-ifeq ($(LINK_TIME_OPT), 1)
-CFLAGS += -flto -fuse-linker-plugin
-endif
 endif
 
 ########################################################
@@ -366,8 +367,8 @@ $(BUILD)/firmware.axf: $(OBJ)
 	$(ECHO) Linking...
 	$(ECHO) " >" $(BUILD)/firmware.axf
 	$(Q)$(LD) $(LDFLAGS) -o $(BUILD)/firmware.axf $(OBJ) $(LIBS) $(LIBM) $(LIBC) $(LIBGCC)
-	$(ECHO) " >" $(BUILD)/firmware.elf
-	$(Q)$(LD) $(LDFLAGS) -o $(BUILD)/firmware.elf $(OBJ) $(LIBS) $(LIBM) $(LIBC) $(LIBGCC)
+#	 $(ECHO) " >" $(BUILD)/firmware.elf
+#	 $(Q)$(LD) $(LDFLAGS) -o $(BUILD)/firmware.elf $(OBJ) $(LIBS) $(LIBM) $(LIBC) $(LIBGCC)
 
 # Extract pure binary from firmware
 $(BUILD)/firmware.bin: $(BUILD)/firmware.axf

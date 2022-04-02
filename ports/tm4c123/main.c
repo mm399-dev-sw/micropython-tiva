@@ -50,6 +50,7 @@
 #include "extmod/vfs.h"
 #include "extmod/vfs_fat.h"
 
+// already included #include "mpconfigport.h"
 
 #include "systick.h"
 #include "pendsv.h"
@@ -63,11 +64,16 @@
 // #include "led.h"
 #include "pin.h"
 #include "extint.h"
+#if MICROPY_HW_HAS_SDCARD
+#include "sdcard.h"
+#endif
 // #include "usrsw.h"
+#if MICROPY_HW_ENABLE_USB
 #include "usb.h"
+#endif
 #include "rtc.h"
 // #include "storage.h"
-#include "sdcard.h"
+
 #include "rng.h"
 // #include "accel.h"
 // #include "servo.h"
@@ -211,11 +217,7 @@ extern uint32_t _heap_end;
 // "import machine\r\n"
 // "import pyb\r\n"
 // "#pyb.main('main.py') # main script to run after this one\r\n"
-// #if MICROPY_HW_ENABLE_USB
-// "#pyb.usb_mode('VCP+MSC') # act as a serial and a storage device\r\n"
-// "#pyb.usb_mode('VCP+HID') # act as a serial device and a mouse\r\n"
-// #endif
-// ;
+
 
 // static const char fresh_main_py[] =
 // "# main.py -- put your code here!\r\n"
@@ -441,7 +443,7 @@ int tm4c_main(int reset_mode) {
     #if MICROPY_HW_ENABLE_RTC
     rtc_init_start(false);
     #endif
-    // spi_init0();
+    spi_init0();
     // disable_irq();
     // TODO
 //     #if MICROPY_HW_ENABLE_HW_I2C
@@ -485,7 +487,6 @@ soft_reset:
     readline_init0();
     pin_init0();
     extint_init0();
-    // TODO timer_init0();
     uart_init0();
 
     dma_hw_init();
@@ -529,6 +530,10 @@ soft_reset:
         mp_obj_list_append(mp_sys_path, MP_OBJ_NEW_QSTR(MP_QSTR__slash_flash_slash_lib));
     }
 
+    #if MICROPY_HW_ENABLE_USB 
+    if(mounted_sdcard && (pyb_usb_storage_medium == PYB_USB_STORAGE_MEDIUM_SDCARD)) usb_msc_device();
+    #endif
+
     // reset config variables; they should be set by boot.py
     MP_STATE_PORT(pyb_config_main) = MP_OBJ_NULL;
 
@@ -570,9 +575,7 @@ soft_reset:
 //     }
 //     #endif
 
-    #if MICROPY_PY_USB_DEV_MSC 
-    //usb_msc_device();
-    #endif
+
 
 // // At this point everything is fully configured and initialised.
 

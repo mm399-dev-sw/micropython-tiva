@@ -38,6 +38,7 @@
 
 void sdcard_init(void);
 bool sdcard_is_present(void);
+bool sdcard_is_initialized(void);
 bool sdcard_power_on(void);
 void sdcard_power_off(void);
 uint64_t sdcard_get_capacity_in_bytes(void);
