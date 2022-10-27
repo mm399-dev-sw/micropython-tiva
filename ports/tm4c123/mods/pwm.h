@@ -30,11 +30,14 @@
 #include <stdint.h>
 #include "py/obj.h"
 
+
+// https://readthedocs.org/projects/micropython-usermod/downloads/pdf/latest/
 // 2 modules, 4 generators each, A/B for each generator
 // -> 16 PWM outputs
 
 // ##### micropython related stuff #####
 extern const mp_obj_type_t machine_pwm_type;
 
+void pwm_init0(void);
 
 #endif
