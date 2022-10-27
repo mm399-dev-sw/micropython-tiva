@@ -39,6 +39,8 @@
 #include "pin.h"
 
 
+enum {PWM_M0PWM0, PWM_M0PWM1, PWM_M0PWM2, PWM_M0PWM3, PWM_M0PWM4, PWM_M0PWM5, PWM_M0PWM6, PWM_M0PWM7,
+        PWM_M1PWM0, PWM_M1PWM1, PWM_M1PWM2, PWM_M1PWM3, PWM_M1PWM4, PWM_M1PWM5, PWM_M1PWM6, PWM_M1PWM7};
 enum {PWM_COUNT_DOWN, PWM_COUNT_UP_DOWN, PWM_DB_FALLING, PWM_DB_RISING};
 
 static const uint8_t pwm_pin_num_list[MICROPY_HW_MAX_PWM][2] = 
@@ -171,12 +173,12 @@ void pwm_update_fault(machine_pwm_obj_t* self, bool val)
 // ##### helper functions #####
 mp_obj_t machine_pwm_init_helper(machine_pwm_obj_t* self, size_t n_args, const mp_obj_t* pos_args, mp_map_t* kw_args)
 {
-    enum {ARG_active, ARG_invert, ARG_alternate_pin, ARG_mode, ARG_freq, ARG_duty, ARG_irq, ARG_db_rising, ARG_db_falling};
+    enum {ARG_pin, ARG_active, ARG_invert, ARG_alternate_pin, ARG_mode, ARG_freq, ARG_duty, ARG_irq, ARG_db_rising, ARG_db_falling};
     static const mp_arg_t allowed_args[] = 
     {
+        {MP_QSTR_pin,           MP_ARG_KW_ONLY | MP_ARG_OBJ,    {.u_obj = mp_const_none}},
         {MP_QSTR_active,        MP_ARG_KW_ONLY | MP_ARG_BOOL,   {.u_int = 1}},
         {MP_QSTR_invert,        MP_ARG_KW_ONLY | MP_ARG_BOOL,   {.u_int = 0}},
-        {MP_QSTR_alternate_pin, MP_ARG_KW_ONLY | MP_ARG_BOOL,   {.u_int = 0}},
         {MP_QSTR_mode,          MP_ARG_KW_ONLY | MP_ARG_INT,    {.u_int = PWM_COUNT_DOWN}},
         {MP_QSTR_freq,          MP_ARG_KW_ONLY | MP_ARG_INT,    {.u_int = PWM_COUNT_UP_DOWN}},
         {MP_QSTR_duty,          MP_ARG_KW_ONLY | MP_ARG_INT,    {.u_int = 0}},
@@ -185,35 +187,8 @@ mp_obj_t machine_pwm_init_helper(machine_pwm_obj_t* self, size_t n_args, const m
         {MP_QSTR_db_falling,    MP_ARG_KW_ONLY | MP_ARG_INT,    {.u_int = 0}},
     };
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
+    mp_arg_parse_all(n_args, pos_args, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
 
-    // create pwm object if not exist
-    if (self == NULL)
-    {
-        mp_arg_parse_all(n_args - 1, pos_args + 1, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
-        if (!mp_obj_is_type(pos_args[0], &pin_type))
-            mp_raise_ValueError(MP_ERROR_TEXT("Type mismatch: not a Pin object"));
-
-        const pin_obj_t* pin = pin_find(pos_args[0]);
-        uint8_t pwm_id = pwm_get_id_from_pin(pin, args[ARG_alternate_pin].u_int);
-        if (pwm_id == 0xff)
-            mp_raise_ValueError(MP_ERROR_TEXT("Pin incapable of PWM function"));
-
-        // create pwm object
-        self = &machine_pwm_obj[pwm_id];
-        self->base.type = &machine_pwm_type;
-        self->id = pwm_id;
-        self->pin = pin;
-        self->active = 0;
-        self->invert = 0;
-        self->mode = PWM_COUNT_DOWN;
-        self->duty = 0;
-        self->freq = 0;
-        self->irq = mp_const_none;
-        self->db_falling = 0;
-        self->db_rising = 0;
-    }
-    else
-        mp_arg_parse_all(n_args, pos_args, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
 
 
     return self;
@@ -305,11 +280,46 @@ mp_obj_t machine_pwm_fault_helper(machine_pwm_obj_t* self, size_t n_args, const 
 // ##### micropython functions and declarations #####
 static mp_obj_t mp_machine_pwm_make_new(const mp_obj_type_t* type, size_t n_args, size_t n_kw, const mp_obj_t* args)
 {
+    uint8_t pwm_id = 0xff;
+    const pin_obj_t* pin = NULL;
+
+    // init via pin
+    if (mp_obj_is_type(args[0], &pin_type))
+    {
+        pin = pin_find(args[0]);
+        pwm_id = pwm_get_id_from_pin(pin, 0);
+        if (pwm_id == 0xff)
+            mp_raise_ValueError(MP_ERROR_TEXT("Pin incapable of PWM function"));
+    }
+    // init via PWM module id
+    else if (mp_obj_is_int(args[0]) && MP_OBJ_SMALL_INT_VALUE(args[0]) >= PWM_M0PWM0 && MP_OBJ_SMALL_INT_VALUE(args[0]) <= PWM_M1PWM7)
+    {
+        pwm_id = MP_OBJ_SMALL_INT_VALUE(args[0]);
+    }
+    else
+        mp_raise_ValueError(MP_ERROR_TEXT("Type mismatch: not a Pin object or MxPWMy module identifier"));
+
+
+    // select pwm object
+    machine_pwm_obj_t* self = &machine_pwm_obj[pwm_id];
+    self->base.type = &machine_pwm_type;
+    self->id = pwm_id;
+
+    self->pin = pin;
+    self->active = 0;
+    self->invert = 0;
+    self->mode = PWM_COUNT_DOWN;
+    self->duty = 0;
+    self->freq = 0;
+    self->irq = mp_const_none;
+    self->db_falling = 0;
+    self->db_rising = 0;
+
     mp_arg_check_num(n_args, n_kw, 1, MP_OBJ_FUN_ARGS_MAX, true);
     mp_map_t kw_args;
     mp_map_init_fixed_table(&kw_args, n_kw, args + n_args);
 
-    return machine_pwm_init_helper(NULL, n_args, args, &kw_args);
+    return machine_pwm_init_helper(self, n_args - 1, args + 1, &kw_args);
 }
 
 static mp_obj_t machine_pwm_init(size_t n_args, const mp_obj_t* args, mp_map_t* kw_args)
@@ -381,7 +391,7 @@ static void machine_pwm_print(const mp_print_t* print, mp_obj_t self_in, mp_prin
 {
     machine_pwm_obj_t* self = MP_OBJ_TO_PTR(self_in);
     mp_printf(print, "PWM(Pin(%s), id = %u, mode = %u, active = %u, invert = %u, freq = %lu, duty = %u, irq = %s, db_rising = %lu, db_falling = %lu)",
-                qstr_str(self->pin->name), self->id, self->mode, self->active, self->invert, self->freq, self->duty, "None", self->db_rising, self->db_falling);
+               (self->pin ? qstr_str(self->pin->name): "None"), self->id, self->mode, self->active, self->invert, self->freq, self->duty, "None", self->db_rising, self->db_falling);
 }
 
 static const mp_rom_map_elem_t machine_pwm_locals_dict_table[] = 
@@ -399,11 +409,27 @@ static const mp_rom_map_elem_t machine_pwm_locals_dict_table[] =
     {MP_ROM_QSTR(MP_QSTR_fault),            MP_ROM_PTR(&machine_pwm_fault_obj)},
 
     // class constants
+    {MP_ROM_QSTR(MP_QSTR_M0PWM0),           MP_ROM_INT(PWM_M0PWM0)},
+    {MP_ROM_QSTR(MP_QSTR_M0PWM1),           MP_ROM_INT(PWM_M0PWM1)},
+    {MP_ROM_QSTR(MP_QSTR_M0PWM2),           MP_ROM_INT(PWM_M0PWM2)},
+    {MP_ROM_QSTR(MP_QSTR_M0PWM3),           MP_ROM_INT(PWM_M0PWM3)},
+    {MP_ROM_QSTR(MP_QSTR_M0PWM4),           MP_ROM_INT(PWM_M0PWM4)},
+    {MP_ROM_QSTR(MP_QSTR_M0PWM5),           MP_ROM_INT(PWM_M0PWM5)},
+    {MP_ROM_QSTR(MP_QSTR_M0PWM6),           MP_ROM_INT(PWM_M0PWM6)},
+    {MP_ROM_QSTR(MP_QSTR_M0PWM7),           MP_ROM_INT(PWM_M0PWM7)},
+    {MP_ROM_QSTR(MP_QSTR_M1PWM0),           MP_ROM_INT(PWM_M1PWM0)},
+    {MP_ROM_QSTR(MP_QSTR_M1PWM1),           MP_ROM_INT(PWM_M1PWM1)},
+    {MP_ROM_QSTR(MP_QSTR_M1PWM2),           MP_ROM_INT(PWM_M1PWM2)},
+    {MP_ROM_QSTR(MP_QSTR_M1PWM3),           MP_ROM_INT(PWM_M1PWM3)},
+    {MP_ROM_QSTR(MP_QSTR_M1PWM4),           MP_ROM_INT(PWM_M1PWM4)},
+    {MP_ROM_QSTR(MP_QSTR_M1PWM5),           MP_ROM_INT(PWM_M1PWM5)},
+    {MP_ROM_QSTR(MP_QSTR_M1PWM6),           MP_ROM_INT(PWM_M1PWM6)},
+    {MP_ROM_QSTR(MP_QSTR_M1PWM7),           MP_ROM_INT(PWM_M1PWM7)},
+
     {MP_ROM_QSTR(MP_QSTR_COUNT_DOWN),       MP_ROM_INT(PWM_COUNT_DOWN)},
     {MP_ROM_QSTR(MP_QSTR_COUNT_UP_DOWN),    MP_ROM_INT(PWM_COUNT_UP_DOWN)},
     {MP_ROM_QSTR(MP_QSTR_DB_FALLING),       MP_ROM_INT(PWM_DB_FALLING)},
     {MP_ROM_QSTR(MP_QSTR_DB_RISING),        MP_ROM_INT(PWM_DB_RISING)},
-
 };
 static MP_DEFINE_CONST_DICT(machine_pwm_locals_dict, machine_pwm_locals_dict_table);
 
