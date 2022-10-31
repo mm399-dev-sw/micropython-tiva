@@ -36,19 +36,26 @@
 #include "inc/hw_sysctl.h"
 #include "inc/hw_gpio.h"
 #include "inc/hw_pwm.h"
-// #include "driverlib/sysctl.h"
-// #include "driverlib/gpio.h"
-// #include "driverlib/pwm.h"
-// #include "driverlib/interrupt.h"
+#include "driverlib/sysctl.h"
+#include "driverlib/gpio.h"
+#include "driverlib/pwm.h"
+#include "driverlib/interrupt.h"
 
 #include "pwm.h"
 #include "pin.h"
 
+// individual pwm modules
 enum {PWM_M0PWM0, PWM_M0PWM1, PWM_M0PWM2, PWM_M0PWM3, PWM_M0PWM4, PWM_M0PWM5, PWM_M0PWM6, PWM_M0PWM7,
         PWM_M1PWM0, PWM_M1PWM1, PWM_M1PWM2, PWM_M1PWM3, PWM_M1PWM4, PWM_M1PWM5, PWM_M1PWM6, PWM_M1PWM7};
+// deadband identifier
 enum {PWM_DB_FALLING, PWM_DB_RISING};
-enum {PWM_COUNT_DOWN, PWM_COUNT_UP_DOWN, PWM_ACT_NOTHING, PWM_ACT_INVERT, PWM_ACT_LOW, PWM_ACT_HIGH};
-enum {PWM_EVENT_ZERO = 0, PWM_EVENT_LOAD = 2, PWM_EVENT_CMP_UP = 4, PWM_EVENT_CMP_DOWN = 8};
+// pwm count mode
+enum {PWM_COUNT_DOWN, PWM_COUNT_UP_DOWN};
+// action to take for pwm pin
+enum {PWM_ACT_NOTHING, PWM_ACT_INVERT, PWM_ACT_LOW, PWM_ACT_HIGH};
+// event triggering pwm pin action
+enum {PWM_EVENT_ZERO = 0, PWM_EVENT_LOAD = 2, PWM_EVENT_CMPA_UP = 4, PWM_EVENT_CMPA_DOWN = 6, PWM_EVENT_CMPB_UP = 8, PWM_EVENT_CMPB_DOWN = 10};
+// pwm clock divider
 enum {PWM_CLK_DIV_2, PWM_CLK_DIV_4, PWM_CLK_DIV_8, PWM_CLK_DIV_16, PWM_CLK_DIV_32, PWM_CLK_DIV_64, PWM_CLK_DIV_1 = 0xff};
 
 static const uint8_t pwm_pin_num_list[MICROPY_HW_MAX_PWM][2] = 
@@ -80,7 +87,7 @@ typedef struct _machine_pwm_obj_t
     uint8_t             id_mod;         // pwm module number
     uint8_t             id_gen;         // pwm generator number
 
-    bool                mode;           // pwm count mode
+    uint16_t            mode;           // pwm count mode
     bool                active;         // pwm output active
     bool                invert;         // invert pwm output
     uint32_t            freq;           // pwm frequency
@@ -168,7 +175,6 @@ void pwm_set_gpio(machine_pwm_obj_t* self, bool val)
     // abort if no pin assigned
     if (!self->pin)
         return;
-    // uint32_t gpio_port_base_map[] = {GPIO_PORTA_BASE, GPIO_PORTB_BASE, GPIO_PORTC_BASE, GPIO_PORTD_BASE, GPIO_PORTE_BASE, GPIO_PORTF_BASE};
     uint32_t gpio_port_base_map[] = {GPIO_PORTA_AHB_BASE, GPIO_PORTB_AHB_BASE, GPIO_PORTC_AHB_BASE, GPIO_PORTD_AHB_BASE, GPIO_PORTE_AHB_BASE, GPIO_PORTF_AHB_BASE};
     
     uint8_t port_index = pwm_get_port_index_from_pin(self->pin);
@@ -187,21 +193,23 @@ void pwm_set_gpio(machine_pwm_obj_t* self, bool val)
         // enable alternate pin function
         HWREG(gpio_port_base_map[port_index] + GPIO_O_AFSEL) |= 1 << pin_index;
         HWREG(gpio_port_base_map[port_index] + GPIO_O_PCTL) |= pctl_val << (4 * pin_index);
+        HWREG(gpio_port_base_map[port_index] + GPIO_O_DEN) |= 1 << pin_index;
     }
     else
     {
         // disable alternate pin function
+        HWREG(gpio_port_base_map[port_index] + GPIO_O_DEN) &= ~(1 << pin_index);
         HWREG(gpio_port_base_map[port_index] + GPIO_O_PCTL) &= ~(pctl_val << (4 * pin_index));
         HWREG(gpio_port_base_map[port_index] + GPIO_O_AFSEL) &= ~(1 << pin_index);
     }
 }
 
-void pwm_set_mode(machine_pwm_obj_t* self, bool val)
+void pwm_set_mode(machine_pwm_obj_t* self, uint16_t val)
 {
     // get register address of MxPWMxCTL
     uint32_t reg = pwm_get_pwm_base_reg(self) + PWM_O_0_CTL + self->id_gen * 0x40;
     // set mode in MxPWMxCTL
-    if (val)
+    if (val & 1)
         HWREG(reg) |= 1 << 1;
     else
         HWREG(reg) &= ~(1 << 1);
@@ -210,16 +218,17 @@ void pwm_set_mode(machine_pwm_obj_t* self, bool val)
     uint8_t reg_offset = (self->id % 2 ? PWM_O_0_GENB: PWM_O_0_GENA);
     // get register address of MxPWMxGENx
     reg = pwm_get_pwm_base_reg(self) + reg_offset + self->id_gen * 0x40;
+    // set match behavior
     HWREG(reg) &= ~0xfff;
-    HWREG(reg) |= PWM_ACT_HIGH << PWM_EVENT_LOAD | PWM_ACT_LOW << (PWM_EVENT_CMP_DOWN + 4*(self->id % 2));
+    HWREG(reg) |= val >> 1;
 }
 
 void pwm_clear_counter(machine_pwm_obj_t* self)
 {
     // get register address of PWMxCOUNT
-    uint32_t reg = pwm_get_pwm_base_reg(self) + PWM_O_0_COUNT + self->id_gen * 0x40;
+    uint32_t reg = pwm_get_pwm_base_reg(self) + PWM_O_SYNC;
     // clear counter value
-    HWREG(reg) &= 0xffff0000;
+    HWREG(reg) |= 1 << self->id_gen;
 }
 
 void pwm_update_active(machine_pwm_obj_t* self, bool val)
@@ -276,11 +285,22 @@ void pwm_update_clock_divider(uint8_t val)
 
 void pwm_update_freq(machine_pwm_obj_t* self, uint32_t val)
 {
+    // disable timer if freq is 0
+    if (!val)
+    {
+        pwm_set_enable(self, 0);
+        self->freq = 0;
+        return;
+    }
+    // reenable timer if freq was 0
+    else if (val && !self->freq)
+        pwm_set_enable(self, 1);
+
     uint32_t sys_freq = SysCtlClockGet();
-    uint32_t pwm_freq = (machine_pwm_clock_divider_value != PWM_CLK_DIV_1 ? sys_freq / 2<<(machine_pwm_clock_divider_value + 1) : sys_freq);
+    uint32_t pwm_freq = (machine_pwm_clock_divider_value != PWM_CLK_DIV_1 ? sys_freq / 2<<machine_pwm_clock_divider_value : sys_freq);
 
     if (val > pwm_freq / 10)
-        mp_raise_ValueError(MP_ERROR_TEXT("Value out of range, must be <= sys_clk / pwm_div / 10"));
+        mp_raise_ValueError(MP_ERROR_TEXT("Value out of range, must be <= sys_clk / clk_div / 10"));
     
     // get register address of MxPWMxLOAD
     uint32_t reg = pwm_get_pwm_base_reg(self) + PWM_O_0_LOAD + self->id_gen * 0x40;
@@ -290,7 +310,9 @@ void pwm_update_freq(machine_pwm_obj_t* self, uint32_t val)
     if (twin->freq && val != twin->freq)
         mp_raise_ValueError(MP_ERROR_TEXT("Frequency must be the same inside one PWM generator"));
     
-    uint16_t load_val = pwm_freq / val;
+    uint32_t load_val = pwm_freq / val;
+    if (load_val > 0xffff)
+        mp_raise_ValueError(MP_ERROR_TEXT("Frequency to low, consider adjusting the PWM clock divider via PWM.clock_divider(PWM.CLK_DIV_x)"));
     HWREG(reg) &= ~0xffff;
     HWREG(reg) |= load_val;
 
@@ -310,12 +332,13 @@ void pwm_update_duty(machine_pwm_obj_t* self, uint8_t val)
     uint32_t reg = pwm_get_pwm_base_reg(self) + reg_offset + self->id_gen * 0x40;
 
     uint16_t comp_val = 0;
-    if (self->mode)
+    if (self->mode & 1)
         ;
     else
-        comp_val = self->load - val * self->load / 100;
+        comp_val = val * self->load / 100;
+    
     HWREG(reg) &= ~0xffff;
-    HWREG(reg) |= comp_val;
+    HWREG(reg) |= (comp_val == self->load ? comp_val - 1: comp_val);
     self->duty = val;
 }
 
@@ -350,7 +373,7 @@ void pwm_update_fault(machine_pwm_obj_t* self, bool val)
 
 }
 
-void pwm_init(machine_pwm_obj_t* self, const pin_obj_t* pin, int mode, bool active, bool invert, uint32_t freq, uint8_t duty, uint32_t db_falling, uint32_t db_rising, mp_obj_t irq, mp_obj_t fault)
+void pwm_init(machine_pwm_obj_t* self, const pin_obj_t* pin, uint16_t mode, bool active, bool invert, uint32_t freq, uint8_t duty, uint32_t db_falling, uint32_t db_rising, mp_obj_t irq, mp_obj_t fault)
 {
     pwm_set_clock(self->id_mod, 1);
     pwm_set_enable(self, 0);
@@ -376,24 +399,16 @@ void pwm_init(machine_pwm_obj_t* self, const pin_obj_t* pin, int mode, bool acti
 void pwm_deinit(machine_pwm_obj_t* self)
 {
     pwm_update_active(self, 0);
-    pwm_set_enable(self, 0);
+    // get second pwm of generator
+    uint8_t twin_id = (self->id % 2 ? self->id - 1: self->id + 1);
+    // if twin pwm is active dont disable generator
+    if (!machine_pwm_obj_in_use[twin_id])
+        pwm_set_enable(self, 0);
     if (self->pin)
         pwm_set_gpio(self, 0);
     self->freq = 0;
     machine_pwm_obj_in_use[self->id] = false;
 }
-
-// ##### internal PWM functions #####
-
-// enable pwm module
-
-// enable gpio module
-// enable alternate functions
-// assign pwm to gpio
-
-// set pwm clock divider
-// set count mode
-// 
 
 
 // ##### helper functions #####
@@ -419,7 +434,7 @@ mp_obj_t machine_pwm_init_helper(machine_pwm_obj_t* self, size_t n_args, const m
     // get arguments
     if (!pin)               // dont overwrite if created via pin
         pin =               (args[ARG_pin].u_obj == mp_const_none ? NULL: args[ARG_pin].u_obj);
-    bool mode =             args[ARG_mode].u_int;
+    uint16_t mode =         (args[ARG_mode].u_int == PWM_COUNT_DOWN ? PWM_COUNT_DOWN | (PWM_ACT_LOW << PWM_EVENT_ZERO | PWM_ACT_HIGH << PWM_EVENT_CMPA_DOWN) << 1 : args[ARG_mode].u_int);
     bool active =           args[ARG_active].u_int;
     bool invert =           args[ARG_invert].u_int;
     uint32_t freq =         args[ARG_freq].u_int;
@@ -437,7 +452,8 @@ mp_obj_t machine_pwm_init_helper(machine_pwm_obj_t* self, size_t n_args, const m
 mp_obj_t machine_pwm_deinit_helper(machine_pwm_obj_t* self)
 {
     pwm_deinit(self);
-    return mp_const_none;
+    self = (mp_obj_t) mp_const_none;
+    return self;
 }
 
 mp_obj_t machine_pwm_active_helper(machine_pwm_obj_t* self, size_t n_args, const mp_obj_t* pos_args)
@@ -464,7 +480,7 @@ mp_obj_t machine_pwm_invert_helper(machine_pwm_obj_t* self, size_t n_args, const
     return mp_obj_new_bool(self->active);
 }
 
-mp_obj_t machine_pwm_clock_divider_helper(size_t n_args, const mp_obj_t* pos_args)
+mp_obj_t machine_pwm_clock_divider_helper(machine_pwm_obj_t* self, size_t n_args, const mp_obj_t* pos_args)
 {
     if (n_args)
     {
@@ -473,8 +489,7 @@ mp_obj_t machine_pwm_clock_divider_helper(size_t n_args, const mp_obj_t* pos_arg
         else
             mp_raise_ValueError(MP_ERROR_TEXT("Type mismatch: not an int"));
     }
-    return mp_obj_new_bool(machine_pwm_clock_divider_value);
-
+    return mp_obj_new_int(machine_pwm_clock_divider_value);
 }
 
 mp_obj_t machine_pwm_freq_helper(machine_pwm_obj_t* self, size_t n_args, const mp_obj_t* pos_args)
@@ -620,9 +635,9 @@ static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(machine_pwm_invert_obj, 1, 2, machine
 
 static mp_obj_t machine_pwm_clock_divider(size_t n_args, const mp_obj_t* args)
 {
-    return machine_pwm_clock_divider_helper(n_args, args);
+    return machine_pwm_clock_divider_helper(args[0], n_args - 1, args + 1);
 }
-static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(machine_pwm_clock_divider_obj, 0, 1, machine_pwm_clock_divider);
+static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(machine_pwm_clock_divider_obj, 1, 2, machine_pwm_clock_divider);
 
 static mp_obj_t machine_pwm_freq(size_t n_args, const mp_obj_t* args)
 {
