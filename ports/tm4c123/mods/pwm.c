@@ -38,25 +38,45 @@
 #include "inc/hw_pwm.h"
 #include "driverlib/sysctl.h"
 #include "driverlib/gpio.h"
+#include "driverlib/pin_map.h"
 #include "driverlib/pwm.h"
 #include "driverlib/interrupt.h"
 
 #include "pwm.h"
 #include "pin.h"
 
+#ifndef PART_TM4C123GH6PM
+    #define PART_TM4C123GH6PM
+#endif
+
 // individual pwm modules
 enum {PWM_M0PWM0, PWM_M0PWM1, PWM_M0PWM2, PWM_M0PWM3, PWM_M0PWM4, PWM_M0PWM5, PWM_M0PWM6, PWM_M0PWM7,
         PWM_M1PWM0, PWM_M1PWM1, PWM_M1PWM2, PWM_M1PWM3, PWM_M1PWM4, PWM_M1PWM5, PWM_M1PWM6, PWM_M1PWM7};
-// deadband identifier
-enum {PWM_DB_FALLING, PWM_DB_RISING};
-// pwm count mode
-enum {PWM_COUNT_DOWN, PWM_COUNT_UP_DOWN};
-// action to take for pwm pin
-enum {PWM_ACT_NOTHING, PWM_ACT_INVERT, PWM_ACT_LOW, PWM_ACT_HIGH};
-// event triggering pwm pin action
-enum {PWM_EVENT_ZERO = 0, PWM_EVENT_LOAD = 2, PWM_EVENT_CMPA_UP = 4, PWM_EVENT_CMPA_DOWN = 6, PWM_EVENT_CMPB_UP = 8, PWM_EVENT_CMPB_DOWN = 10};
-// pwm clock divider
-enum {PWM_CLK_DIV_2, PWM_CLK_DIV_4, PWM_CLK_DIV_8, PWM_CLK_DIV_16, PWM_CLK_DIV_32, PWM_CLK_DIV_64, PWM_CLK_DIV_1 = 0xff};
+
+static const uint32_t pwm_periph_reg_map[2] = {SYSCTL_PERIPH_PWM0, SYSCTL_PERIPH_PWM1};
+static const uint32_t pwm_mod_reg_map[2] = {PWM0_BASE, PWM1_BASE};
+static const uint16_t pwm_gen_reg_map[4] = {PWM_GEN_0, PWM_GEN_1, PWM_GEN_2, PWM_GEN_3};
+static const uint16_t pwm_out_reg_map[8] = {PWM_OUT_0, PWM_OUT_1, PWM_OUT_2, PWM_OUT_3, PWM_OUT_4, PWM_OUT_5, PWM_OUT_6, PWM_OUT_7};
+static const uint32_t gpio_af_val_map[MICROPY_HW_MAX_PWM][2] = 
+{
+    {GPIO_PB6_M0PWM0,   0},
+    {GPIO_PB7_M0PWM1,   0},
+    {GPIO_PB4_M0PWM2,   0},
+    {GPIO_PB5_M0PWM3,   0},
+    {GPIO_PE4_M0PWM4,   0},
+    {GPIO_PE5_M0PWM5,   0},
+    {GPIO_PC4_M0PWM6,   GPIO_PD0_M0PWM6},
+    {GPIO_PC5_M0PWM7,   GPIO_PD1_M0PWM7},
+
+    {GPIO_PD0_M1PWM0,   0},
+    {GPIO_PD1_M1PWM1,   0},
+    {GPIO_PA6_M1PWM2,   GPIO_PE4_M1PWM2},
+    {GPIO_PA7_M1PWM3,   GPIO_PE5_M1PWM3},
+    {GPIO_PF0_M1PWM4,   0},
+    {GPIO_PF1_M1PWM5,   0},
+    {GPIO_PF2_M1PWM6,   0},
+    {GPIO_PF3_M1PWM7,   0},
+};
 
 static const uint8_t pwm_pin_num_list[MICROPY_HW_MAX_PWM][2] = 
 {
@@ -82,33 +102,31 @@ static const uint8_t pwm_pin_num_list[MICROPY_HW_MAX_PWM][2] =
 typedef struct _machine_pwm_obj_t
 {
     mp_obj_base_t       base;
-    const pin_obj_t*    pin;            // output pin for pwm, can be NULL (None)
-    uint8_t             id;             // id 0..15 for pwm generator
-    uint8_t             id_mod;         // pwm module number
-    uint8_t             id_gen;         // pwm generator number
 
-    uint16_t            mode;           // pwm count mode
-    bool                active;         // pwm output active
-    bool                invert;         // invert pwm output
+    const pin_obj_t*    pin;            // output pin
+    bool                alternate_pin;  // use alternative pwm output pin if available
+
+    uint8_t             id;             // internal id 0..15
+    uint8_t             mod_id;         // pwm module id 0..1
+    uint8_t             gen_id;         // pwm generator id 0..3
+    
+    bool                active;         // output active
+    bool                invert;         // output inverted
     uint32_t            freq;           // pwm frequency
     uint16_t            load;           // internal pwm load value
-    uint8_t             duty;           // pwm duty cycle 0..100
-    mp_obj_t            irq;            // interrupt isr
-    uint32_t            db_falling;     // deadband delay for falling edge
-    uint32_t            db_rising;      // deadband delay for rising edge
-    const pin_obj_t*    fault_pin;      // pin to assert fault condition, can be NULL (None)
+    uint8_t             duty;           // pwm duty 0..100
+    mp_obj_t            irq;            // pwm interrupt service callback
+    uint16_t            irq_mode;       // pwm interrupt configuration
+    uint16_t            db_falling;     // deadband delay falling edge
+    uint16_t            db_rising;      // deadband delay rising edge
+
+    uint32_t            mode;           // counting mode
 
 } machine_pwm_obj_t;
 
 static machine_pwm_obj_t machine_pwm_obj[MICROPY_HW_MAX_PWM] = {};
-static bool machine_pwm_obj_in_use[MICROPY_HW_MAX_PWM] = {};
-static uint8_t machine_pwm_clock_divider_value = PWM_CLK_DIV_1;
-
-void delay_cycles(uint16_t n)
-{
-    for (uint16_t i = 0; i < n; i++)
-        asm("nop");
-}
+static bool pwm_obj_in_use[MICROPY_HW_MAX_PWM] = {};
+static uint16_t pwm_clk_div_val = PWM_SYSCLK_DIV_1;
 
 uint8_t pwm_get_id_from_pin(const pin_obj_t* pin, bool alternate_pin)
 {
@@ -120,203 +138,58 @@ uint8_t pwm_get_id_from_pin(const pin_obj_t* pin, bool alternate_pin)
     return 0xff;
 }
 
-uint8_t pwm_get_port_index_from_pin(const pin_obj_t* pin)
+uint8_t get_port_index_from_pin(const pin_obj_t* pin)
 {
     return (uint8_t) qstr_str(pin->name)[1] - (uint8_t) 'A';
 }
 
-uint8_t pwm_get_pin_index_from_pin(const pin_obj_t* pin)
+uint8_t get_pin_index_from_pin(const pin_obj_t* pin)
 {
     return (uint8_t) qstr_str(pin->name)[2] - (uint8_t) '0';
 }
 
-uint32_t pwm_get_pwm_base_reg(machine_pwm_obj_t* self)
-{
-    return (self->id_mod ? PWM1_BASE: PWM0_BASE);
-}
-
-void pwm_set_clock(uint8_t id_mod, bool val)
-{
-    if (val)
-    {
-        HWREG(SYSCTL_RCGCPWM) |= 1 << id_mod;
-        // ensure pwm is ready
-        delay_cycles(3);
-    }
-    else
-        HWREG(SYSCTL_RCGCPWM) &= ~(1 << id_mod);
-}
-
-void pwm_set_enable(machine_pwm_obj_t* self, bool val)
-{
-    // get register address of MxPWMxCTL
-    uint32_t reg = pwm_get_pwm_base_reg(self) + PWM_O_0_CTL + self->id_gen * 0x40;
-    // start timer in MxPWMxCTL
-    if (val)
-        HWREG(reg) |= 1;
-    else
-        HWREG(reg) &= ~1;
-}
-
-void pwm_set_sync(machine_pwm_obj_t* self, bool val)
-{
-    // get register address of MxPWMxCTL
-    uint32_t reg = pwm_get_pwm_base_reg(self) + PWM_O_0_CTL + self->id_gen * 0x40;
-    // set global sync in MxPWMxCTL
-    if (val)
-        HWREG(reg) |= 0xfff8;
-    // set immediate sync in MxPWMxCTL
-    else
-        HWREG(reg) &= ~0xfff8;
-}
-
-void pwm_set_gpio(machine_pwm_obj_t* self, bool val)
-{
-    // abort if no pin assigned
-    if (!self->pin)
-        return;
-    uint32_t gpio_port_base_map[] = {GPIO_PORTA_AHB_BASE, GPIO_PORTB_AHB_BASE, GPIO_PORTC_AHB_BASE, GPIO_PORTD_AHB_BASE, GPIO_PORTE_AHB_BASE, GPIO_PORTF_AHB_BASE};
-    
-    uint8_t port_index = pwm_get_port_index_from_pin(self->pin);
-    uint8_t pin_index = pwm_get_pin_index_from_pin(self->pin);
-    uint8_t pctl_val = (self->id < PWM_M1PWM0 ? 4: 5);
-    if (val)
-    {
-        // enable clock for gpio module
-        HWREG(SYSCTL_RCGCGPIO) |= 1 << port_index;
-        delay_cycles(3);
-
-        // unlock gpio
-        HWREG(gpio_port_base_map[port_index] + GPIO_O_LOCK) = GPIO_LOCK_KEY;
-        HWREG(gpio_port_base_map[port_index] + GPIO_O_CR) |= 1 << pin_index;
-        
-        // enable alternate pin function
-        HWREG(gpio_port_base_map[port_index] + GPIO_O_AFSEL) |= 1 << pin_index;
-        HWREG(gpio_port_base_map[port_index] + GPIO_O_PCTL) |= pctl_val << (4 * pin_index);
-        HWREG(gpio_port_base_map[port_index] + GPIO_O_DEN) |= 1 << pin_index;
-    }
-    else
-    {
-        // disable alternate pin function
-        HWREG(gpio_port_base_map[port_index] + GPIO_O_DEN) &= ~(1 << pin_index);
-        HWREG(gpio_port_base_map[port_index] + GPIO_O_PCTL) &= ~(pctl_val << (4 * pin_index));
-        HWREG(gpio_port_base_map[port_index] + GPIO_O_AFSEL) &= ~(1 << pin_index);
-    }
-}
-
-void pwm_set_mode(machine_pwm_obj_t* self, uint16_t val)
-{
-    // get register address of MxPWMxCTL
-    uint32_t reg = pwm_get_pwm_base_reg(self) + PWM_O_0_CTL + self->id_gen * 0x40;
-    // set mode in MxPWMxCTL
-    if (val & 1)
-        HWREG(reg) |= 1 << 1;
-    else
-        HWREG(reg) &= ~(1 << 1);
-    
-    // get offset for register address MxPWMxGENx
-    uint8_t reg_offset = (self->id % 2 ? PWM_O_0_GENB: PWM_O_0_GENA);
-    // get register address of MxPWMxGENx
-    reg = pwm_get_pwm_base_reg(self) + reg_offset + self->id_gen * 0x40;
-    // set match behavior
-    HWREG(reg) &= ~0xfff;
-    HWREG(reg) |= val >> 1;
-}
-
-void pwm_clear_counter(machine_pwm_obj_t* self)
-{
-    // get register address of PWMxCOUNT
-    uint32_t reg = pwm_get_pwm_base_reg(self) + PWM_O_SYNC;
-    // clear counter value
-    HWREG(reg) |= 1 << self->id_gen;
-}
-
 void pwm_update_active(machine_pwm_obj_t* self, bool val)
 {
-    // get register address of MxPWMENABLE
-    uint32_t reg = pwm_get_pwm_base_reg(self) + PWM_O_ENABLE;
-    // enable pin output in MxPWMENABLE
-    if (val)
-        HWREG(reg) |= 1 << (self->id % PWM_M1PWM0);
-    else
-        HWREG(reg) &= ~(1 << (self->id % PWM_M1PWM0));
+    PWMOutputState(pwm_mod_reg_map[self->mod_id], 1 << (self->id % PWM_M1PWM0), val);
     self->active = val;
 }
 
 void pwm_update_invert(machine_pwm_obj_t* self, bool val)
 {
-    // get register address of MxPWMINVERT
-    uint32_t reg = pwm_get_pwm_base_reg(self) + PWM_O_INVERT;
-    if (val)
-        HWREG(reg) |= 1 << (self->id % PWM_M1PWM0);
-
+    PWMOutputInvert(pwm_mod_reg_map[self->mod_id], 1 << (self->id % PWM_M1PWM0), val);
     self->invert = val;
 }
 
-void pwm_update_clock_divider(uint8_t val)
+void pwm_update_clock_divider(machine_pwm_obj_t* self, uint16_t val)
 {
-    if (val > PWM_CLK_DIV_64 && val != PWM_CLK_DIV_1)
+    if (val == PWM_SYSCLK_DIV_1 || (val >= PWM_SYSCLK_DIV_2 && val <= PWM_SYSCLK_DIV_64))
+        PWMClockSet(pwm_mod_reg_map[self->mod_id], val);
+    else
         mp_raise_ValueError(MP_ERROR_TEXT("Value out of range"));
-    
-    // change requested
-    if (val != machine_pwm_clock_divider_value)
-    {
-        pwm_set_clock(0, 0);
-        pwm_set_clock(1, 0);
-        // disable divider
-        if (val == PWM_CLK_DIV_1)
-            HWREG(SYSCTL_RCC) &= ~(1<<20);
-        // set divider
-        else
-        {
-            uint32_t write_val = val << 17;
-            // enable divider
-            if (machine_pwm_clock_divider_value == PWM_CLK_DIV_1)
-                write_val |= 1<<20;
-            // clear and set divider
-            HWREG(SYSCTL_RCC) &= ~(0x0f < 17);
-            HWREG(SYSCTL_RCC) |= write_val;
-        }
-        machine_pwm_clock_divider_value = val;
-        pwm_set_clock(0, 1);
-        pwm_set_clock(1, 1);
-    }
+    pwm_clk_div_val = val;
 }
 
 void pwm_update_freq(machine_pwm_obj_t* self, uint32_t val)
 {
-    // disable timer if freq is 0
-    if (!val)
-    {
-        pwm_set_enable(self, 0);
-        self->freq = 0;
-        return;
-    }
-    // reenable timer if freq was 0
-    else if (val && !self->freq)
-        pwm_set_enable(self, 1);
-
     uint32_t sys_freq = SysCtlClockGet();
-    uint32_t pwm_freq = (machine_pwm_clock_divider_value != PWM_CLK_DIV_1 ? sys_freq / 2<<machine_pwm_clock_divider_value : sys_freq);
-
-    if (val > pwm_freq / 10)
-        mp_raise_ValueError(MP_ERROR_TEXT("Value out of range, must be <= sys_clk / clk_div / 10"));
+    uint32_t pwm_freq = sys_freq;
+    if (pwm_clk_div_val & PWM_SYSCLK_DIV_2)
+        pwm_freq = sys_freq / (2 << (pwm_clk_div_val & PWM_SYSCLK_DIV_2));
     
-    // get register address of MxPWMxLOAD
-    uint32_t reg = pwm_get_pwm_base_reg(self) + PWM_O_0_LOAD + self->id_gen * 0x40;
-    // get second pwm of generator
+    if (val * 10 > pwm_freq)
+        mp_raise_ValueError(MP_ERROR_TEXT("Value out of range, must be <= sys_clk / clk_div / 10"));
+
     machine_pwm_obj_t* twin = &machine_pwm_obj[(self->id % 2 ? self->id - 1: self->id + 1)];
     // if twin pwm is active dont allow different frequency
     if (twin->freq && val != twin->freq)
         mp_raise_ValueError(MP_ERROR_TEXT("Frequency must be the same inside one PWM generator"));
-    
+
     uint32_t load_val = pwm_freq / val;
     if (load_val > 0xffff)
         mp_raise_ValueError(MP_ERROR_TEXT("Frequency to low, consider adjusting the PWM clock divider via PWM.clock_divider(PWM.CLK_DIV_x)"));
-    HWREG(reg) &= ~0xffff;
-    HWREG(reg) |= load_val;
-
-    pwm_clear_counter(self);
+    
+    PWMGenPeriodSet(pwm_mod_reg_map[self->mod_id], pwm_gen_reg_map[self->gen_id], load_val);
+    PWMSyncTimeBase(pwm_mod_reg_map[self->mod_id], 1 << self->gen_id);
     self->load = load_val;
     self->freq = val;
 }
@@ -325,47 +198,58 @@ void pwm_update_duty(machine_pwm_obj_t* self, uint8_t val)
 {
     if (val > 100)
         mp_raise_ValueError(MP_ERROR_TEXT("Value out of range"));
-
-    // get offset for register address MxPWMxCMPx
-    uint8_t reg_offset = (self->id % 2 ? PWM_O_0_CMPB: PWM_O_0_CMPA);
-    // get register address of MxPWMxCMPx
-    uint32_t reg = pwm_get_pwm_base_reg(self) + reg_offset + self->id_gen * 0x40;
-
-    uint16_t comp_val = 0;
-    if (self->mode & 1)
-        ;
-    else
-        comp_val = val * self->load / 100;
     
-    HWREG(reg) &= ~0xffff;
-    HWREG(reg) |= (comp_val == self->load ? comp_val - 1: comp_val);
+    uint16_t comp_val = 0;
+    comp_val = val * self->load / 100;
+    
+    // reenable output if duty was 0%
+    if (val && self->duty == 0)
+        PWMOutputState(pwm_mod_reg_map[self->mod_id], 1 << (self->id % PWM_M1PWM0), 1);
+    
+    // set pulse width
+    if (val)
+        PWMPulseWidthSet(pwm_mod_reg_map[self->mod_id], pwm_out_reg_map[self->id % PWM_M1PWM0], comp_val);
+    // silently disable output as left aligned PWM does not allow for 0% duty cycle
+    else
+        PWMOutputState(pwm_mod_reg_map[self->mod_id], 1 << (self->id % PWM_M1PWM0), 0);
+    
     self->duty = val;
 }
 
 void pwm_update_sync(machine_pwm_obj_t* self, const machine_pwm_obj_t* tbs, uint8_t n_tbs)
 {
-    if (n_tbs)
+    uint8_t tbs_flag = (1 << self->gen_id) << (4 * self->mod_id);
+    for (uint8_t i = 0; i < n_tbs; i++)
+        tbs_flag |= (1 << tbs[i].gen_id) << (4 * tbs[i].mod_id);
+    if (tbs_flag & 0x0f)
+        PWMSyncTimeBase(pwm_mod_reg_map[0], tbs_flag & 0x0f);
+    if (tbs_flag & 0xf0)
+        PWMSyncTimeBase(pwm_mod_reg_map[1], (tbs_flag >> 4) & 0x0f);
+}
+
+void pwm_update_db(machine_pwm_obj_t* self, uint16_t db_falling, uint16_t db_rising)
+{
+    PWMDeadBandEnable(pwm_mod_reg_map[self->mod_id], pwm_gen_reg_map[self->gen_id], db_rising, db_falling);
+    self->db_falling = db_falling;
+    self->db_rising = db_rising;
+    // update values for twin
+    machine_pwm_obj[(self->id % 2 ? self->id - 1: self->id + 1)].db_falling = db_falling;
+    machine_pwm_obj[(self->id % 2 ? self->id - 1: self->id + 1)].db_rising = db_rising;
+}
+
+void pwm_update_irq(machine_pwm_obj_t* self, mp_obj_t irq, uint16_t irq_mode)
+{
+    // disable irq
+    if (mp_obj_is_type(irq, &mp_type_NoneType))
     {
 
     }
-    else
-    ;
-}
-
-void pwm_update_irq(machine_pwm_obj_t* self, mp_obj_t irq)
-{
-
-}
-
-void pwm_update_db(machine_pwm_obj_t* self, uint32_t db, uint8_t db_type)
-{
-    switch (db_type)
+    // setup irq
+    else if (mp_obj_is_fun(irq))
     {
-    case PWM_DB_FALLING:    self->db_falling = db;  break;
-    case PWM_DB_RISING:     self->db_rising = db;   break;
-    
-    default: mp_raise_ValueError(MP_ERROR_TEXT("Deadband type out of range"));   break;
+
     }
+    self->irq_mode = irq_mode;
 }
 
 void pwm_update_fault(machine_pwm_obj_t* self, bool val)
@@ -373,27 +257,47 @@ void pwm_update_fault(machine_pwm_obj_t* self, bool val)
 
 }
 
-void pwm_init(machine_pwm_obj_t* self, const pin_obj_t* pin, uint16_t mode, bool active, bool invert, uint32_t freq, uint8_t duty, uint32_t db_falling, uint32_t db_rising, mp_obj_t irq, mp_obj_t fault)
+void pwm_set_gpio(machine_pwm_obj_t* self, bool val)
 {
-    pwm_set_clock(self->id_mod, 1);
-    pwm_set_enable(self, 0);
-    pwm_update_active(self, 0);
+    // alternate pin
+    if (pwm_get_id_from_pin(self->pin, 1) == self->id)
+        self->alternate_pin = 1;
+    // standard pin not found
+    else if (pwm_get_id_from_pin(self->pin, 0) != self->id)
+        mp_raise_ValueError(MP_ERROR_TEXT("Can't setup pin for PWM"));
+
+    SysCtlPeripheralEnable(self->pin->periph);
+    while (!SysCtlPeripheralReady(self->pin->periph));
+    GPIOPinConfigure(gpio_af_val_map[self->id][self->alternate_pin]);
+    GPIOPinTypePWM(self->pin->gpio, 1 << get_pin_index_from_pin(self->pin));
+}
+
+void pwm_init(machine_pwm_obj_t* self, const pin_obj_t* pin, bool active, bool invert, uint32_t freq, uint8_t duty, uint16_t db_falling, uint16_t db_rising, uint32_t mode, mp_obj_t irq, uint16_t irq_mode, mp_obj_t fault)
+{
+    SysCtlPeripheralEnable(pwm_periph_reg_map[self->mod_id]);
+    while (!SysCtlPeripheralReady(pwm_periph_reg_map[self->mod_id]));
+
+    machine_pwm_obj_t* twin = &machine_pwm_obj[(self->id % 2 ? self->id - 1: self->id + 1)];
+    // if twin pwm is active dont allow different mode
+    if (twin->freq && mode != twin->mode)
+        mp_raise_ValueError(MP_ERROR_TEXT("Mode must be the same inside one PWM generator"));
+    // configure pwm generator
+    PWMGenConfigure(pwm_mod_reg_map[self->mod_id], pwm_gen_reg_map[self->gen_id], mode);
+    // setup output pin
     if (pin)
+    {
         self->pin = pin;
-    pwm_set_gpio(self, 1);
-    pwm_set_mode(self, mode);
-    // pwm_set_sync(self, 1);
+        pwm_set_gpio(self, 1);
+    }
+
     pwm_update_freq(self, freq);
     pwm_update_duty(self, duty);
-
     pwm_update_invert(self, invert);
-    pwm_update_db(self, db_falling, PWM_DB_FALLING);
-    pwm_update_db(self, db_rising, PWM_DB_RISING);
-    pwm_update_irq(self, irq);
+    pwm_update_db(self, db_falling, db_rising);
+    pwm_update_irq(self, irq, irq_mode);
     pwm_update_fault(self, fault);
-
-    pwm_set_enable(self, 1);
-    pwm_update_active(self, 1);
+    PWMGenEnable(pwm_mod_reg_map[self->mod_id], pwm_gen_reg_map[self->gen_id]);
+    pwm_update_active(self, active);
 }
 
 void pwm_deinit(machine_pwm_obj_t* self)
@@ -402,30 +306,31 @@ void pwm_deinit(machine_pwm_obj_t* self)
     // get second pwm of generator
     uint8_t twin_id = (self->id % 2 ? self->id - 1: self->id + 1);
     // if twin pwm is active dont disable generator
-    if (!machine_pwm_obj_in_use[twin_id])
-        pwm_set_enable(self, 0);
+    if (!pwm_obj_in_use[twin_id])
+        PWMGenDisable(pwm_mod_reg_map[self->mod_id], pwm_gen_reg_map[self->gen_id]);
     if (self->pin)
         pwm_set_gpio(self, 0);
     self->freq = 0;
-    machine_pwm_obj_in_use[self->id] = false;
+    pwm_obj_in_use[self->id] = false;
 }
 
 
 // ##### helper functions #####
 mp_obj_t machine_pwm_init_helper(machine_pwm_obj_t* self, size_t n_args, const mp_obj_t* pos_args, mp_map_t* kw_args, const pin_obj_t* pin)
 {
-    enum {ARG_pin, ARG_active, ARG_invert, ARG_mode, ARG_freq, ARG_duty, ARG_db_falling, ARG_db_rising, ARG_irq, ARG_fault};
+    enum {ARG_pin, ARG_active, ARG_invert, ARG_freq, ARG_duty, ARG_db_falling, ARG_db_rising, ARG_mode, ARG_irq, ARG_irq_mode, ARG_fault};
     static const mp_arg_t allowed_args[] = 
     {
         {MP_QSTR_pin,           MP_ARG_KW_ONLY | MP_ARG_OBJ,    {.u_obj = mp_const_none}},
         {MP_QSTR_active,        MP_ARG_KW_ONLY | MP_ARG_BOOL,   {.u_int = true}},
         {MP_QSTR_invert,        MP_ARG_KW_ONLY | MP_ARG_BOOL,   {.u_int = false}},
-        {MP_QSTR_mode,          MP_ARG_KW_ONLY | MP_ARG_BOOL,   {.u_int = PWM_COUNT_DOWN}},
         {MP_QSTR_freq,          MP_ARG_KW_ONLY | MP_ARG_INT,    {.u_int = 0}},
         {MP_QSTR_duty,          MP_ARG_KW_ONLY | MP_ARG_INT,    {.u_int = 0}},
         {MP_QSTR_db_falling,    MP_ARG_KW_ONLY | MP_ARG_INT,    {.u_int = 0}},
         {MP_QSTR_db_rising,     MP_ARG_KW_ONLY | MP_ARG_INT,    {.u_int = 0}},
+        {MP_QSTR_mode,          MP_ARG_KW_ONLY | MP_ARG_INT,    {.u_int = PWM_GEN_MODE_DOWN}},
         {MP_QSTR_irq,           MP_ARG_KW_ONLY | MP_ARG_OBJ,    {.u_obj = mp_const_none}},
+        {MP_QSTR_irq_mode,      MP_ARG_KW_ONLY | MP_ARG_OBJ,    {.u_int = 0}},
         {MP_QSTR_fault,         MP_ARG_KW_ONLY | MP_ARG_OBJ,    {.u_obj = mp_const_none}},
     };
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
@@ -433,18 +338,20 @@ mp_obj_t machine_pwm_init_helper(machine_pwm_obj_t* self, size_t n_args, const m
 
     // get arguments
     if (!pin)               // dont overwrite if created via pin
-        pin =               (args[ARG_pin].u_obj == mp_const_none ? NULL: args[ARG_pin].u_obj);
-    uint16_t mode =         (args[ARG_mode].u_int == PWM_COUNT_DOWN ? PWM_COUNT_DOWN | (PWM_ACT_LOW << PWM_EVENT_ZERO | PWM_ACT_HIGH << PWM_EVENT_CMPA_DOWN) << 1 : args[ARG_mode].u_int);
+        pin =               (args[ARG_pin].u_obj == mp_const_none ? NULL: pin_find(args[ARG_pin].u_obj));
+
     bool active =           args[ARG_active].u_int;
     bool invert =           args[ARG_invert].u_int;
     uint32_t freq =         args[ARG_freq].u_int;
     uint8_t duty =          args[ARG_duty].u_int;
-    uint32_t db_falling =   args[ARG_db_falling].u_int;
-    uint32_t db_rising =    args[ARG_db_rising].u_int;
+    uint16_t db_falling =   args[ARG_db_falling].u_int;
+    uint16_t db_rising =    args[ARG_db_rising].u_int;
+    uint32_t mode =         args[ARG_mode].u_int;
     mp_obj_t irq =          args[ARG_irq].u_obj;
+    uint16_t irq_mode =     args[ARG_irq_mode].u_int;
     mp_obj_t fault =        args[ARG_fault].u_obj;
 
-    pwm_init(self, pin, mode, active, invert, freq, duty, db_falling, db_rising, irq, fault);
+    pwm_init(self, pin, active, invert, freq, duty, db_falling, db_rising, mode, irq, irq_mode, fault);
     
     return self;
 }
@@ -477,7 +384,7 @@ mp_obj_t machine_pwm_invert_helper(machine_pwm_obj_t* self, size_t n_args, const
         else
             mp_raise_ValueError(MP_ERROR_TEXT("Type mismatch: not an int"));
     }
-    return mp_obj_new_bool(self->active);
+    return mp_obj_new_bool(self->invert);
 }
 
 mp_obj_t machine_pwm_clock_divider_helper(machine_pwm_obj_t* self, size_t n_args, const mp_obj_t* pos_args)
@@ -485,11 +392,11 @@ mp_obj_t machine_pwm_clock_divider_helper(machine_pwm_obj_t* self, size_t n_args
     if (n_args)
     {
         if (mp_obj_is_int(pos_args[0]))
-            pwm_update_clock_divider(MP_OBJ_SMALL_INT_VALUE(pos_args[0]));
+            pwm_update_clock_divider(self, MP_OBJ_SMALL_INT_VALUE(pos_args[0]));
         else
             mp_raise_ValueError(MP_ERROR_TEXT("Type mismatch: not an int"));
     }
-    return mp_obj_new_int(machine_pwm_clock_divider_value);
+    return mp_obj_new_int(pwm_clk_div_val);
 }
 
 mp_obj_t machine_pwm_freq_helper(machine_pwm_obj_t* self, size_t n_args, const mp_obj_t* pos_args)
@@ -527,7 +434,7 @@ mp_obj_t machine_pwm_sync_helper(machine_pwm_obj_t* self, size_t n_args, const m
         }
     }
     pwm_update_sync(self, (machine_pwm_obj_t*) pos_args, n_args);
-    return self;
+    return mp_obj_new_bool(1);
 }
 
 mp_obj_t machine_pwm_db_helper(machine_pwm_obj_t* self, size_t n_args, const mp_obj_t* pos_args, mp_map_t* kw_args)
@@ -535,22 +442,29 @@ mp_obj_t machine_pwm_db_helper(machine_pwm_obj_t* self, size_t n_args, const mp_
     enum {ARG_db_falling, ARG_db_rising};
     static const mp_arg_t allowed_args[] = 
     {
-        {MP_QSTR_db_falling,    MP_ARG_KW_ONLY | MP_ARG_INT,    {.u_int = -1}},
-        {MP_QSTR_db_rising,     MP_ARG_KW_ONLY | MP_ARG_INT,    {.u_int = -1}},
+        {MP_QSTR_db_falling,    MP_ARG_KW_ONLY | MP_ARG_INT,    {.u_int = 0}},
+        {MP_QSTR_db_rising,     MP_ARG_KW_ONLY | MP_ARG_INT,    {.u_int = 0}},
     };
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
     mp_arg_parse_all(n_args, pos_args, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
 
-    if (args[ARG_db_falling].u_int != -1)
-        pwm_update_db(self, args[ARG_db_falling].u_int, PWM_DB_FALLING);
-    if (args[ARG_db_rising].u_int != -1)
-        pwm_update_db(self, args[ARG_db_rising].u_int, PWM_DB_RISING);
+    pwm_update_db(self, args[ARG_db_falling].u_int, args[ARG_db_rising].u_int);
 
     return self;
 }
 
-mp_obj_t machine_pwm_irq_helper(machine_pwm_obj_t* self, size_t n_args, const mp_obj_t* pos_args)
+mp_obj_t machine_pwm_irq_helper(machine_pwm_obj_t* self, size_t n_args, const mp_obj_t* pos_args, mp_map_t* kw_args)
 {
+    enum {ARG_mode};
+    static const mp_arg_t allowed_args[] = 
+    {
+        {MP_QSTR_mode,          MP_ARG_KW_ONLY | MP_ARG_INT,    {.u_int = 0}},
+    };
+    mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
+    mp_arg_parse_all(n_args, pos_args, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
+
+    pwm_update_irq(self, pos_args[0], args[ARG_mode].u_int);
+
     return self;
 }
 
@@ -566,8 +480,16 @@ static mp_obj_t mp_machine_pwm_make_new(const mp_obj_type_t* type, size_t n_args
     uint8_t pwm_id = 0xff;
     const pin_obj_t* pin = NULL;
 
-    // init via pin
-    if (mp_obj_is_type(args[0], &pin_type))
+    // init via pin name
+    if (mp_obj_is_str(args[0]))
+    {
+        pin = pin_find(args[0]);
+        pwm_id = pwm_get_id_from_pin(pin, 0);
+        if (pwm_id == 0xff)
+            mp_raise_ValueError(MP_ERROR_TEXT("Pin incapable of PWM function"));
+    }
+    // init via pin obj
+    else if (mp_obj_is_type(args[0], &pin_type))
     {
         pin = pin_find(args[0]);
         pwm_id = pwm_get_id_from_pin(pin, 0);
@@ -584,23 +506,25 @@ static mp_obj_t mp_machine_pwm_make_new(const mp_obj_type_t* type, size_t n_args
 
     // create (select) pwm object
     machine_pwm_obj_t* self = &machine_pwm_obj[pwm_id];
-    machine_pwm_obj_in_use[pwm_id] = true;                  // flag pwm object as in use
+    pwm_obj_in_use[pwm_id] = true;                  // flag pwm object as in use
 
     self->base.type = &machine_pwm_type;
     self->id = pwm_id;
-    self->id_mod = !(pwm_id < PWM_M1PWM0);
-    self->id_gen = (pwm_id % PWM_M1PWM0) - (pwm_id % 2);
+    self->mod_id = !(pwm_id < PWM_M1PWM0);
+    self->gen_id = ((pwm_id % PWM_M1PWM0) - (pwm_id % 2)) / 2;
 
     self->pin = pin;
+    self->alternate_pin = 0;
     self->active = false;
     self->invert = false;
-    self->mode = PWM_COUNT_DOWN;
+    self->mode = 0;
     self->duty = 0;
     self->freq = 0;
     self->load = 0;
     self->db_falling = 0;
     self->db_rising = 0;
     self->irq = mp_const_none;
+    self->irq_mode = 0;
 
     mp_arg_check_num(n_args, n_kw, 1, MP_OBJ_FUN_ARGS_MAX, true);
     mp_map_t kw_args;
@@ -663,11 +587,11 @@ static mp_obj_t machine_pwm_db(size_t n_args, const mp_obj_t* args, mp_map_t* kw
 }
 static MP_DEFINE_CONST_FUN_OBJ_KW(machine_pwm_db_obj, 1, machine_pwm_db);
 
-static mp_obj_t machine_pwm_irq(size_t n_args, const mp_obj_t* args)
+static mp_obj_t machine_pwm_irq(size_t n_args, const mp_obj_t* args, mp_map_t* kw_args)
 {
-    return machine_pwm_irq_helper(args[0], n_args - 1, args + 1);
+    return machine_pwm_irq_helper(args[0], n_args - 1, args + 1, kw_args);
 }
-static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(machine_pwm_irq_obj, 1, 2, machine_pwm_irq);
+static MP_DEFINE_CONST_FUN_OBJ_KW(machine_pwm_irq_obj, 1, machine_pwm_irq);
 
 static mp_obj_t machine_pwm_fault(size_t n_args, const mp_obj_t* args)
 {
@@ -681,7 +605,10 @@ void pwm_init0(void)
     mp_obj_list_init(&MP_STATE_PORT(mp_pwm_obj_list), 0);
     // setup objects frequencies for correct initialization later
     for (uint8_t i = 0; i < MICROPY_HW_MAX_PWM; i++)
+    {
         machine_pwm_obj[i].freq = 0;
+        machine_pwm_obj[i].mode = 0;
+    }
 }
 
 static void machine_pwm_print(const mp_print_t* print, mp_obj_t self_in, mp_print_kind_t kind)
@@ -724,17 +651,15 @@ static const mp_rom_map_elem_t machine_pwm_locals_dict_table[] =
     {MP_ROM_QSTR(MP_QSTR_M1PWM6),           MP_ROM_INT(PWM_M1PWM6)},
     {MP_ROM_QSTR(MP_QSTR_M1PWM7),           MP_ROM_INT(PWM_M1PWM7)},
 
-    {MP_ROM_QSTR(MP_QSTR_COUNT_DOWN),       MP_ROM_INT(PWM_COUNT_DOWN)},
-    {MP_ROM_QSTR(MP_QSTR_COUNT_UP_DOWN),    MP_ROM_INT(PWM_COUNT_UP_DOWN)},
-    {MP_ROM_QSTR(MP_QSTR_DB_FALLING),       MP_ROM_INT(PWM_DB_FALLING)},
-    {MP_ROM_QSTR(MP_QSTR_DB_RISING),        MP_ROM_INT(PWM_DB_RISING)},
-    {MP_ROM_QSTR(MP_QSTR_CLK_DIV_1),        MP_ROM_INT(PWM_CLK_DIV_1)},
-    {MP_ROM_QSTR(MP_QSTR_CLK_DIV_2),        MP_ROM_INT(PWM_CLK_DIV_2)},
-    {MP_ROM_QSTR(MP_QSTR_CLK_DIV_4),        MP_ROM_INT(PWM_CLK_DIV_4)},
-    {MP_ROM_QSTR(MP_QSTR_CLK_DIV_8),        MP_ROM_INT(PWM_CLK_DIV_8)},
-    {MP_ROM_QSTR(MP_QSTR_CLK_DIV_16),       MP_ROM_INT(PWM_CLK_DIV_16)},
-    {MP_ROM_QSTR(MP_QSTR_CLK_DIV_32),       MP_ROM_INT(PWM_CLK_DIV_32)},
-    {MP_ROM_QSTR(MP_QSTR_CLK_DIV_64),       MP_ROM_INT(PWM_CLK_DIV_64)},
+    {MP_ROM_QSTR(MP_QSTR_COUNT_DOWN),       MP_ROM_INT(PWM_GEN_MODE_DOWN)},
+    {MP_ROM_QSTR(MP_QSTR_COUNT_UP_DOWN),    MP_ROM_INT(PWM_GEN_MODE_UP_DOWN)},
+    {MP_ROM_QSTR(MP_QSTR_CLK_DIV_1),        MP_ROM_INT(PWM_SYSCLK_DIV_1)},
+    {MP_ROM_QSTR(MP_QSTR_CLK_DIV_2),        MP_ROM_INT(PWM_SYSCLK_DIV_2)},
+    {MP_ROM_QSTR(MP_QSTR_CLK_DIV_4),        MP_ROM_INT(PWM_SYSCLK_DIV_4)},
+    {MP_ROM_QSTR(MP_QSTR_CLK_DIV_8),        MP_ROM_INT(PWM_SYSCLK_DIV_8)},
+    {MP_ROM_QSTR(MP_QSTR_CLK_DIV_16),       MP_ROM_INT(PWM_SYSCLK_DIV_16)},
+    {MP_ROM_QSTR(MP_QSTR_CLK_DIV_32),       MP_ROM_INT(PWM_SYSCLK_DIV_32)},
+    {MP_ROM_QSTR(MP_QSTR_CLK_DIV_64),       MP_ROM_INT(PWM_SYSCLK_DIV_64)},
 };
 static MP_DEFINE_CONST_DICT(machine_pwm_locals_dict, machine_pwm_locals_dict_table);
 
