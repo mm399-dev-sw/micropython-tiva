@@ -41,6 +41,7 @@
 #include "driverlib/pin_map.h"
 #include "driverlib/pwm.h"
 #include "driverlib/interrupt.h"
+#include "handlers.h"
 
 #include "pwm.h"
 #include "pin.h"
@@ -102,11 +103,13 @@ static const uint8_t pwm_pin_num_list[MICROPY_HW_MAX_PWM][2] =
 typedef struct _machine_pwm_obj_t
 {
     mp_obj_base_t       base;
+    bool                in_use;
 
     const pin_obj_t*    pin;            // output pin
     bool                alternate_pin;  // use alternative pwm output pin if available
 
     uint8_t             id;             // internal id 0..15
+    uint8_t             twin_id;        // id of twin pwm in generator
     uint8_t             mod_id;         // pwm module id 0..1
     uint8_t             gen_id;         // pwm generator id 0..3
     
@@ -125,8 +128,25 @@ typedef struct _machine_pwm_obj_t
 } machine_pwm_obj_t;
 
 static machine_pwm_obj_t machine_pwm_obj[MICROPY_HW_MAX_PWM] = {};
-static bool pwm_obj_in_use[MICROPY_HW_MAX_PWM] = {};
 static uint16_t pwm_clk_div_val = PWM_SYSCLK_DIV_1;
+
+void machine_pwm_obj_val_init(machine_pwm_obj_t* self)
+{
+    self->base.type = &machine_pwm_type;
+    self->in_use =          false;
+    self->pin =             NULL;
+    self->alternate_pin =   false;
+    self->active =          false;
+    self->invert =          false;
+    self->freq =            0;
+    self->load =            0;
+    self->duty =            0;
+    self->irq =             mp_const_none;
+    self->irq_mode =        0;
+    self->db_falling =      0;
+    self->db_rising =       0;
+    self->mode =            0;
+}
 
 uint8_t pwm_get_id_from_pin(const pin_obj_t* pin, bool alternate_pin)
 {
@@ -179,7 +199,7 @@ void pwm_update_freq(machine_pwm_obj_t* self, uint32_t val)
     if (val * 10 > pwm_freq)
         mp_raise_ValueError(MP_ERROR_TEXT("Value out of range, must be <= sys_clk / clk_div / 10"));
 
-    machine_pwm_obj_t* twin = &machine_pwm_obj[(self->id % 2 ? self->id - 1: self->id + 1)];
+    machine_pwm_obj_t* twin = &machine_pwm_obj[self->twin_id];
     // if twin pwm is active dont allow different frequency
     if (twin->freq && val != twin->freq)
         mp_raise_ValueError(MP_ERROR_TEXT("Frequency must be the same inside one PWM generator"));
@@ -233,28 +253,52 @@ void pwm_update_db(machine_pwm_obj_t* self, uint16_t db_falling, uint16_t db_ris
     self->db_falling = db_falling;
     self->db_rising = db_rising;
     // update values for twin
-    machine_pwm_obj[(self->id % 2 ? self->id - 1: self->id + 1)].db_falling = db_falling;
-    machine_pwm_obj[(self->id % 2 ? self->id - 1: self->id + 1)].db_rising = db_rising;
+    machine_pwm_obj[self->twin_id].db_falling = db_falling;
+    machine_pwm_obj[self->twin_id].db_rising = db_rising;
+}
+
+static const void* irq_handlers[2][4] = {{&PWM0GEN0_Handler, &PWM0GEN1_Handler, &PWM0GEN2_Handler, &PWM0GEN3_Handler},
+                                        {&PWM1GEN0_Handler, &PWM1GEN1_Handler, &PWM1GEN2_Handler, &PWM1GEN3_Handler}};
+void pwm_irq_handler(uint8_t mod_id, uint8_t gen_id)
+{
+    uint32_t gen_int = PWMGenIntStatus(pwm_mod_reg_map[mod_id], pwm_gen_reg_map[mod_id], 1);
+    machine_pwm_obj_t* pwm = &machine_pwm_obj[mod_id * PWM_M1PWM0 + gen_id * 2];
+    // call irq
+    if (pwm->irq != mp_const_none)
+        mp_call_function_1(pwm->irq, mp_obj_new_int(gen_int));
+    // call irq of twin in generator
+    if (machine_pwm_obj[pwm->twin_id].irq != mp_const_none)
+        mp_call_function_1(machine_pwm_obj[pwm->twin_id].irq, mp_obj_new_int(gen_int));
+    // clear interrupts
+    PWMGenIntClear(pwm_mod_reg_map[mod_id], pwm_gen_reg_map[gen_id], gen_int);
 }
 
 void pwm_update_irq(machine_pwm_obj_t* self, mp_obj_t irq, uint16_t irq_mode)
 {
     // disable irq
-    if (mp_obj_is_type(irq, &mp_type_NoneType))
+    if (irq == mp_const_none)
     {
-
+        PWMGenIntUnregister(pwm_mod_reg_map[self->mod_id], pwm_gen_reg_map[self->gen_id]);
+        // dont disable interrupts if twin is using them
+        machine_pwm_obj_t* twin = &machine_pwm_obj[self->twin_id];
+        if (twin->irq == mp_const_none)
+        {
+            PWMIntDisable(pwm_mod_reg_map[self->mod_id], 1 << self->gen_id);
+            PWMGenIntTrigDisable(pwm_mod_reg_map[self->mod_id], pwm_gen_reg_map[self->gen_id], irq_mode);
+        }
     }
     // setup irq
     else if (mp_obj_is_fun(irq))
     {
-
+        PWMIntEnable(pwm_mod_reg_map[self->mod_id], 1 << self->gen_id);
+        PWMGenIntRegister(pwm_mod_reg_map[self->mod_id], pwm_gen_reg_map[self->gen_id], irq_handlers[self->mod_id][self->gen_id]);
+        PWMGenIntTrigEnable(pwm_mod_reg_map[self->mod_id], pwm_gen_reg_map[self->gen_id], irq_mode);
     }
+    else
+        mp_raise_ValueError(MP_ERROR_TEXT("irq must be a function handler(flag: int) or None"));
+    
+    self->irq = irq;
     self->irq_mode = irq_mode;
-}
-
-void pwm_update_fault(machine_pwm_obj_t* self, bool val)
-{
-
 }
 
 void pwm_set_gpio(machine_pwm_obj_t* self, bool val)
@@ -272,12 +316,12 @@ void pwm_set_gpio(machine_pwm_obj_t* self, bool val)
     GPIOPinTypePWM(self->pin->gpio, 1 << get_pin_index_from_pin(self->pin));
 }
 
-void pwm_init(machine_pwm_obj_t* self, const pin_obj_t* pin, bool active, bool invert, uint32_t freq, uint8_t duty, uint16_t db_falling, uint16_t db_rising, uint32_t mode, mp_obj_t irq, uint16_t irq_mode, mp_obj_t fault)
+void pwm_init(machine_pwm_obj_t* self, const pin_obj_t* pin, bool active, bool invert, uint32_t freq, uint8_t duty, uint16_t db_falling, uint16_t db_rising, uint32_t mode, mp_obj_t irq, uint16_t irq_mode)
 {
     SysCtlPeripheralEnable(pwm_periph_reg_map[self->mod_id]);
     while (!SysCtlPeripheralReady(pwm_periph_reg_map[self->mod_id]));
 
-    machine_pwm_obj_t* twin = &machine_pwm_obj[(self->id % 2 ? self->id - 1: self->id + 1)];
+    machine_pwm_obj_t* twin = &machine_pwm_obj[self->twin_id];
     // if twin pwm is active dont allow different mode
     if (twin->freq && mode != twin->mode)
         mp_raise_ValueError(MP_ERROR_TEXT("Mode must be the same inside one PWM generator"));
@@ -295,30 +339,27 @@ void pwm_init(machine_pwm_obj_t* self, const pin_obj_t* pin, bool active, bool i
     pwm_update_invert(self, invert);
     pwm_update_db(self, db_falling, db_rising);
     pwm_update_irq(self, irq, irq_mode);
-    pwm_update_fault(self, fault);
     PWMGenEnable(pwm_mod_reg_map[self->mod_id], pwm_gen_reg_map[self->gen_id]);
     pwm_update_active(self, active);
 }
 
 void pwm_deinit(machine_pwm_obj_t* self)
 {
+    pwm_update_irq(self, mp_const_none, self->irq_mode);
     pwm_update_active(self, 0);
-    // get second pwm of generator
-    uint8_t twin_id = (self->id % 2 ? self->id - 1: self->id + 1);
     // if twin pwm is active dont disable generator
-    if (!pwm_obj_in_use[twin_id])
+    if (!machine_pwm_obj[self->twin_id].in_use)
         PWMGenDisable(pwm_mod_reg_map[self->mod_id], pwm_gen_reg_map[self->gen_id]);
     if (self->pin)
         pwm_set_gpio(self, 0);
-    self->freq = 0;
-    pwm_obj_in_use[self->id] = false;
+    machine_pwm_obj_val_init(self);
 }
 
 
 // ##### helper functions #####
 mp_obj_t machine_pwm_init_helper(machine_pwm_obj_t* self, size_t n_args, const mp_obj_t* pos_args, mp_map_t* kw_args, const pin_obj_t* pin)
 {
-    enum {ARG_pin, ARG_active, ARG_invert, ARG_freq, ARG_duty, ARG_db_falling, ARG_db_rising, ARG_mode, ARG_irq, ARG_irq_mode, ARG_fault};
+    enum {ARG_pin, ARG_active, ARG_invert, ARG_freq, ARG_duty, ARG_db_falling, ARG_db_rising, ARG_mode, ARG_irq, ARG_irq_mode};
     static const mp_arg_t allowed_args[] = 
     {
         {MP_QSTR_pin,           MP_ARG_KW_ONLY | MP_ARG_OBJ,    {.u_obj = mp_const_none}},
@@ -331,7 +372,6 @@ mp_obj_t machine_pwm_init_helper(machine_pwm_obj_t* self, size_t n_args, const m
         {MP_QSTR_mode,          MP_ARG_KW_ONLY | MP_ARG_INT,    {.u_int = PWM_GEN_MODE_DOWN}},
         {MP_QSTR_irq,           MP_ARG_KW_ONLY | MP_ARG_OBJ,    {.u_obj = mp_const_none}},
         {MP_QSTR_irq_mode,      MP_ARG_KW_ONLY | MP_ARG_OBJ,    {.u_int = 0}},
-        {MP_QSTR_fault,         MP_ARG_KW_ONLY | MP_ARG_OBJ,    {.u_obj = mp_const_none}},
     };
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
     mp_arg_parse_all(n_args, pos_args, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
@@ -349,9 +389,8 @@ mp_obj_t machine_pwm_init_helper(machine_pwm_obj_t* self, size_t n_args, const m
     uint32_t mode =         args[ARG_mode].u_int;
     mp_obj_t irq =          args[ARG_irq].u_obj;
     uint16_t irq_mode =     args[ARG_irq_mode].u_int;
-    mp_obj_t fault =        args[ARG_fault].u_obj;
 
-    pwm_init(self, pin, active, invert, freq, duty, db_falling, db_rising, mode, irq, irq_mode, fault);
+    pwm_init(self, pin, active, invert, freq, duty, db_falling, db_rising, mode, irq, irq_mode);
     
     return self;
 }
@@ -453,26 +492,24 @@ mp_obj_t machine_pwm_db_helper(machine_pwm_obj_t* self, size_t n_args, const mp_
     return self;
 }
 
-mp_obj_t machine_pwm_irq_helper(machine_pwm_obj_t* self, size_t n_args, const mp_obj_t* pos_args, mp_map_t* kw_args)
+mp_obj_t machine_pwm_irq_helper(machine_pwm_obj_t* self, size_t n_args, const mp_obj_t* pos_args)
 {
-    enum {ARG_mode};
-    static const mp_arg_t allowed_args[] = 
+    if (n_args)
     {
-        {MP_QSTR_mode,          MP_ARG_KW_ONLY | MP_ARG_INT,    {.u_int = 0}},
-    };
-    mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
-    mp_arg_parse_all(n_args, pos_args, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
-
-    pwm_update_irq(self, pos_args[0], args[ARG_mode].u_int);
-
-    return self;
+        uint16_t mode = self->irq_mode;
+        if (n_args > 1)
+        {
+            if (mp_obj_is_int(pos_args[1]))
+                mode = MP_OBJ_SMALL_INT_VALUE(pos_args[1]);
+            else
+                mp_raise_ValueError(MP_ERROR_TEXT("Type mismatch: mode is not an int"));
+        }
+        pwm_update_irq(self, pos_args[0], mode);
+    }
+    mp_obj_t ret[] = {  self->irq, 
+                        mp_obj_new_int(self->irq_mode)};
+    return mp_obj_new_tuple(2, ret);
 }
-
-mp_obj_t machine_pwm_fault_helper(machine_pwm_obj_t* self, size_t n_args, const mp_obj_t* pos_args)
-{
-    return self;
-}
-
 
 // ##### micropython functions and declarations #####
 static mp_obj_t mp_machine_pwm_make_new(const mp_obj_type_t* type, size_t n_args, size_t n_kw, const mp_obj_t* args)
@@ -503,28 +540,10 @@ static mp_obj_t mp_machine_pwm_make_new(const mp_obj_type_t* type, size_t n_args
     else
         mp_raise_ValueError(MP_ERROR_TEXT("Type mismatch: not a Pin object or valid MxPWMx pwm identifier"));
 
-
     // create (select) pwm object
     machine_pwm_obj_t* self = &machine_pwm_obj[pwm_id];
-    pwm_obj_in_use[pwm_id] = true;                  // flag pwm object as in use
-
-    self->base.type = &machine_pwm_type;
-    self->id = pwm_id;
-    self->mod_id = !(pwm_id < PWM_M1PWM0);
-    self->gen_id = ((pwm_id % PWM_M1PWM0) - (pwm_id % 2)) / 2;
-
-    self->pin = pin;
-    self->alternate_pin = 0;
-    self->active = false;
-    self->invert = false;
-    self->mode = 0;
-    self->duty = 0;
-    self->freq = 0;
-    self->load = 0;
-    self->db_falling = 0;
-    self->db_rising = 0;
-    self->irq = mp_const_none;
-    self->irq_mode = 0;
+    // flag pwm object as in use
+    self->in_use = true;
 
     mp_arg_check_num(n_args, n_kw, 1, MP_OBJ_FUN_ARGS_MAX, true);
     mp_map_t kw_args;
@@ -587,17 +606,11 @@ static mp_obj_t machine_pwm_db(size_t n_args, const mp_obj_t* args, mp_map_t* kw
 }
 static MP_DEFINE_CONST_FUN_OBJ_KW(machine_pwm_db_obj, 1, machine_pwm_db);
 
-static mp_obj_t machine_pwm_irq(size_t n_args, const mp_obj_t* args, mp_map_t* kw_args)
+static mp_obj_t machine_pwm_irq(size_t n_args, const mp_obj_t* args)
 {
-    return machine_pwm_irq_helper(args[0], n_args - 1, args + 1, kw_args);
+    return machine_pwm_irq_helper(args[0], n_args - 1, args + 1);
 }
-static MP_DEFINE_CONST_FUN_OBJ_KW(machine_pwm_irq_obj, 1, machine_pwm_irq);
-
-static mp_obj_t machine_pwm_fault(size_t n_args, const mp_obj_t* args)
-{
-    return machine_pwm_fault_helper(args[0], n_args - 1, args + 1);
-}
-static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(machine_pwm_fault_obj, 1, 2, machine_pwm_fault);
+static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(machine_pwm_irq_obj, 1, 3, machine_pwm_irq);
 
 
 void pwm_init0(void)
@@ -606,8 +619,11 @@ void pwm_init0(void)
     // setup objects frequencies for correct initialization later
     for (uint8_t i = 0; i < MICROPY_HW_MAX_PWM; i++)
     {
-        machine_pwm_obj[i].freq = 0;
-        machine_pwm_obj[i].mode = 0;
+        machine_pwm_obj_val_init(&machine_pwm_obj[i]);
+        machine_pwm_obj[i].id =         i;
+        machine_pwm_obj[i].twin_id =    (i % 2 ? i - 1: i + 1);
+        machine_pwm_obj[i].mod_id =     !(i < PWM_M1PWM0);
+        machine_pwm_obj[i].gen_id =     ((i % PWM_M1PWM0) - (i % 2)) / 2;
     }
 }
 
@@ -631,9 +647,9 @@ static const mp_rom_map_elem_t machine_pwm_locals_dict_table[] =
     {MP_ROM_QSTR(MP_QSTR_sync),             MP_ROM_PTR(&machine_pwm_sync_obj)},
     {MP_ROM_QSTR(MP_QSTR_db),               MP_ROM_PTR(&machine_pwm_db_obj)},
     {MP_ROM_QSTR(MP_QSTR_irq),              MP_ROM_PTR(&machine_pwm_irq_obj)},
-    {MP_ROM_QSTR(MP_QSTR_fault),            MP_ROM_PTR(&machine_pwm_fault_obj)},
 
     // class constants
+    // pwm identifier
     {MP_ROM_QSTR(MP_QSTR_M0PWM0),           MP_ROM_INT(PWM_M0PWM0)},
     {MP_ROM_QSTR(MP_QSTR_M0PWM1),           MP_ROM_INT(PWM_M0PWM1)},
     {MP_ROM_QSTR(MP_QSTR_M0PWM2),           MP_ROM_INT(PWM_M0PWM2)},
@@ -651,15 +667,43 @@ static const mp_rom_map_elem_t machine_pwm_locals_dict_table[] =
     {MP_ROM_QSTR(MP_QSTR_M1PWM6),           MP_ROM_INT(PWM_M1PWM6)},
     {MP_ROM_QSTR(MP_QSTR_M1PWM7),           MP_ROM_INT(PWM_M1PWM7)},
 
-    {MP_ROM_QSTR(MP_QSTR_COUNT_DOWN),       MP_ROM_INT(PWM_GEN_MODE_DOWN)},
-    {MP_ROM_QSTR(MP_QSTR_COUNT_UP_DOWN),    MP_ROM_INT(PWM_GEN_MODE_UP_DOWN)},
-    {MP_ROM_QSTR(MP_QSTR_CLK_DIV_1),        MP_ROM_INT(PWM_SYSCLK_DIV_1)},
-    {MP_ROM_QSTR(MP_QSTR_CLK_DIV_2),        MP_ROM_INT(PWM_SYSCLK_DIV_2)},
-    {MP_ROM_QSTR(MP_QSTR_CLK_DIV_4),        MP_ROM_INT(PWM_SYSCLK_DIV_4)},
-    {MP_ROM_QSTR(MP_QSTR_CLK_DIV_8),        MP_ROM_INT(PWM_SYSCLK_DIV_8)},
-    {MP_ROM_QSTR(MP_QSTR_CLK_DIV_16),       MP_ROM_INT(PWM_SYSCLK_DIV_16)},
-    {MP_ROM_QSTR(MP_QSTR_CLK_DIV_32),       MP_ROM_INT(PWM_SYSCLK_DIV_32)},
-    {MP_ROM_QSTR(MP_QSTR_CLK_DIV_64),       MP_ROM_INT(PWM_SYSCLK_DIV_64)},
+    // pwm mode options
+    {MP_ROM_QSTR(MP_QSTR_MODE_COUNT_DOWN),      MP_ROM_INT(PWM_GEN_MODE_DOWN)},
+    {MP_ROM_QSTR(MP_QSTR_MODE_COUNT_UP_DOWN),   MP_ROM_INT(PWM_GEN_MODE_UP_DOWN)},
+    {MP_ROM_QSTR(MP_QSTR_MODE_COUNT_UP_DOWN),   MP_ROM_INT(PWM_GEN_MODE_UP_DOWN)},
+    {MP_ROM_QSTR(MP_QSTR_MODE_SYNC),            MP_ROM_INT(PWM_GEN_MODE_SYNC)},
+    {MP_ROM_QSTR(MP_QSTR_MODE_NO_SYNC),         MP_ROM_INT(PWM_GEN_MODE_NO_SYNC)},
+    {MP_ROM_QSTR(MP_QSTR_MODE_DBG_RUN),         MP_ROM_INT(PWM_GEN_MODE_DBG_RUN)},
+    {MP_ROM_QSTR(MP_QSTR_MODE_DBG_STOP),        MP_ROM_INT(PWM_GEN_MODE_DBG_STOP)},
+    {MP_ROM_QSTR(MP_QSTR_MODE_DB_NO_SYNC),      MP_ROM_INT(PWM_GEN_MODE_DB_NO_SYNC)},
+    {MP_ROM_QSTR(MP_QSTR_MODE_DB_SYNC_LOCAL),   MP_ROM_INT(PWM_GEN_MODE_DB_SYNC_LOCAL)},
+    {MP_ROM_QSTR(MP_QSTR_MODE_DB_SYNC_GLOBAL),  MP_ROM_INT(PWM_GEN_MODE_DB_SYNC_GLOBAL)},
+    {MP_ROM_QSTR(MP_QSTR_MODE_GEN_NO_SYNC),     MP_ROM_INT(PWM_GEN_MODE_GEN_NO_SYNC)},
+    {MP_ROM_QSTR(MP_QSTR_MODE_GEN_SYNC_LOCAL),  MP_ROM_INT(PWM_GEN_MODE_GEN_SYNC_LOCAL)},
+    {MP_ROM_QSTR(MP_QSTR_MODE_GEN_SYNC_GLOBAL), MP_ROM_INT(PWM_GEN_MODE_GEN_SYNC_GLOBAL)},
+
+    // pwm clock divider
+    {MP_ROM_QSTR(MP_QSTR_CLK_DIV_1),            MP_ROM_INT(PWM_SYSCLK_DIV_1)},
+    {MP_ROM_QSTR(MP_QSTR_CLK_DIV_2),            MP_ROM_INT(PWM_SYSCLK_DIV_2)},
+    {MP_ROM_QSTR(MP_QSTR_CLK_DIV_4),            MP_ROM_INT(PWM_SYSCLK_DIV_4)},
+    {MP_ROM_QSTR(MP_QSTR_CLK_DIV_8),            MP_ROM_INT(PWM_SYSCLK_DIV_8)},
+    {MP_ROM_QSTR(MP_QSTR_CLK_DIV_16),           MP_ROM_INT(PWM_SYSCLK_DIV_16)},
+    {MP_ROM_QSTR(MP_QSTR_CLK_DIV_32),           MP_ROM_INT(PWM_SYSCLK_DIV_32)},
+    {MP_ROM_QSTR(MP_QSTR_CLK_DIV_64),           MP_ROM_INT(PWM_SYSCLK_DIV_64)},
+
+    // pwm irq options
+    {MP_ROM_QSTR(MP_QSTR_IRQ_INT_CNT_ZERO),     MP_ROM_INT(PWM_INT_CNT_ZERO)},
+    {MP_ROM_QSTR(MP_QSTR_IRQ_INT_CNT_LOAD),     MP_ROM_INT(PWM_INT_CNT_LOAD)},
+    {MP_ROM_QSTR(MP_QSTR_IRQ_INT_CNT_AU),       MP_ROM_INT(PWM_INT_CNT_AU)},
+    {MP_ROM_QSTR(MP_QSTR_IRQ_INT_CNT_AD),       MP_ROM_INT(PWM_INT_CNT_AD)},
+    {MP_ROM_QSTR(MP_QSTR_IRQ_INT_CNT_BU),       MP_ROM_INT(PWM_INT_CNT_BU)},
+    {MP_ROM_QSTR(MP_QSTR_IRQ_INT_CNT_BD),       MP_ROM_INT(PWM_INT_CNT_BD)},
+    {MP_ROM_QSTR(MP_QSTR_IRQ_TR_CNT_ZERO),      MP_ROM_INT(PWM_TR_CNT_ZERO)},
+    {MP_ROM_QSTR(MP_QSTR_IRQ_TR_CNT_LOAD),      MP_ROM_INT(PWM_TR_CNT_LOAD)},
+    {MP_ROM_QSTR(MP_QSTR_IRQ_TR_CNT_AU),        MP_ROM_INT(PWM_TR_CNT_AU)},
+    {MP_ROM_QSTR(MP_QSTR_IRQ_TR_CNT_AD),        MP_ROM_INT(PWM_TR_CNT_AD)},
+    {MP_ROM_QSTR(MP_QSTR_IRQ_TR_CNT_BU),        MP_ROM_INT(PWM_TR_CNT_BU)},
+    {MP_ROM_QSTR(MP_QSTR_IRQ_TR_CNT_BD),        MP_ROM_INT(PWM_TR_CNT_BD)},
 };
 static MP_DEFINE_CONST_DICT(machine_pwm_locals_dict, machine_pwm_locals_dict_table);
 

@@ -39,5 +39,6 @@
 extern const mp_obj_type_t machine_pwm_type;
 
 void pwm_init0(void);
+void pwm_irq_handler(uint8_t mod_id, uint8_t gen_id);
 
 #endif
