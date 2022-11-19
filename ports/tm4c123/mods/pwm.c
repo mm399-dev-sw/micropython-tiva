@@ -132,7 +132,6 @@ typedef struct _machine_pwm_obj_t
     bool                active;         // output active
     bool                invert;         // output inverted
     uint32_t            freq;           // pwm frequency
-    uint16_t            load;           // internal pwm load value
     uint8_t             duty;           // pwm duty 0..100
     mp_obj_t            irq;            // pwm interrupt service callback
     uint16_t            irq_mode;       // pwm interrupt configuration
@@ -147,7 +146,7 @@ typedef struct _machine_pwm_obj_t
 static machine_pwm_obj_t machine_pwm_obj[MICROPY_HW_MAX_PWM] = {};
 
 /// @brief PWM system clock divider
-static uint16_t pwm_clk_div_val = PWM_SYSCLK_DIV_1;
+static uint16_t pwm_clk_div_val[2] = {PWM_SYSCLK_DIV_1, PWM_SYSCLK_DIV_1};
 
 void machine_pwm_obj_val_init(machine_pwm_obj_t* self)
 {
@@ -157,7 +156,6 @@ void machine_pwm_obj_val_init(machine_pwm_obj_t* self)
     self->active =          false;
     self->invert =          false;
     self->freq =            0;
-    self->load =            0;
     self->duty =            0;
     self->irq =             mp_const_none;
     self->irq_mode =        0;
@@ -186,6 +184,15 @@ uint8_t get_pin_index_from_pin(const pin_obj_t* pin)
     return (uint8_t) qstr_str(pin->name)[2] - (uint8_t) '0';
 }
 
+uint32_t get_mod_pwm_freq(uint8_t mod_id)
+{
+    uint32_t sys_freq = SysCtlClockGet();
+    uint32_t pwm_freq = sys_freq;
+    if (pwm_clk_div_val[mod_id] & PWM_SYSCLK_DIV_2)
+        pwm_freq = sys_freq / (2 << (pwm_clk_div_val[mod_id] & ~PWM_SYSCLK_DIV_2));
+    return pwm_freq;
+}
+
 void pwm_update_active(machine_pwm_obj_t* self, bool val)
 {
     PWMOutputState(pwm_mod_reg_map[self->mod_id], 1 << (self->id % PWM_M1PWM0), val);
@@ -204,15 +211,12 @@ void pwm_update_clock_divider(machine_pwm_obj_t* self, uint16_t val)
         PWMClockSet(pwm_mod_reg_map[self->mod_id], val);
     else
         mp_raise_ValueError(MP_ERROR_TEXT("Value out of range"));
-    pwm_clk_div_val = val;
+    pwm_clk_div_val[self->mod_id] = val;
 }
 
 void pwm_update_freq(machine_pwm_obj_t* self, uint32_t val)
 {
-    uint32_t sys_freq = SysCtlClockGet();
-    uint32_t pwm_freq = sys_freq;
-    if (pwm_clk_div_val & PWM_SYSCLK_DIV_2)
-        pwm_freq = sys_freq / (2 << (pwm_clk_div_val & PWM_SYSCLK_DIV_2));
+    uint32_t pwm_freq = get_mod_pwm_freq(self->mod_id);
     
     if (val * 10 > pwm_freq)
         mp_raise_ValueError(MP_ERROR_TEXT("Value out of range, must be <= sys_clk / clk_div / 10"));
@@ -228,7 +232,6 @@ void pwm_update_freq(machine_pwm_obj_t* self, uint32_t val)
     
     PWMGenPeriodSet(pwm_mod_reg_map[self->mod_id], pwm_gen_reg_map[self->gen_id], load_val);
     PWMSyncTimeBase(pwm_mod_reg_map[self->mod_id], 1 << self->gen_id);
-    self->load = load_val;
     self->freq = val;
 }
 
@@ -238,7 +241,7 @@ void pwm_update_duty(machine_pwm_obj_t* self, uint8_t val)
         mp_raise_ValueError(MP_ERROR_TEXT("Value out of range"));
     
     uint16_t comp_val = 0;
-    comp_val = val * self->load / 100;
+    comp_val = val * get_mod_pwm_freq(self->mod_id) / self->freq / 100;
     
     // reenable output if duty was 0%
     if (val && self->duty == 0)
@@ -267,6 +270,9 @@ void pwm_update_sync(machine_pwm_obj_t* self, const machine_pwm_obj_t* tbs, uint
 
 void pwm_update_db(machine_pwm_obj_t* self, uint16_t db_falling, uint16_t db_rising)
 {
+    if (db_falling > 0xfff || db_rising > 0xfff)
+        mp_raise_ValueError(MP_ERROR_TEXT("Value out of range"));
+
     PWMDeadBandEnable(pwm_mod_reg_map[self->mod_id], pwm_gen_reg_map[self->gen_id], db_rising, db_falling);
     self->db_falling = db_falling;
     self->db_rising = db_rising;
@@ -452,7 +458,8 @@ mp_obj_t machine_pwm_clock_divider_helper(machine_pwm_obj_t* self, size_t n_args
         else
             mp_raise_ValueError(MP_ERROR_TEXT("Type mismatch: not an int"));
     }
-    return mp_obj_new_int(pwm_clk_div_val);
+    mp_obj_t ret[] = {mp_obj_new_int(pwm_clk_div_val[self->mod_id]), mp_obj_new_int(get_mod_pwm_freq(self->mod_id))};
+    return mp_obj_new_tuple(2, ret);
 }
 
 mp_obj_t machine_pwm_freq_helper(machine_pwm_obj_t* self, size_t n_args, const mp_obj_t* pos_args)
@@ -504,10 +511,10 @@ mp_obj_t machine_pwm_db_helper(machine_pwm_obj_t* self, size_t n_args, const mp_
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
     mp_arg_parse_all(n_args, pos_args, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
 
-    if (args[ARG_db_falling].u_int != -1 && args[ARG_db_rising].u_int != -1)
+    if (args[ARG_db_falling].u_int != -1 || args[ARG_db_rising].u_int != -1)
     {
-        uint16_t db_falling = (args[ARG_db_falling].u_int == -1 ? 0 : args[ARG_db_falling].u_int);
-        uint16_t db_rising = (args[ARG_db_rising].u_int == -1 ? 0 : args[ARG_db_rising].u_int);
+        uint16_t db_falling = (args[ARG_db_falling].u_int == -1 ? self->db_falling : args[ARG_db_falling].u_int);
+        uint16_t db_rising = (args[ARG_db_rising].u_int == -1 ? self->db_rising : args[ARG_db_rising].u_int);
         pwm_update_db(self, db_falling, db_rising);
     }
     mp_obj_t ret[] = {mp_obj_new_int(self->db_falling), mp_obj_new_int(self->db_rising)};
@@ -628,8 +635,8 @@ static MP_DEFINE_CONST_FUN_OBJ_1(machine_pwm_deinit_obj, machine_pwm_deinit);
 
 /// @method active([value])
 /// @brief Sets the output of a PWM object
-/// With no argument, returns whether the output is active
 /// @param value is the desired value
+/// @return Returns whether the output is active
 static mp_obj_t machine_pwm_active(size_t n_args, const mp_obj_t* args)
 {
     return machine_pwm_active_helper(args[0], n_args - 1, args + 1);
@@ -638,8 +645,8 @@ static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(machine_pwm_active_obj, 1, 2, machine
 
 /// @method invert([value])
 /// @brief Sets the output inversion of a PWM object
-/// With no argument, returns whether the output is inverted
 /// @param value is the desired value
+/// @return Returns whether the output is inverted
 static mp_obj_t machine_pwm_invert(size_t n_args, const mp_obj_t* args)
 {
     return machine_pwm_invert_helper(args[0], n_args - 1, args + 1);
@@ -647,12 +654,12 @@ static mp_obj_t machine_pwm_invert(size_t n_args, const mp_obj_t* args)
 static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(machine_pwm_invert_obj, 1, 2, machine_pwm_invert);
 
 /// @method clock_divider[value])
-/// @brief Sets the global clock divider for the PWM block
-/// - With no argument, returns the current clock divider
-/// - Arguments may be one of the following:
+/// @brief Sets the global clock divider for the PWM block.
+/// Arguments may be one of the following:
 /// \b CLK_DIV_1, \b CLK_DIV_2, \b CLK_DIV_4, \b CLK_DIV_8,
 /// \b CLK_DIV_16, \b CLK_DIV_32, \b CLK_DIV_64
 /// @param value is the desired value
+/// @return Returns a tuple of the current clock divider and the PWM frequency of the module
 static mp_obj_t machine_pwm_clock_divider(size_t n_args, const mp_obj_t* args)
 {
     return machine_pwm_clock_divider_helper(args[0], n_args - 1, args + 1);
@@ -661,8 +668,8 @@ static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(machine_pwm_clock_divider_obj, 1, 2, 
 
 /// @method freq([value])
 /// @brief Sets the frequency of a PWM object
-/// With no argument, returns the current frequency
 /// @param value is the desired value
+/// @return Returns the current frequency
 static mp_obj_t machine_pwm_freq(size_t n_args, const mp_obj_t* args)
 {
     return machine_pwm_freq_helper(args[0], n_args - 1, args + 1);
@@ -671,8 +678,8 @@ static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(machine_pwm_freq_obj, 1, 2, machine_p
 
 /// @method duty([value])
 /// @brief Sets the duty cycle percentage of a PWM object
-/// With no argument, returns the current duty cycle
 /// @param value is the desired value
+/// @return Returns the current duty cycle
 static mp_obj_t machine_pwm_duty(size_t n_args, const mp_obj_t* args)
 {
     return machine_pwm_duty_helper(args[0], n_args - 1, args + 1);
@@ -682,6 +689,7 @@ static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(machine_pwm_duty_obj, 1, 2, machine_p
 /// @method freq([pwm, ...])
 /// @brief Syncs the provided PWM objects
 /// @param pwm are pwm objects to sync
+/// @return Returns None
 static mp_obj_t machine_pwm_sync(size_t n_args, const mp_obj_t* args)
 {
     return machine_pwm_sync_helper(args[0], n_args - 1, args + 1);
@@ -690,9 +698,10 @@ static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(machine_pwm_sync_obj, 1, MICROPY_HW_M
 
 /// @method db([db_falling, db_rising])
 /// @brief Sets the deadband delay of a PWM object. This delay is being shared within a generator.
-/// With no argument, returns the current deadband delay values
+/// The deadband values are clock ticks. The PWM clock divider applies
 /// @param db_falling is the desired deadband delay for a falling edge
 /// @param db_rising is the desired deadband delay for a rising edge
+/// @return Returns the current deadband delay values
 static mp_obj_t machine_pwm_db(size_t n_args, const mp_obj_t* args, mp_map_t* kw_args)
 {
     return machine_pwm_db_helper(args[0], n_args - 1, args + 1, kw_args);
@@ -701,7 +710,6 @@ static MP_DEFINE_CONST_FUN_OBJ_KW(machine_pwm_db_obj, 1, machine_pwm_db);
 
 /// @method irq([callback, mode])
 /// @brief Sets the interrupt callback and mode for the PWM object
-/// With no argument, returns a tuple of the current callback and mode.
 /// @param callback is the interrupt callback function to attach.
 /// The callback function receives the value of the interrupt status register
 /// via its first argument of type \b int. The triggered interrupt will be
@@ -711,6 +719,7 @@ static MP_DEFINE_CONST_FUN_OBJ_KW(machine_pwm_db_obj, 1, machine_pwm_db);
 /// \b PWM_INT_CNT_ZERO, \b PWM_INT_CNT_LOAD, \b PWM_INT_CNT_AU, \b PWM_INT_CNT_AD,
 /// \b PWM_INT_CNT_BU, \b PWM_INT_CNT_BD, \b PWM_TR_CNT_ZERO, \b PWM_TR_CNT_LOAD,
 /// \b PWM_TR_CNT_AU, \b PWM_TR_CNT_AD, \b PWM_TR_CNT_BU, or \b PWM_TR_CNT_BD
+/// @return Returns a tuple of the current callback and mode.
 static mp_obj_t machine_pwm_irq(size_t n_args, const mp_obj_t* args)
 {
     return machine_pwm_irq_helper(args[0], n_args - 1, args + 1);
