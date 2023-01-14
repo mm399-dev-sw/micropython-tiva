@@ -50,8 +50,8 @@
     #define PART_TM4C123GH6PM
 #endif
 
-/// @moduleref umachine
-/// @class PWM - control PWM generators
+/// \moduleref pyb
+/// \class PWM - control PWM generators
 /// The tm4c123gh6pm contains 2 PWM modules with 4 generators each,
 /// each of which capable of 2 output pins, for a total of 16 PWM outputs
 ///
@@ -63,11 +63,11 @@
 /// A PWM object may be initialised via a Pin object, the name of the pin (e.g. PA0),
 /// or the id of the individual PWM output
 
-/// @brief Enum to identify different PWM objects by index
+/// \brief Enum to identify different PWM objects by index
 enum {PWM_M0PWM0, PWM_M0PWM1, PWM_M0PWM2, PWM_M0PWM3, PWM_M0PWM4, PWM_M0PWM5, PWM_M0PWM6, PWM_M0PWM7,
         PWM_M1PWM0, PWM_M1PWM1, PWM_M1PWM2, PWM_M1PWM3, PWM_M1PWM4, PWM_M1PWM5, PWM_M1PWM6, PWM_M1PWM7};
 
-/// @brief Mappings for required hardware addresses
+/// \brief Mappings for required hardware addresses
 static const uint32_t pwm_periph_reg_map[2] = {SYSCTL_PERIPH_PWM0, SYSCTL_PERIPH_PWM1};
 static const uint32_t pwm_mod_reg_map[2] = {PWM0_BASE, PWM1_BASE};
 static const uint16_t pwm_gen_reg_map[4] = {PWM_GEN_0, PWM_GEN_1, PWM_GEN_2, PWM_GEN_3};
@@ -93,7 +93,7 @@ static const uint32_t gpio_af_val_map[MICROPY_HW_MAX_PWM][2] =
     {GPIO_PF3_M1PWM7,   0},
 };
 
-/// @brief List of pwm pins to identify PWM object
+/// \brief List of pwm pins to identify PWM object
 static const uint8_t pwm_pin_num_list[MICROPY_HW_MAX_PWM][2] = 
 {
     {1,     0xff},  // 0xff to indicate no alternative pin
@@ -115,7 +115,7 @@ static const uint8_t pwm_pin_num_list[MICROPY_HW_MAX_PWM][2] =
     {31,    0xff},
 };
 
-/// @brief PWM object struct
+/// \brief PWM object struct
 typedef struct _machine_pwm_obj_t
 {
     mp_obj_base_t       base;
@@ -142,10 +142,10 @@ typedef struct _machine_pwm_obj_t
 
 } machine_pwm_obj_t;
 
-/// @brief PWM object instances
+/// \brief PWM object instances
 static machine_pwm_obj_t machine_pwm_obj[MICROPY_HW_MAX_PWM] = {};
 
-/// @brief PWM system clock divider
+/// \brief PWM system clock divider
 static uint16_t pwm_clk_div_val[2] = {PWM_SYSCLK_DIV_1, PWM_SYSCLK_DIV_1};
 
 void machine_pwm_obj_val_init(machine_pwm_obj_t* self)
@@ -540,10 +540,10 @@ mp_obj_t machine_pwm_irq_helper(machine_pwm_obj_t* self, size_t n_args, const mp
     return mp_obj_new_tuple(2, ret);
 }
 
-/// @classmethod @constructor(Pin() | id, ...)
-/// @brief Create a new PWM object associated with the Pin or PWM id. If additional arguments are given,
+/// \classmethod @constructor(Pin() | id, ...)
+/// \brief Create a new PWM object associated with the Pin or PWM id. If additional arguments are given,
 /// they are used to initialise the PWM object. See `init`
-/// @return The PWM object
+/// \return The PWM object
 static mp_obj_t mp_machine_pwm_make_new(const mp_obj_type_t* type, size_t n_args, size_t n_kw, const mp_obj_t* args)
 {
     uint8_t pwm_id = 0xff;
@@ -584,17 +584,17 @@ static mp_obj_t mp_machine_pwm_make_new(const mp_obj_type_t* type, size_t n_args
     return machine_pwm_init_helper(self, n_args - 1, args + 1, &kw_args, pin);
 }
 
-/// @method init([pin, active, invert, freq, duty, db_falling, db_rising, mode, irq, irq_mode])
-/// @brief Initialises the PWM object
-/// @param self is a pointer to the PWM object
-/// @param pin is the output pin object
-/// @param active specifies the state of the output pin
-/// @param invert inverts the state of the output pin
-/// @param freq specifies the frequency of the PWM signal
-/// @param duty specifies the duty cycle percentage of the PWM signal
-/// @param db_falling specifies the deadband delay in clock ticks on a falling edge
-/// @param db_rising specifies the deadband delay in clock ticks on a rising edge
-/// @param mode specifies the mode of the PWM object. It is the logical OR of the 
+/// \method init([pin, active, invert, freq, duty, db_falling, db_rising, mode, irq, irq_mode])
+/// \brief Initialises the PWM object
+/// \param self is a pointer to the PWM object
+/// \param pin is the output pin object
+/// \param active specifies the state of the output pin
+/// \param invert inverts the state of the output pin
+/// \param freq specifies the frequency of the PWM signal
+/// \param duty specifies the duty cycle percentage of the PWM signal
+/// \param db_falling specifies the deadband delay in clock ticks on a falling edge
+/// \param db_rising specifies the deadband delay in clock ticks on a rising edge
+/// \param mode specifies the mode of the PWM object. It is the logical OR of the 
 /// following:
 /// - \b PWM_GEN_MODE_DOWN or \b PWM_GEN_MODE_UP_DOWN to specify the counting
 ///   mode
@@ -608,118 +608,118 @@ static mp_obj_t mp_machine_pwm_make_new(const mp_obj_type_t* type, size_t n_args
 /// - \b PWM_GEN_MODE_DB_NO_SYNC, \b PWM_GEN_MODE_DB_SYNC_LOCAL, or
 ///   \b PWM_GEN_MODE_DB_SYNC_GLOBAL to specify the deadband parameter
 ///   synchronization mode
-/// @param irq is the interrupt handler to attach. This function receives the 
+/// \param irq is the interrupt handler to attach. This function receives the 
 /// status of the interrupt register via its first argument of type \b int
-/// @param irq_mode specifies interrupts and triggers to act upon.
+/// \param irq_mode specifies interrupts and triggers to act upon.
 /// The irq_mode is the logical OR of the following:
 /// \b PWM_INT_CNT_ZERO, \b PWM_INT_CNT_LOAD, \b PWM_INT_CNT_AU, \b PWM_INT_CNT_AD,
 /// \b PWM_INT_CNT_BU, \b PWM_INT_CNT_BD, \b PWM_TR_CNT_ZERO, \b PWM_TR_CNT_LOAD,
 /// \b PWM_TR_CNT_AU, \b PWM_TR_CNT_AD, \b PWM_TR_CNT_BU, or \b PWM_TR_CNT_BD
 ///
-/// @return The PWM object
+/// \return The PWM object
 static mp_obj_t machine_pwm_init(size_t n_args, const mp_obj_t* args, mp_map_t* kw_args)
 {
     return machine_pwm_init_helper(args[0], n_args - 1, args + 1, kw_args, NULL);
 }
 static MP_DEFINE_CONST_FUN_OBJ_KW(machine_pwm_init_obj, 1, machine_pwm_init);
 
-/// @method deinit()
-/// @brief Deinitialises the PWM object
-/// @param self is the PWM object
-/// @return None
+/// \method deinit()
+/// \brief Deinitialises the PWM object
+/// \param self is the PWM object
+/// \return None
 static mp_obj_t machine_pwm_deinit(mp_obj_t self)
 {
     return machine_pwm_deinit_helper(self);
 }
 static MP_DEFINE_CONST_FUN_OBJ_1(machine_pwm_deinit_obj, machine_pwm_deinit);
 
-/// @method active([value])
-/// @brief Sets the output of a PWM object
-/// @param value is the desired value
-/// @return Returns whether the output is active
+/// \method active([value])
+/// \brief Sets the output of a PWM object
+/// \param value is the desired value
+/// \return Returns whether the output is active
 static mp_obj_t machine_pwm_active(size_t n_args, const mp_obj_t* args)
 {
     return machine_pwm_active_helper(args[0], n_args - 1, args + 1);
 }
 static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(machine_pwm_active_obj, 1, 2, machine_pwm_active);
 
-/// @method invert([value])
-/// @brief Sets the output inversion of a PWM object
-/// @param value is the desired value
-/// @return Returns whether the output is inverted
+/// \method invert([value])
+/// \brief Sets the output inversion of a PWM object
+/// \param value is the desired value
+/// \return Returns whether the output is inverted
 static mp_obj_t machine_pwm_invert(size_t n_args, const mp_obj_t* args)
 {
     return machine_pwm_invert_helper(args[0], n_args - 1, args + 1);
 }
 static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(machine_pwm_invert_obj, 1, 2, machine_pwm_invert);
 
-/// @method clock_divider[value])
-/// @brief Sets the global clock divider for the PWM block.
+/// \method clock_divider[value])
+/// \brief Sets the global clock divider for the PWM block.
 /// Arguments may be one of the following:
 /// \b CLK_DIV_1, \b CLK_DIV_2, \b CLK_DIV_4, \b CLK_DIV_8,
 /// \b CLK_DIV_16, \b CLK_DIV_32, \b CLK_DIV_64
-/// @param value is the desired value
-/// @return Returns a tuple of the current clock divider and the PWM frequency of the module
+/// \param value is the desired value
+/// \return Returns a tuple of the current clock divider and the PWM frequency of the module
 static mp_obj_t machine_pwm_clock_divider(size_t n_args, const mp_obj_t* args)
 {
     return machine_pwm_clock_divider_helper(args[0], n_args - 1, args + 1);
 }
 static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(machine_pwm_clock_divider_obj, 1, 2, machine_pwm_clock_divider);
 
-/// @method freq([value])
-/// @brief Sets the frequency of a PWM object
-/// @param value is the desired value
-/// @return Returns the current frequency
+/// \method freq([value])
+/// \brief Sets the frequency of a PWM object
+/// \param value is the desired value
+/// \return Returns the current frequency
 static mp_obj_t machine_pwm_freq(size_t n_args, const mp_obj_t* args)
 {
     return machine_pwm_freq_helper(args[0], n_args - 1, args + 1);
 }
 static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(machine_pwm_freq_obj, 1, 2, machine_pwm_freq);
 
-/// @method duty([value])
-/// @brief Sets the duty cycle percentage of a PWM object
-/// @param value is the desired value
-/// @return Returns the current duty cycle
+/// \method duty([value])
+/// \brief Sets the duty cycle percentage of a PWM object
+/// \param value is the desired value
+/// \return Returns the current duty cycle
 static mp_obj_t machine_pwm_duty(size_t n_args, const mp_obj_t* args)
 {
     return machine_pwm_duty_helper(args[0], n_args - 1, args + 1);
 }
 static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(machine_pwm_duty_obj, 1, 2, machine_pwm_duty);
 
-/// @method freq([pwm, ...])
-/// @brief Syncs the provided PWM objects
-/// @param pwm are pwm objects to sync
-/// @return Returns None
+/// \method freq([pwm, ...])
+/// \brief Syncs the provided PWM objects
+/// \param pwm are pwm objects to sync
+/// \return Returns None
 static mp_obj_t machine_pwm_sync(size_t n_args, const mp_obj_t* args)
 {
     return machine_pwm_sync_helper(args[0], n_args - 1, args + 1);
 }
 static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(machine_pwm_sync_obj, 1, MICROPY_HW_MAX_PWM, machine_pwm_sync);
 
-/// @method db([db_falling, db_rising])
-/// @brief Sets the deadband delay of a PWM object. This delay is being shared within a generator.
+/// \method db([db_falling, db_rising])
+/// \brief Sets the deadband delay of a PWM object. This delay is being shared within a generator.
 /// The deadband values are clock ticks. The PWM clock divider applies
-/// @param db_falling is the desired deadband delay for a falling edge
-/// @param db_rising is the desired deadband delay for a rising edge
-/// @return Returns the current deadband delay values
+/// \param db_falling is the desired deadband delay for a falling edge
+/// \param db_rising is the desired deadband delay for a rising edge
+/// \return Returns the current deadband delay values
 static mp_obj_t machine_pwm_db(size_t n_args, const mp_obj_t* args, mp_map_t* kw_args)
 {
     return machine_pwm_db_helper(args[0], n_args - 1, args + 1, kw_args);
 }
 static MP_DEFINE_CONST_FUN_OBJ_KW(machine_pwm_db_obj, 1, machine_pwm_db);
 
-/// @method irq([callback, mode])
-/// @brief Sets the interrupt callback and mode for the PWM object
-/// @param callback is the interrupt callback function to attach.
+/// \method irq([callback, mode])
+/// \brief Sets the interrupt callback and mode for the PWM object
+/// \param callback is the interrupt callback function to attach.
 /// The callback function receives the value of the interrupt status register
 /// via its first argument of type \b int. The triggered interrupt will be
 /// cleared automatically after exiting the callback.
-/// @param mode specifies interrupts and triggers to act upon. It is the
+/// \param mode specifies interrupts and triggers to act upon. It is the
 /// logical OR of the following: 
 /// \b PWM_INT_CNT_ZERO, \b PWM_INT_CNT_LOAD, \b PWM_INT_CNT_AU, \b PWM_INT_CNT_AD,
 /// \b PWM_INT_CNT_BU, \b PWM_INT_CNT_BD, \b PWM_TR_CNT_ZERO, \b PWM_TR_CNT_LOAD,
 /// \b PWM_TR_CNT_AU, \b PWM_TR_CNT_AD, \b PWM_TR_CNT_BU, or \b PWM_TR_CNT_BD
-/// @return Returns a tuple of the current callback and mode.
+/// \return Returns a tuple of the current callback and mode.
 static mp_obj_t machine_pwm_irq(size_t n_args, const mp_obj_t* args)
 {
     return machine_pwm_irq_helper(args[0], n_args - 1, args + 1);
@@ -742,8 +742,8 @@ void pwm_init0(void)
     }
 }
 
-/// @method __str__()
-/// @brief Return a string describing the PWM object
+/// \method __str__()
+/// \brief Return a string describing the PWM object
 static void machine_pwm_print(const mp_print_t* print, mp_obj_t self_in, mp_print_kind_t kind)
 {
     machine_pwm_obj_t* self = MP_OBJ_TO_PTR(self_in);
